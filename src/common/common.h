@@ -45,6 +45,13 @@ typedef struct _socketFTP
     char* ip_addr;
     unsigned int PORT_;
     unsigned int endpoint_addr_size;
+
+    int interactive_mode; 
+    int passive_mode;
+    int auto_loggin;
+    int name_globbing;
+    int verbose_output;
+    int debug;
 } _socketFTP;
 
 int set_socket( _socketFTP* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,

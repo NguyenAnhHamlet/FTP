@@ -188,14 +188,14 @@ int handleReply(char rep[], Asym_Infos* as_infos, Timer* timer);
 int handleOption(char option[]);
 
 // Options functions
-void ipv4_op(_socketFTP* socketFTP, const char *option);
-void ipv6_op(_socketFTP* socketFTP, const char *option);
-void passmode(const char *option);
-void int_off(const char *option);
-void aulog_dis(const char *option);
-void glob_dis(const char *option);
-void verbose_enb(const char *option);
-void debug_enb(const char *option);
+void ipv4_op(_socketFTP* socketFTP);
+void ipv6_op(_socketFTP* socketFTP);
+void passmode(_socketFTP* socketFTP);
+void int_off(_socketFTP* socketFTP);
+void aulog_dis(_socketFTP* socketFTP);
+void glob_dis(_socketFTP* socketFTP);
+void verbose_enb(_socketFTP* socketFTP);
+void debug_enb(_socketFTP* socketFTP);
 
 // Client side functions
 int quit();

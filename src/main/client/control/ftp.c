@@ -9,48 +9,44 @@
 #include "timer.h"
 #include <time.h>
 
-void ipv4_op(_socketFTP* socketFTP, const char *option)
+void ipv4_op(_socketFTP* socketFTP)
 {
-    if(strcmp(option, IPV4_OP)) return;
-
     socketFTP->endpoint_addr->sin_family = AF_INET;
 }
 
-void ipv6_op(_socketFTP* socketFTP, const char *option)
+void ipv6_op(_socketFTP* socketFTP)
 {
-    if(strcmp(option, IPV6_OP)) return;
-
     socketFTP->endpoint_addr->sin_family = AF_INET6;
 }
 
-void passmode(const char *option)
+void passmode(_socketFTP* socketFTP)
 {
-
+    socketFTP->passive_mode = 1;
 }
 
-void int_off(const char *option)
+void int_off(_socketFTP* socketFTP)
 {
-
+    socketFTP->interactive_mode = 0;
 }
 
-void aulog_dis(const char *option)
+void aulog_dis(_socketFTP* socketFTP)
 {
-
+    socketFTP->auto_loggin = 0;
 }
 
-void glob_dis(const char *option)
+void glob_dis(_socketFTP* socketFTP)
 {
-
+    socketFTP->name_globbing = 0;
 }
 
-void verbose_enb(const char *option)
+void verbose_enb(_socketFTP* socketFTP)
 {
-
+    socketFTP->verbose_output = 1;
 }
 
-void debug_enb(const char *option)
+void debug_enb(_socketFTP* socketFTP)
 {
-
+    socketFTP->debug = 1;
 }
 
 int sendClientRequest(char req[], Asym_Infos* as_infos, Timer* timer)
