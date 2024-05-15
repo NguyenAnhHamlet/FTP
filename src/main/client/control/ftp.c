@@ -124,6 +124,10 @@ int main(int argc, char* argvs[])
     char buffer[BUF_LEN] = {0};
     bool FTPrunning;
 
+    // // Create a FTP socket
+    // _socketFTP* socketFTP = (_socketFTP*) malloc(sizeof(_socketFTP));
+    // set_socket(socketFTP, sock_fd, &server_address, ipaddr, PORT, addrlen, AF_INET);
+
     // Initiate a connection with server
     sock_fd = cre_socket();
     end_point(&server_address,ipaddr,PORT);

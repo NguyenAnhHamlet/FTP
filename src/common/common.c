@@ -91,11 +91,29 @@ int set_socket( _socketFTP* socket, unsigned int _sockfd, struct sockaddr_in* _e
                 unsigned int IPTYPE)
 {
     int res = 1;
-    socket->sockfd = cre_socket();
+    socket->sockfd = _sockfd;
     res *= set_end_point(socket->endpoint_addr, socket->ip_addr, socket->PORT_, IPTYPE);
     res *= connect_endpoint(socket->sockfd, socket->endpoint_addr, socket->endpoint_addr_size);
     
     return res;
+}
+
+_socketFTP* cre_FTPSocket(char* _ip_addr, unsigned int IPTYPE)
+{
+    int sock_fd;
+    struct sockaddr_in* endpoint_address = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
+    int opt = 1;
+    int addrlen = sizeof(struct sockaddr_in);
+
+    _socketFTP* socket = (_socketFTP*)malloc(sizeof(_socketFTP));
+
+    set_socket(socket, cre_socket(), endpoint_address, _ip_addr, PORT, addrlen, IPTYPE);
+}
+
+void destroy_FTPSocket(_socketFTP* socket)
+{
+    free(socket->endpoint_addr);
+    free(socket);
 }
 
 void execute(char cmd[], char res[])

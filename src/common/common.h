@@ -58,6 +58,8 @@ int set_socket( _socketFTP* socket, unsigned int _sockfd, struct sockaddr_in* _e
                 char* _ip_addr, unsigned int _PORT_, unsigned int _endpoint_addr_size,
                 unsigned int IPTYPE);
 
+_socketFTP* cre_FTPSocket(char* _ip_addr, unsigned int IPTYPE);
+void destroy_FTPSocket(_socketFTP* socket);
 // create a new raw socket
 // and return it
 int cre_socket();
