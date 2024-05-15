@@ -185,7 +185,9 @@ int recvServerReply(char rep[], Asym_Infos* as_infos, Timer* timer);
 
 int handleReply(char rep[], Asym_Infos* as_infos, Timer* timer);
 
-int handleOption(char option[]);
+void splitArgs(_socketFTP* socketFTP, int argc, ...);
+
+int handleOp(_socketFTP* socketFTP, char op[]);
 
 // Options functions
 void ipv4_op(_socketFTP* socketFTP);

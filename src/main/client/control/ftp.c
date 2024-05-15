@@ -9,6 +9,21 @@
 #include "timer.h"
 #include <time.h>
 
+void splitArgs(_socketFTP* socketFTP, int argc, ...)
+{
+    va_list ptr;
+
+    va_start(ptr, argc);
+    char* arg = va_arg(ptr, char*);
+    strcpy(socketFTP->ip_addr, arg);
+
+    for(int i =1; i < argc; i++)
+    {
+        arg = va_arg(ptr, char*);
+        if(!handleOp(socketFTP, arg)) errorLog("Faillure in handle options\n"); 
+    }
+}
+
 void ipv4_op(_socketFTP* socketFTP)
 {
     socketFTP->endpoint_addr->sin_family = AF_INET;
@@ -21,32 +36,32 @@ void ipv6_op(_socketFTP* socketFTP)
 
 void passmode(_socketFTP* socketFTP)
 {
-    socketFTP->passive_mode = 1;
+    socketFTP->op |= PASSIVE_MODE;
 }
 
 void int_off(_socketFTP* socketFTP)
 {
-    socketFTP->interactive_mode = 0;
+    socketFTP->op &= ~INTERACTIVE_MODE;
 }
 
 void aulog_dis(_socketFTP* socketFTP)
 {
-    socketFTP->auto_loggin = 0;
+    socketFTP->op &= ~AUTO_LOGGIN;
 }
 
 void glob_dis(_socketFTP* socketFTP)
 {
-    socketFTP->name_globbing = 0;
+   socketFTP->op &= ~NAME_GLOBBING;
 }
 
 void verbose_enb(_socketFTP* socketFTP)
 {
-    socketFTP->verbose_output = 1;
+    socketFTP->op |= VERBOSE_OUTPUT;
 }
 
 void debug_enb(_socketFTP* socketFTP)
 {
-    socketFTP->debug = 1;
+    socketFTP->op |= DEBUG_ENB_OP;
 }
 
 int sendClientRequest(char req[], Asym_Infos* as_infos, Timer* timer)
@@ -101,9 +116,19 @@ int handleReply(char rep[], Asym_Infos* as_infos, Timer* timer)
 
 }
 
-int handleOption(char option[])
+int handleOp(_socketFTP* socketFTP, char op[])
 {
+    if(strcmp(op, IPV4_OP))         ipv4_op(socketFTP);
+    else if(strcmp(op, IPV6_OP))    ipv6_op(socketFTP);
+    else if(strcmp(op, PASSMODE))   passmode(socketFTP);
+    else if(strcmp(op, INT_OFF))    int_off(socketFTP);
+    else if(strcmp(op, AULOG_DIS))  aulog_dis(socketFTP);
+    else if(strcmp(op, GLOB_DIS))   glob_dis(socketFTP);
+    else if(strcmp(op, VER_OUT))    verbose_enb(socketFTP);
+    else if(strcmp(op, DEBUG_ENB))  debug_enb(socketFTP);
+    else                            return Faillure;
 
+    return Success;
 }
 
 void callBackTimer(Timer* timer)

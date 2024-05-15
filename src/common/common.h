@@ -38,6 +38,16 @@ typedef enum Conn_Type
     SERVER
 } Conn_Type;
 
+typedef enum option
+{
+    INTERACTIVE_MODE = 1,
+    PASSIVE_MODE = 2,
+    AUTO_LOGGIN = 4,
+    NAME_GLOBBING = 8,
+    VERBOSE_OUTPUT = 16,
+    DEBUG_ENB_OP = 32
+} option;
+
 typedef struct _socketFTP
 {
     unsigned int sockfd;
@@ -45,13 +55,7 @@ typedef struct _socketFTP
     char* ip_addr;
     unsigned int PORT_;
     unsigned int endpoint_addr_size;
-
-    int interactive_mode; 
-    int passive_mode;
-    int auto_loggin;
-    int name_globbing;
-    int verbose_output;
-    int debug;
+    unsigned int op;
 } _socketFTP;
 
 int set_socket( _socketFTP* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,
