@@ -117,24 +117,15 @@ int main(int argc, char* argvs[])
     Timer* pubAuthentimer = (Timer*) malloc(sizeof(Timer));
     char option[8];
     char ipaddr[32];
-    int sock_fd;
-    struct sockaddr_in server_address;
-    int opt = 1;
-    int addrlen = sizeof(server_address);
-    char buffer[BUF_LEN] = {0};
+    char buffer[BUF_LEN];
+    unsigned int iptype;
     bool FTPrunning;
 
-    // // Create a FTP socket
-    // _socketFTP* socketFTP = (_socketFTP*) malloc(sizeof(_socketFTP));
-    // set_socket(socketFTP, sock_fd, &server_address, ipaddr, PORT, addrlen, AF_INET);
-
-    // Initiate a connection with server
-    sock_fd = cre_socket();
-    end_point(&server_address,ipaddr,PORT);
-    connect_endpoint(sock_fd,&server_address,addrlen); 
+    // Create a FTP socket
+    _socketFTP* socketFTP = cre_FTPSocket(ipaddr, iptype);
     
     // public key authen 
-    as_infos.setupSocket = sock_fd;
+    as_infos.setupSocket = socketFTP->sockfd;
     as_infos.conn = CLIENT;
 
     setTimer(pubAuthentimer, time(NULL), 30);
