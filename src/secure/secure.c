@@ -115,7 +115,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
                 strcpy(res, PUB_AUTHEN_FAIL);
                 send_msg(as_infos,BUF_LEN, res);
                 close(as_infos->setupSocket);
-                errorLog("Authentication failed\n");
+                return Faillure;
             }
             else 
             {

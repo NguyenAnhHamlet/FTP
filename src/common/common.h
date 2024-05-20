@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include "stack.h"
 
 // choose port 50000 as default port 
 // for sending and receiving data
@@ -21,6 +22,8 @@
 // short and messsage display on CLI 
 // not to be too long
 #define BUF_LEN 1024
+
+#define NUMCLIENT 2056
 
 
 mode_t R_O_ALL;
@@ -60,9 +63,9 @@ typedef struct _socketFTP
 
 int set_socket( _socketFTP* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,
                 char* _ip_addr, unsigned int _PORT_, unsigned int _endpoint_addr_size,
-                unsigned int IPTYPE);
+                unsigned int IPTYPE,  Conn_Type type);
 
-_socketFTP* cre_FTPSocket(char* _ip_addr, unsigned int IPTYPE);
+_socketFTP* cre_FTPSocket(char* _ip_addr, unsigned int IPTYPE, Conn_Type type);
 void destroy_FTPSocket(_socketFTP* socket);
 // create a new raw socket
 // and return it
@@ -72,7 +75,7 @@ int cre_socket();
 // specify IP address and PORT
 // and return it
 int set_end_point(struct sockaddr_in* _endpoint_addr, char* _ip_addr, unsigned int _PORT,
-                  unsigned int IPTYPE);
+                  unsigned int IPTYPE, Conn_Type type);
 
 // connect the fd to endpoint socket
 int connect_endpoint(unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
@@ -89,5 +92,14 @@ void errorLog(char err[]);
 unsigned int size_buffer(char buff[]);
 
 bool has_Pattern(char path[], char* pattern, FILE* pipe);
+
+int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr, 
+                    unsigned int _endpoint_addr_size);
+
+int listen_endpoint(unsigned int _socket_fd, unsigned int num);
+
+int accept_New_ConnectionFTP(_socketFTP* socket);
+
+int available_SocketFD(Stack* available);
 
 #endif

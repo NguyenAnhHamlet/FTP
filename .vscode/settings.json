@@ -65,6 +65,8 @@
     "ftp.h": "c",
     "common.h": "c",
     "stdio.h": "c",
-    "time.h": "c"
+    "time.h": "c",
+    "inet.h": "c",
+    "ftplog.h": "c"
   }
 }

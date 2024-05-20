@@ -7,5 +7,6 @@
 char tochar(int num);
 int toint(char c);
 int toInt(char num[], unsigned int size);
+int max(int a, int b);
 
 #endif

@@ -34,7 +34,7 @@ function __main()
 
 
 
-main
+__main
 
 
 
