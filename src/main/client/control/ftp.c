@@ -139,6 +139,7 @@ void callBackTimer(Timer* timer)
 int main(int argc, char* argvs[])
 {
     Asym_Infos as_infos;
+    TimerThreadArgs *arg = (TimerThreadArgs*) malloc(sizeof(TimerThreadArgs));
     Timer* pubAuthentimer = (Timer*) malloc(sizeof(Timer));
     char option[8];
     char ipaddr[32];
@@ -147,14 +148,14 @@ int main(int argc, char* argvs[])
     bool FTPrunning;
 
     // Create a FTP socket
-    _socketFTP* socketFTP = cre_FTPSocket(ipaddr, iptype);
+    _socketFTP* socketFTP = cre_FTPSocket(ipaddr, iptype, CLIENT);
     
     // public key authen 
     as_infos.setupSocket = socketFTP->sockfd;
     as_infos.conn = CLIENT;
 
     setTimer(pubAuthentimer, time(NULL), 30);
-    startTimer(pubAuthentimer, callBackTimer);
+    startTimerThread(arg , pubAuthentimer, callBackTimer);
 
     if(!public_key_Authentication(&as_infos))
         errorLog("Public key authentication failed\n");
@@ -166,7 +167,7 @@ int main(int argc, char* argvs[])
         errorLog("Public key authentication failed\n");
 
     // Pub authen done successfully, cancel timer
-    cancelTimer(pubAuthentimer);
+    cancelTimerThread(arg);
 
     FTPrunning = true;
 

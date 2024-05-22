@@ -39,6 +39,21 @@ int startTimer(Timer* timer, callbackFunc func)
     signalTimerSemaphore(timer);
 }
 
+void* timerThreadWrapper(void* arg) 
+{
+    TimerThreadArgs* args = (TimerThreadArgs*)arg; 
+    startTimer(args->timer, args->func);
+    return NULL;
+}
+
+int startTimerThread(TimerThreadArgs* args, Timer* timer, callbackFunc func)
+{
+    pthread_t thread;
+    args->timer = timer;
+    args->func = func;
+    pthread_create(&thread, NULL, timerThreadWrapper, args);
+}
+
 int cancelTimer(Timer* timer)
 {
     if(!timer) return Faillure;
@@ -48,6 +63,13 @@ int cancelTimer(Timer* timer)
     while(timer->in_used);
 
     free(timer);
+}
+
+int cancelTimerThread(TimerThreadArgs* arg)
+{
+    if(!arg) return Faillure;
+    cancelTimer(arg->timer);
+    free(arg);
 }
 
 int delayTimer(Timer* timer)

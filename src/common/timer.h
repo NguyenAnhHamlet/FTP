@@ -18,6 +18,12 @@ typedef struct Timer
     int in_used;
 } Timer;
 
+typedef struct {
+  Timer* timer;
+  callbackFunc func;
+  unsigned int socketfd;
+} TimerThreadArgs;
+
 typedef void (*callbackFunc)(Timer*);
 
 // Use semaphore to prevent user from setting the timer 
@@ -32,10 +38,14 @@ void setTimer(Timer* timer, time_t start , time_t end);
 // after done running, the func shall be called
 int startTimer(Timer* timer, callbackFunc func);
 
+void* timerThreadWrapper(void* arg);
+int startTimerThread(TimerThreadArgs* arg ,Timer* timer, callbackFunc func);
+
 // in_used variable help to keep track of the object timer
 // if none of the thread / function is using this object
 // cancelTimer could destroy it
 int cancelTimer(Timer* timer);
+int cancelTimerThread(TimerThreadArgs* arg);
 int delayTimer(Timer* timer);
 
 #endif
