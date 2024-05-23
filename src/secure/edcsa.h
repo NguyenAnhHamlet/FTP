@@ -9,8 +9,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define public_ECDSAkey_file "/etc/ECDSApub.key"
-#define private_ECDSAkey_file "/etc/ECDSAprivate.key"
+#define public_ECDSAkey_file "/etc/pub/ECDSApub.key"
+#define private_ECDSAkey_file "/etc/priv/ECDSAprivate.key"
 
 #define CURVE_NAME "secp256k1"
 

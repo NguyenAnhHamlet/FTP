@@ -9,8 +9,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define public_RSAkey_file "/etc/RSApub.key"
-#define private_RSAkey_file "/etc/RSAprivate.key"
+#define public_RSAkey_file "/etc/pub/RSApub.key"
+#define private_RSAkey_file "/etc/priv/RSAprivate.key"
 
 #define KEY_SIZE 2048  
 

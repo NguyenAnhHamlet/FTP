@@ -24,6 +24,123 @@ void splitArgs(_socketFTP* socketFTP, int argc, ...)
     }
 }
 
+// Client side functions
+int quit() 
+{
+  // Implement quit function here
+}
+
+int help() 
+{
+  // Implement help function here
+}
+
+int ascii() 
+{
+  // Implement ascii function here
+}
+
+int bell() 
+{
+  // Implement bell function here
+}
+
+int binary() 
+{
+  // Implement binary function here
+}
+
+int bye() 
+{
+  // Implement bye function here (might be same as quit)
+}
+
+int close() 
+{
+  // Implement close function here
+}
+
+int cr() 
+{
+  // Implement cr function here
+}
+
+int debug() 
+{
+  // Implement debug function here
+}
+
+int disconnect() 
+{
+  // Implement disconnect function here
+}
+
+int exit_cmd() 
+{
+  // Implement exit_cmd function here (might be same as quit)
+}
+
+int form() 
+{
+  // Implement form function here
+}
+
+int glob() 
+{
+  // Implement glob function here
+}
+
+int hash() 
+{
+  // Implement hash function here
+}
+
+int help_client() 
+{
+  // Implement help_client function here
+}
+
+int image() 
+{
+  // Implement image function here
+}
+
+int macdef() 
+{
+  // Implement macdef function here
+}
+
+int verbose() 
+{
+  // Implement verbose function here
+}
+
+int umask() 
+{
+  // Implement umask function here
+}
+
+// Data command functions
+int get() 
+{
+  // Implement get function here
+}
+
+int put() 
+{
+  // Implement put function here
+}
+
+int recv() 
+{
+  // Implement recv function here (might be similar to get)
+}
+
+int send() 
+{
+  // Implement send function here (might be similar to put)
+}
+
 void ipv4_op(_socketFTP* socketFTP)
 {
     socketFTP->endpoint_addr->sin_family = AF_INET;
