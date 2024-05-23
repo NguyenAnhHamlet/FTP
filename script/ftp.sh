@@ -9,9 +9,20 @@ if [[ $# -gt 1 ]]; then
   echo "Warning: Only the last argument will be considered as the IP address."
 fi
 
+# check for key file
+if [ !find /etc/pub/ -name *.key -o !find /etc/priv/ -name *] ; then 
+    echo "Please generate pair key file"
+    exit 1
+fi
+
 IP="${@: -1}"
 OPTIONS="${@: 0: $# }"
 FTP_BIN=/usr/bin/ftp
+
+if [ !-f ${FTP_BIN} ] ; then 
+    echo "There is no ftpserver"
+    exit 1
+fi
 
 function __checkIP()
 {
