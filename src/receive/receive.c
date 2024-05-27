@@ -16,7 +16,7 @@ int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, S
     //  in queue
     while(*status == SEND_START || FD_ISSET(_socket_fd, &read_fds))
     {
-        if( byte = recv_msg(_socket_fd, BUF_LEN, buf) >= 0 ) 
+        if( byte = recv_msg(_socket_fd, BUF_LEN, buf) != Faillure ) 
             appendFile(_filename,buf,file);
         else 
             break;
@@ -33,24 +33,53 @@ int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, S
 
 int recv_msg(unsigned int _socket_fd, unsigned int _BUF_LEN, char* msg)
 {
-    int bytes_received = recv(_socket_fd, msg, _BUF_LEN, SOCK_NONBLOCK);
+    int pos = 0;
+    while(_BUF_LEN - pos)
+    {
+        switch (recv(_socket_fd, msg, _BUF_LEN, 0))
+        {
+        case -1 :
+        {
+            if (errno == EINTR || errno == EAGAIN)
+				continue;
+            else return Faillure;
+            break;
+        }
+        
+        default:
+        {
+            pos += _BUF_LEN;
+            break;
+        }
+        }
+    }
 
-    if(bytes_received < 0) errorLog("unknown error with socket\n");
-    if (bytes_received == 0) errorLog("connection closed by peer\n");
+    if(pos == _BUF_LEN) return Success;
 
-    return bytes_received;
+    return Faillure;
 }
 
 int recv_int(unsigned int _socket_fd, int* num)
 {
-    int received_int = 0;
+    int converted_number = htonl(num);
 
-    if(read(_socket_fd, &received_int, sizeof(received_int)) <= 0)
+    int pos = 0;
+    while(sizeof(converted_number) - pos)
     {
-        return Faillure;
+        switch (read(_socket_fd, &converted_number, sizeof(converted_number)))
+        {
+        case -1 :
+            if (errno == EINTR || errno == EAGAIN)
+				continue;
+            else return Faillure;
+        
+        default:
+            pos += _BUF_LEN;
+            break;
+        }
     }
 
-    *num = ntohl(received_int);
+    if(pos == sizeof(converted_number)) return Success;
 
-    return Success;
+    return Faillure;
 }

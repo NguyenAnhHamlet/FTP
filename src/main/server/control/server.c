@@ -322,12 +322,12 @@ int main()
 
         if(activity_client)
         {
-            for(int i=0 ; i<= maxClientSocket; i++)
+            for(int client=0 ; client<= maxClientSocket; client++)
             {
-                if (FD_ISSET(i, &readfds))
+                if (FD_ISSET(client, &readfds))
                 {   
-                    recv_msg(i, BUF_LEN, buf);
-                    handleRequestServer(i, buf);
+                    recv_msg(client, BUF_LEN, buf);
+                    handleRequestServer(client, buf);
                 }
             }
         }   
