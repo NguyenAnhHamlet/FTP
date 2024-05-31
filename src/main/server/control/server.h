@@ -67,8 +67,6 @@
 #define TYPE "type"
 #define USER "user"
 
-void* pubkeyAuthenThreadFunc(void* vargp);
-
 // Handle the request :
 // Open data PORT to send, recv file
 // Send back the data to control PORT

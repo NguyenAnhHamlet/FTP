@@ -16,27 +16,22 @@
 #include "ftplog.h"
 #include "receive.h"
 #include "timer.h"
+#include <signal.h>
+#include <fcntl.h>
 
-void callbackPubAuthen(TimerThreadArgs* arg)
+_socketFTP* socketServer;
+
+void signal_handler(int sig)
 {
-    close(arg->socketfd);
-    cancelTimerThread(arg);
+    LOG("Received signal %d; terminating.", sig);
+    close(socketServer->sockfd);
+    exit(255);
 }
 
-void* pubkeyAuthenThreadFunc(void* vargp)
+void time_out_alarm(int sig)
 {
-    Timer* pubAuthentimer = (Timer*)malloc(sizeof(Timer));
-    TimerThreadArgs* arg = (TimerThreadArgs*) malloc(sizeof(TimerThreadArgs));
-    setTimer(pubAuthentimer, time(NULL), 30);
-    startTimerThread(   (TimerThreadArgs*) malloc(sizeof(TimerThreadArgs)), 
-                        pubAuthentimer, callbackPubAuthen);
-    Asym_Infos as_infos; 
-    as_infos.setupSocket = *((int*) vargp);
-    if(!public_key_Authentication((Asym_Infos*) vargp))
-    {
-        LOG("%s %d", "Public key authentication failed on socket", as_infos.setupSocket);
-        cancelTimerThread(arg);
-    }
+    LOG("Time out");
+    exit(1);
 }
 
 int handleRequestServer(int sockfd, char req[])
@@ -281,8 +276,9 @@ int user() {
 
 int main()
 {
-    _socketFTP* socket = cre_FTPSocket(NULL, AF_INET, SERVER);
+    socketServer = cre_FTPSocket(NULL, AF_INET, SERVER);
     bool isRunning = 1;
+    int pid, newsock;
     unsigned int maxClientSocket = 0;
     unsigned int clientfd;
     fd_set readfds;
@@ -292,46 +288,66 @@ int main()
     pthread_t pub_key_thread;
     char buf[BUF_LEN];
 
+    // signal and handle
+    signal(SIGINT, signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     while(isRunning)
     {
         FD_ZERO(&readfds);
 
         // add server socket
-        FD_SET(socket->sockfd, &readfds);
+        FD_SET(socketServer->sockfd, &readfds);
 
-        // add client sockets
-        for(int i =0; i< maxClientSocket; i++)
-        {
-            FD_SET(i, &readfds);
-        }
-
-        activity = select(socket->sockfd + 1, &readfds, NULL, NULL, NULL);
+        activity = select(socketServer->sockfd + 1, &readfds, NULL, NULL, NULL);
 
         if ((activity < 0) && (errno != EINTR)) 
             perror("select error");
 
-        if (FD_ISSET(socket->sockfd, &readfds))
+        if (FD_ISSET(socketServer->sockfd, &readfds))
         {
-            clientfd = accept_New_ConnectionFTP(socket);
-            maxClientSocket = max(clientfd, maxClientSocket);
-            
-            pthread_create(&pub_key_thread, NULL, pubkeyAuthenThreadFunc, (void*) &clientfd);
-        }
+            newsock = accept_New_ConnectionFTP(socketServer);
 
-        activity_client = select(maxClientSocket + 1, &readfds, NULL, NULL, NULL);
-
-        if(activity_client)
-        {
-            for(int client=0 ; client<= maxClientSocket; client++)
+            if(clientfd < 0 )
             {
-                if (FD_ISSET(client, &readfds))
-                {   
-                    recv_msg(client, BUF_LEN, buf);
-                    handleRequestServer(client, buf);
-                }
+                if (errno != EINTR && errno != EWOULDBLOCK)
+                  error("Accept error\n");
+                continue;
             }
-        }   
+
+            if (fcntl(newsock, F_SETFL, 0) < 0) 
+            {
+                error("newsock del O_NONBLOCK: %s", strerror(errno));
+                continue;
+			      }
+
+            maxClientSocket = max(newsock, maxClientSocket);
+
+            // New connection from client
+            // Fork to form a new process
+            if ((pid = fork()) == 0) 
+            {
+                clientfd = newsock ;
+                LOG("New connection from client %d", clientfd);
+                break;
+            } 
+        }
     }
+
+    // Client process handle
+    as_infos.as_type = SERVER;
+    
+    signal(SIGALRM, time_out_alarm);
+		alarm(30);
+
+    if(public_key_Authentication(&as_infos) == Faillure)
+    {
+        LOG("Pub authen failed with socket %d\n", clientfd);
+        exit(1);
+    }
+
+    alarm(0);
 
     return 0;
 }

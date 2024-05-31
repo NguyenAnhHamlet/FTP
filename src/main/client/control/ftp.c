@@ -8,6 +8,12 @@
 #include "secure.h"
 #include "timer.h"
 #include <time.h>
+#include <signal.h>
+
+void time_out_alarm(int sig)
+{
+    errorLog("Time out");
+}
 
 void splitArgs(_socketFTP* socketFTP, int argc, ...)
 {
@@ -271,8 +277,9 @@ int main(int argc, char* argvs[])
     as_infos.setupSocket = socketFTP->sockfd;
     as_infos.conn = CLIENT;
 
-    setTimer(pubAuthentimer, time(NULL), 30);
-    startTimerThread(arg , pubAuthentimer, callBackTimer);
+    // set alarm for 30 seconds
+    signal(SIGALRM, time_out_alarm);
+		alarm(30);
 
     if(!public_key_Authentication(&as_infos))
         errorLog("Public key authentication failed\n");
@@ -283,8 +290,8 @@ int main(int argc, char* argvs[])
     if(strcmp(buffer, PUB_AUTHEN_FAIL)) 
         errorLog("Public key authentication failed\n");
 
-    // Pub authen done successfully, cancel timer
-    cancelTimerThread(arg);
+    // Pub authen done successfully, cancel alarm
+    alarm(0);
 
     FTPrunning = true;
 
