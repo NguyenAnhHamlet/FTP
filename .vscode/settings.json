@@ -68,6 +68,12 @@
     "time.h": "c",
     "inet.h": "c",
     "ftplog.h": "c",
-    "pem.h": "c"
+    "pem.h": "c",
+    "system_error": "cpp",
+    "array": "cpp",
+    "functional": "cpp",
+    "tuple": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp"
   }
 }

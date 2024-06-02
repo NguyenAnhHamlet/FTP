@@ -7,11 +7,11 @@
 #define BUF_SIZE 4096
 
 typedef struct {
-	char   *buf;		
+	char   *buf;
+	unsigned int offset;	
 	unsigned int alloc;	
 	unsigned int end;	
 } Buffer;
-
 
 void buffer_init(Buffer * buffer);
 
