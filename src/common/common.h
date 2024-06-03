@@ -102,4 +102,6 @@ int accept_New_ConnectionFTP(_socketFTP* socket);
 
 int available_SocketFD(Stack* available);
 
+int get_host_name(char* host);
+
 #endif

@@ -31,8 +31,11 @@ function __checkIP()
     local IP="$1"
 
     if [${IP} =~ !${regexIP}] ; then 
-        echo "IP address is unidentified"
-        exit 1
+        IP=$(host ${IP} | awk '/has address/ {print $NF}')
+        if [ -z ${IP} ] ; then  
+            echo "IP address is unidentified"
+            exit 1
+        fi
     fi
 
 }

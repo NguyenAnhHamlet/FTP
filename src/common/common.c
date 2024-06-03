@@ -1,5 +1,12 @@
+#include <netdb.h>
 #include "common.h"
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <string.h>
 
 R_O_ALL = 0444;
 
@@ -240,4 +247,30 @@ int available_SocketFD(Stack* available)
 {
     int sock = pop(available);
     return sock;
+}
+
+int get_host_name(char* host)
+{
+    if(strchr(host, '.') == 0)
+    {
+        struct addrinfo hints;
+        struct addrinfo *ai = NULL;
+        int errgai;
+        memset(&hints, 0, sizeof(hints));
+
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_flags = AI_CANONNAME;
+        hints.ai_socktype = SOCK_STREAM;
+
+        errgai = getaddrinfo(host, NULL, &hints, &ai);
+        if (errgai == 0) {
+            if (ai->ai_canonname != NULL)
+                host = xstrdup(ai->ai_canonname);
+            freeaddrinfo(ai);
+        }
+        return Success;
+    }
+
+    return Unknown;
+
 }

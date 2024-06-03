@@ -74,6 +74,9 @@
     "functional": "cpp",
     "tuple": "cpp",
     "type_traits": "cpp",
-    "utility": "cpp"
-  }
+    "utility": "cpp",
+    "unistd.h": "c",
+    "netdb.h": "c"
+  },
+  "C_Cpp.errorSquiggles": "disabled"
 }

@@ -270,6 +270,8 @@ int main(int argc, char* argvs[])
     unsigned int iptype;
     bool FTPrunning;
 
+    
+
     // Create a FTP socket
     _socketFTP* socketFTP = cre_FTPSocket(ipaddr, iptype, CLIENT);
     
