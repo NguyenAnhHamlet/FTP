@@ -20,11 +20,11 @@ void save_RSApublic_key(RSA * rsa, char path[]);
 
 void save_RSAprivate_key(RSA * rsa, char path[]);
 
-int sign_RSAChallenge( RSA * rsa, const unsigned char *challenge, 
+int rsa_pub_encrypt( RSA * rsa, const unsigned char *challenge, 
                     int challenge_len, unsigned char *signature, 
                     size_t *signature_len);
 
-int verify_RSAchallenge(RSA * rsa, const unsigned char *challenge, 
+int rsa_priv_decrypt(RSA * rsa, const unsigned char *challenge, 
                     int challenge_len, const unsigned char *signature, 
                     size_t* signature_len);
 

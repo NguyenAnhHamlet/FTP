@@ -12,7 +12,7 @@
 
 void time_out_alarm(int sig)
 {
-    errorLog("Time out");
+    fatal("Time out");
 }
 
 void splitArgs(_socketFTP* socketFTP, int argc, ...)
@@ -26,7 +26,7 @@ void splitArgs(_socketFTP* socketFTP, int argc, ...)
     for(int i =1; i < argc; i++)
     {
         arg = va_arg(ptr, char*);
-        if(!handleOp(socketFTP, arg)) errorLog("Faillure in handle options\n"); 
+        if(!handleOp(socketFTP, arg)) fatal("Faillure in handle options\n"); 
     }
 }
 
@@ -256,7 +256,7 @@ int handleOp(_socketFTP* socketFTP, char op[])
 
 void callBackTimer(Timer* timer)
 {
-    errorLog("Time out\n");
+    fatal("Time out\n");
 }
 
 int main(int argc, char* argvs[])
@@ -284,13 +284,13 @@ int main(int argc, char* argvs[])
 		alarm(30);
 
     if(!public_key_Authentication(&as_infos))
-        errorLog("Public key authentication failed\n");
+        fatal("Public key authentication failed\n");
     
     // recv the respond about pubkey authen from server
     recvmsg(as_infos.setupSocket, buffer, 0);
 
     if(strcmp(buffer, PUB_AUTHEN_FAIL)) 
-        errorLog("Public key authentication failed\n");
+        fatal("Public key authentication failed\n");
 
     // Pub authen done successfully, cancel alarm
     alarm(0);

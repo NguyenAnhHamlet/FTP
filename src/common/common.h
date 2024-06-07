@@ -87,7 +87,7 @@ void execute(char cmd[], char res[]);
 
 void takeUserName(char username[]);
 
-void errorLog(char err[]);
+void fatal(const char* format, ...);
 
 unsigned int size_buffer(char buff[]);
 

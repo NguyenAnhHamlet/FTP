@@ -38,7 +38,7 @@ void keygen(int argc, ...)
             else
             {
                 va_end(ptr);
-                errorLog("There is no such key\n");
+                fatal("There is no such key\n");
             }
         }
         else if(!strcmp(arg, OVEWRITE))
@@ -57,7 +57,7 @@ void keygen(int argc, ...)
         else
         {
             va_end(ptr);
-            errorLog("There is no such type of argument\n");
+            fatal("There is no such type of argument\n");
         }
     }
     

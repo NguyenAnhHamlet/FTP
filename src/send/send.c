@@ -28,7 +28,7 @@ int send_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, S
             // Abort the sending operation
             close(file);
             *status = ABORT; 
-            errorLog("Fail to send file\n");
+            fatal("Fail to send file\n");
         }
     }
 

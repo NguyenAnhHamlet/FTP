@@ -37,18 +37,18 @@ void save_public_key(EDCSA_key_pair* ECDSA, char path[])
 {
     EVP_PKEY *keypair = EVP_PKEY_new();
 
-    if(!keypair) errorLog("Couldn't create keypair");
+    if(!keypair) fatal("Couldn't create keypair");
 
     if(!EVP_PKEY_assign_EC_KEY(keypair, ECDSA->eckey))
-        errorLog("Couldn't assign keypair");
+        fatal("Couldn't assign keypair");
 
     FILE *fp = fopen(path, "a");
     
-    if(!fp) errorLog("Couldn't open file");
+    if(!fp) fatal("Couldn't open file");
     
 
     if (!PEM_write_EC_PUBKEY(fp, keypair)) 
-        errorLog("Error writing public key to file");
+        fatal("Error writing public key to file");
 
     fclose(fp);
     EVP_PKEY_free(keypair);
@@ -59,41 +59,93 @@ void save_private_key(EDCSA_key_pair* ECDSA, char path[])
 {
     EVP_PKEY *keypair = EVP_PKEY_new();
 
-    if(!keypair) errorLog("Couldn't create keypair");
+    if(!keypair) fatal("Couldn't create keypair");
 
     if(!EVP_PKEY_assign_EC_KEY(keypair, ECDSA->eckey))
-        errorLog("Couldn't assign keypair");
+        fatal("Couldn't assign keypair");
 
     FILE *fp = fopen(path, "a");
 
-    if(!fp) errorLog("Couldn't open file");
+    if(!fp) fatal("Couldn't open file");
 
     if(!PEM_write_ECPrivateKey(fp, keypair,NULL, NULL, 0, NULL, NULL))
-        errorLog("Error writing private key to file");
+        fatal("Error writing private key to file");
 
     fclose(fp);
     EVP_PKEY_free(keypair);
 }
 
-int sign_Challenge( EDCSA_key_pair* ECDSA, const unsigned char *challenge, 
-                    int challenge_len, unsigned char *signature, 
+int edcsa_pub_encrypt( EDCSA_key_pair* ECDSA, BIGNUM *challenge, 
+                    int challenge_len, BIGNUM *signature, 
                     size_t *signature_len)
 {
+   EVP_PKEY_CTX *ctx;
+    char *inbuf, *outbuf;
+	int len, ilen, olen;
+
+    ctx = EVP_PKEY_CTX_new();
     size_t sig_size = ECDSA_size(ECDSA->eckey);
-    ECDSA_sign(1,challenge, challenge_len, signature, sig_size, ECDSA->eckey);
-    *signature_len = sig_size;
+
+    olen = BN_num_bytes(ECDSA->eckey);          // might be an issue
+	outbuf = xmalloc(olen);
+
+	ilen = BN_num_bytes(in);
+	inbuf = xmalloc(ilen);
+	BN_bn2binpad(signature, inbuf, ilen);
+
+    if (EVP_PKEY_encrypt_init_ex(ctx, NULL, NULL, ECDSA->eckey) != 1) 
+    {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    if (EVP_PKEY_encrypt(ctx, inbuf, &ilen, outbuf, olen) != 1) 
+    {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    BN_bin2bn(outbuf, len, signature);
+    *signature_len = olen;
 
     return *signature_len;
 }
 
-int verify_challenge(EDCSA_key_pair* ECDSA, const unsigned char *challenge, 
-                    int challenge_len, const unsigned char *signature, 
+int ecdsa_priv_decrypt(EDCSA_key_pair* ECDSA, BIGNUM *challenge, 
+                    int challenge_len, BIGNUM *signature, 
                     size_t* signature_len)
 {
-    size_t sig_size = ECDSA_size(ECDSA->eckey);
-    int res = ECDSA_verify(1,challenge, challenge_len, signature, sig_size, ECDSA->eckey);
-    
-    return res;
+    EVP_PKEY_CTX *ctx;
+	char *inbuf, *outbuf;
+	int len, ilen, olen;
+
+    ctx = EVP_PKEY_CTX_new();
+
+	olen = BN_num_bytes(ECDSA->eckey);                  // might be an issue
+	outbuf = (char*)malloc(olen);
+
+	ilen = BN_num_bytes(signature);
+	inbuf = (char*)malloc(ilen);
+    BN_bn2binpad(signature, inbuf, ilen);
+
+    if (EVP_PKEY_decrypt_init_ex(ctx, NULL, NULL, ECDSA->eckey) != 1) 
+    {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    if (EVP_PKEY_decrypt(ctx, outbuf, olen, inbuf, ilen) != 1) 
+    {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+	BN_bin2bn(outbuf, len, challenge);
+
+	memset(outbuf, 0, olen);
+	memset(inbuf, 0, ilen);
+	free(outbuf);
+	free(inbuf);
 }
 
 int read_auth_key(EDCSA_key_pair* ECDSA, char path[], char* pattern)
@@ -106,7 +158,7 @@ int read_auth_key(EDCSA_key_pair* ECDSA, char path[], char* pattern)
     
     ECDSA->eckey = PEM_read_PUBKEY(pipe,NULL,NULL,NULL);
 
-    if(!ECDSA->eckey) errorLog("Could not read public key\n");
+    if(!ECDSA->eckey) fatal("Could not read public key\n");
 
     pclose(pipe);
 
@@ -122,7 +174,7 @@ int read_private_key(EDCSA_key_pair* ECDSA, char path[])
     FILE* fp = fopen(path, "rb");
     ECDSA->eckey = PEM_read_PrivateKey(fp,NULL,NULL,NULL);  
 
-    if(!ECDSA->eckey) errorLog("Could not read private key\n");
+    if(!ECDSA->eckey) fatal("Could not read private key\n");
 
     return Success;
 }

@@ -92,7 +92,7 @@ int set_end_point(  struct sockaddr_in* _endpoint_addr, char* _ip_addr, unsigned
     }
     
     default:
-        errorLog("Unknown type\n");
+        fatal("Unknown type\n");
         break;
     }
 
@@ -183,10 +183,16 @@ void takeUserName(char username[])
     execute(cmd, username);
 }
 
-void errorLog(char err[])
+void fatal(const char* format, ...)
 {
-    printf("%s\n",err);
-    exit(1);
+	va_list ap;
+	char buf[1024];
+
+	va_start(ap, format);
+	vsnprintf(buf, sizeof(buf), format, ap);
+	va_end(ap);
+	fprintf(stderr, "%s\n", buf);
+	exit(255);
 }
 
 unsigned int size_buffer(char buff[])
@@ -211,7 +217,7 @@ bool has_Pattern(char path[], char* pattern, FILE* pipe)
 
     pipe = popen(cmd, "r");
 
-    if(!pipe) errorLog("Could not create pipe");
+    if(!pipe) fatal("Could not create pipe");
     
 
     size_t bytes_read = fread(buffer, 1, 1, pipe);
@@ -225,7 +231,7 @@ int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
                     unsigned int _endpoint_addr_size)
 {
     if (bind(_socket_fd, (struct sockaddr*)&_endpoint_addr, _endpoint_addr_size) < 0) 
-        errorLog("Bind error\n");
+        fatal("Bind error\n");
 
     return 1;
 }
@@ -233,7 +239,7 @@ int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
 int listen_endpoint(unsigned int _socket_fd, unsigned int num)
 {
     if (listen(_socket_fd, num) < 0) 
-        errorLog("Listen error\n");
+        fatal("Listen error\n");
 
     return 1;
 }

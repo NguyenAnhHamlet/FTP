@@ -29,12 +29,12 @@ void save_public_key(EDCSA_key_pair* ECDSA, char path[]);
 
 void save_private_key(EDCSA_key_pair* ECDSA, char path[]);
 
-int sign_Challenge( EDCSA_key_pair* ECDSA, const unsigned char *challenge, 
-                    int challenge_len, unsigned char *signature, 
+int sign_Challenge( EDCSA_key_pair* ECDSA, BIGNUM *challenge, 
+                    int challenge_len, BIGNUM *signature, 
                     size_t *signature_len);
 
-int verify_challenge(EDCSA_key_pair* ECDSA, const unsigned char *challenge, 
-                    int challenge_len, const unsigned char *signature, 
+int ecdsa_priv_decrypt(EDCSA_key_pair* ECDSA, BIGNUM *challenge, 
+                    int challenge_len, BIGNUM *signature, 
                     size_t* signature_len);
 
 int read_auth_key(EDCSA_key_pair* ECDSA, char path[], char* pattern);

@@ -6,11 +6,11 @@
 
 void readFile(char path[], FILE* fp)
 {
-    if(notExist(path)) errorLog("File does not exist\n");
+    if(notExist(path)) fatal("File does not exist\n");
 
     fp = fopen(path, "r");
 
-    if(!fp) errorLog("Could not create file descriptor\n");
+    if(!fp) fatal("Could not create file descriptor\n");
 }
 
 void writeFile(char path[], char data[], FILE* fp)
@@ -19,17 +19,17 @@ void writeFile(char path[], char data[], FILE* fp)
 
     fp = fopen(path, "wb");
 
-    if(!fp) errorLog("Could not create file descriptor\n");
+    if(!fp) fatal("Could not create file descriptor\n");
 
     fprintf(fp, data);
 }
 
 mode_t permission(char path[])
 {
-    if(notExist(path)) errorLog("File does not exist\n");
+    if(notExist(path)) fatal("File does not exist\n");
 
     struct stat stat_result;
-    if (stat(path, &stat_result) == -1) errorLog("Error in stat");
+    if (stat(path, &stat_result) == -1) fatal("Error in stat");
 
     mode_t permissions = stat_result.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
 
@@ -50,7 +50,7 @@ void appendFile(char path[], char data[],FILE* fp)
 {
     fp = fopen(path, "a");
 
-    if(!fp) errorLog("Could not create file descriptor\n");
+    if(!fp) fatal("Could not create file descriptor\n");
 
     fprintf(fp, data);
 }

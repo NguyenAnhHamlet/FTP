@@ -9,6 +9,7 @@
 #include "send.h"
 #include "receive.h"
 #include <time.h>
+#include <openssl/bn.h>
 
 int public_key_Authentication(Asym_Infos* as_infos)
 {
@@ -17,10 +18,13 @@ int public_key_Authentication(Asym_Infos* as_infos)
     case CLIENT:
     {
         // determine the host key algorithm to use
-        if(HostKey(as_infos) == Faillure) errorLog("Could not agree and use host key algorithm\n");
+        if(HostKey(as_infos) == Faillure) fatal("Could not agree and use host key algorithm\n");
 
-        char challenge[CHALLENGE_LENGTH];
-        char sig[BUF_LEN];
+        BIGNUM *challenge, *sig;
+        BN_CTX *ctx = BN_CTX_new();
+        challenge = BN_new(); 
+        sig = BN_new();  
+
         size_t sig_length;
 
         switch (as_infos->as_type)
@@ -31,9 +35,6 @@ int public_key_Authentication(Asym_Infos* as_infos)
 
             // Send the ECDSA public key to server
             send_file(as_infos->setupSocket,BUF_LEN,public_ECDSAkey_file);
-
-            // generate the challenge
-            generateChallenge(challenge);
             
             // sign the challenge
             read_private_key(ECDSA, private_ECDSAkey_file);
@@ -54,13 +55,10 @@ int public_key_Authentication(Asym_Infos* as_infos)
 
             // Send the ECDSA public key to server
             send_file(as_infos->setupSocket,BUF_LEN,public_RSAkey_file);
-
-            // generate the challenge
-            generateChallenge(challenge);
             
             // sign the challenge
             read_privateRSA_key(rsa, private_RSAkey_file);
-            sign_RSAChallenge(rsa, challenge, sizeof(challenge), sig, &sig_length);
+            rsa_pub_encrypt(rsa, challenge, sizeof(challenge), sig, &sig_length);
 
             // send the challenge to server
             send_msg(as_infos->setupSocket,CHALLENGE_LENGTH,challenge);
@@ -72,7 +70,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
         
         default:
         {
-            errorLog("There is no such key\n");
+            fatal("There is no such key\n");
             break;
         }
         }
@@ -83,7 +81,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
     case SERVER:
     {
         // determine the host key algorithm to use
-        if(HostKey(as_infos) == Faillure) errorLog("Could not agree and use host key algorithm\n");
+        if(HostKey(as_infos) == Faillure) fatal("Could not agree and use host key algorithm\n");
 
         char key[BUF_LEN];
         char res[BUF_LEN];
@@ -110,7 +108,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
             // reject/accept the connection by opening a new port 
             // for data transfer
 
-            if(verify_challenge(ECDSA,challenge,sizeof(challenge),sig,sig_length) <= 0)
+            if(ecdsa_priv_decrypt(ECDSA,challenge,sizeof(challenge),sig,sig_length) <= 0)
             {
                 strcpy(res, PUB_AUTHEN_FAIL);
                 send_msg(as_infos,BUF_LEN, res);
@@ -166,7 +164,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
         
         default:
         {
-            errorLog("There is no such key\n");
+            fatal("There is no such key\n");
             break;
         }
         }
@@ -176,7 +174,7 @@ int public_key_Authentication(Asym_Infos* as_infos)
     default:
     {
         // something wrong happened, error handle
-        errorLog("No such type of endpoint\n");
+        fatal("No such type of endpoint\n");
         break;
     }
     }
