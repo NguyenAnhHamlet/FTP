@@ -76,7 +76,16 @@
     "type_traits": "cpp",
     "utility": "cpp",
     "unistd.h": "c",
-    "netdb.h": "c"
+    "netdb.h": "c",
+    "kex.h": "c",
+    "pam.h": "c",
+    "typeinfo": "c",
+    "executor": "c",
+    "memory": "c",
+    "random": "c",
+    "future": "c",
+    "control.h": "c",
+    "aescipher.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

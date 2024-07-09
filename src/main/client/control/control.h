@@ -1,16 +1,21 @@
-#ifndef __SERVER__
-#define __SERVER__
+#ifndef __FTP__ 
+#define __FTP__
 
+#include <stdio.h>
+#include "common.h"
 #include "cmd.h"
 
-// Handle the request :
-// Open data PORT to send, recv file
-// Send back the data to control PORT
-int handleRequestServer(int sockfd, char req[]);
+void splitArgs(socket_ftp* socketFTP, int argc, ...);
 
-int pass_authen_server(int sockfd, passwd* pw);
+int handleOp(socket_ftp* socketFTP, char op[]);
 
-int get();
+int password_authen_client(socket_ftp* socketFTP);
+
+// Options functions
+void ipv4_op(socket_ftp* socketFTP);
+void ipv6_op(socket_ftp* socketFTP);
+
+int get(control_channel* channel);
 int put();
 int recv();
 int send();

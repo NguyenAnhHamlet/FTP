@@ -4,16 +4,16 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-void readFile(char path[], FILE* fp)
+void read_file(char path[], FILE* fp)
 {
-    if(notExist(path)) fatal("File does not exist\n");
+    if(not_exist(path)) fatal("File does not exist\n");
 
     fp = fopen(path, "r");
 
     if(!fp) fatal("Could not create file descriptor\n");
 }
 
-void writeFile(char path[], char data[], FILE* fp)
+void write_file(char path[], char data[], FILE* fp)
 {
     FILE* fp = popen();
 
@@ -26,7 +26,7 @@ void writeFile(char path[], char data[], FILE* fp)
 
 mode_t permission(char path[])
 {
-    if(notExist(path)) fatal("File does not exist\n");
+    if(not_exist(path)) fatal("File does not exist\n");
 
     struct stat stat_result;
     if (stat(path, &stat_result) == -1) fatal("Error in stat");
@@ -36,17 +36,17 @@ mode_t permission(char path[])
     return permissions;
 }   
 
-void createFile(char path[], FILE* fp)
+void create_file(char path[], FILE* fp)
 {
     fp = fopen(path, "w");
 }
 
-void deleteFile(char path[])
+void delete_file(char path[])
 {
     remove(path);
 }
 
-void appendFile(char path[], char data[],FILE* fp)
+void append_file(char path[], char data[],FILE* fp)
 {
     fp = fopen(path, "a");
 
@@ -55,7 +55,7 @@ void appendFile(char path[], char data[],FILE* fp)
     fprintf(fp, data);
 }
 
-bool isEmpty(char path[], FILE* fp)
+bool is_empty(char path[], FILE* fp)
 {
     fp = fopen(path, "r");
     char buffer[1];
@@ -67,7 +67,7 @@ bool isEmpty(char path[], FILE* fp)
     return true;
 }
 
-bool notExist(char path[])
+bool not_exist(char path[])
 {
     if(access(path, F_OK) == -1) return true;
 

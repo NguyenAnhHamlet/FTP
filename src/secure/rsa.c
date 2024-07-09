@@ -3,13 +3,41 @@
 #include "file.h"
 #include <string.h>
 
-void generate_RSA_KEYPAIR(RSA * rsa)
+void generate_RSA_KEYPAIR(RSA *prv, RSA *pub)
 {
-    rsa = RSA_new();
-    if (!rsa) fatal("Could not initialize object rsa\n");
+    RSA* key_pair = RSA_new();
+    if (!key_pair) 
+        fatal("Could not initialize object rsa\n");
 
-    if (RSA_generate_key_ex(rsa, KEY_SIZE, RSA_3, NULL) != 1) 
+    if (RSA_generate_key_ex(key_pair, KEY_SIZE, RSA_3, NULL) != 1) 
        fatal("Could not generate RSA key pair\n");
+
+    pub->n = BN_new();
+	BN_copy(pub->n, key_pair->n);
+	pub->e = BN_new();
+	BN_copy(pub->e, key_pair->e);
+
+    prv->n = BN_new();
+	BN_copy(prv->n, key_pair->n);
+	prv->e = BN_new();
+	BN_copy(prv->e, key_pair->e);
+	prv->d = BN_new();
+	BN_copy(prv->d, key_pair->d);
+	prv->p = BN_new();
+	BN_copy(prv->p, key_pair->p);
+	prv->q = BN_new();
+	BN_copy(prv->q, key_pair->q);
+
+	prv->dmp1 = BN_new();
+	BN_copy(prv->dmp1, key_pair->dmp1);
+
+	prv->dmq1 = BN_new();
+	BN_copy(prv->dmq1, key_pair->dmq1);
+
+	prv->iqmp = BN_new();
+	BN_copy(prv->iqmp, key_pair->iqmp);
+
+	RSA_free(key_pair);
 }
 
 void save_RSApublic_key(RSA * rsa, char path[])
@@ -68,7 +96,7 @@ int rsa_pub_encrypt( RSA * rsa, const unsigned char *challenge,
     return *signature_len;
 }
 
-int rsa_priv_decrypt(RSA * rsa, BIGNUM *challenge, 
+int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge, 
                     int challenge_len, BIGNUM *signature, 
                     size_t* signature_len)
 {
@@ -105,32 +133,74 @@ int rsa_priv_decrypt(RSA * rsa, BIGNUM *challenge,
 	free(inbuf);
 }
 
-int read_RSAauth_key(RSA * rsa, char path[], char* pattern)
+int load_rsa_auth_key(RSA * pub_key, char path[])
 {
     FILE* pipe;
-    if(!has_Pattern(path,pattern,pipe))
-    {
-        return Faillure;
-    }
     
-    rsa = PEM_read_RSA_PUBKEY(pipe,NULL,NULL,NULL);
+    pub_key = PEM_read_RSA_PUBKEY(pipe,NULL,NULL,NULL);
 
-    if(!rsa) fatal("Could not read public key\n");
+    if(!pub_key) fatal("Could not read public key\n");
 
     pclose(pipe);
 
     return Success;
 }
 
-int read_privateRSA_key(RSA * rsa, char path[])
+int load_private_rsa_key(RSA * private_key, char path[])
 {
     FILE* pipe;
     
-    rsa = PEM_read_RSAPrivateKey(pipe,NULL,NULL,NULL);
+    private_key = PEM_read_RSAPrivateKey(pipe,NULL,NULL,NULL);
 
-    if(!rsa) fatal("Could not read private key\n");
+    if(!private_key) fatal("Could not read private key\n");
 
     pclose(pipe);
 
     return Success;
+}
+
+void rsa_read_public_key(char path[], char* key)
+{
+    if(notExist(path))
+        fatal("File %s does not exist\n");
+    
+    if(!key) 
+    {   
+        FILE* pub_file;
+        readFile(path, pub_file);
+
+        fseek(pub_file, 0, SEEK_END);
+        int pub_size = ftell(pub_file);
+        fseek(pub_file, 0, SEEK_SET);
+
+        key = (char*) malloc(pub_size);
+
+        if(!key) 
+            fatal("Could not allocate memory to store public key\n");
+
+        fread(key, 1, pub_size, pub_file);
+    }
+}
+
+void rsa_read_private_key(char path[], char* key)
+{
+    if(notExist(path))
+        fatal("File %s does not exist\n");
+    
+    if(!key) 
+    {   
+        FILE* pub_file;
+        readFile(path, pub_file);
+
+        fseek(pub_file, 0, SEEK_END);
+        int pub_size = ftell(pub_file);
+        fseek(pub_file, 0, SEEK_SET);
+
+        key = (char*) malloc(pub_size);
+
+        if(!key) 
+            fatal("Could not allocate memory to store private key\n");
+
+        fread(key, 1, pub_size, pub_file);
+    }
 }

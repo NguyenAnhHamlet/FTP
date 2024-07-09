@@ -9,7 +9,7 @@
 #include "status.h"
 
 // recv file over to the server
-int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, Status_FTP* status);
+int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, status_ftp* status);
 
 // recv msg over to the server
 int recv_msg(unsigned int _socket_fd, unsigned int _BUF_LEN, char* msg);

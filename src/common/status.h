@@ -6,14 +6,14 @@
 #include <string.h>
 
 
-typedef enum Status_FTP
+typedef enum 
 {
     SEND_START = 125,
     SEND_SUCC = 226,
     CON_CLOSE =     426, 
     ABORT =         451,
     FILE_UN = 550 
-} Status_FTP;
+} status_ftp;
 
 
 #endif

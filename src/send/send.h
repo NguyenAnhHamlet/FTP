@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 
 // send file over to the server
-int send_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, Status_FTP* status);
+int send_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, status_ftp* status);
 
 // send msg over to the server
 int send_msg(unsigned int _socket_fd, unsigned int _BUF_LEN, char* msg);

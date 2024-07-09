@@ -18,8 +18,12 @@
 #include "timer.h"
 #include <signal.h>
 #include <fcntl.h>
+#include "socket_ftp.h"
+#include "pam.h"
+#include "packet.h"
+#include <pwd.h>
 
-_socketFTP* socketServer;
+socket_ftp* socketServer;
 
 void signal_handler(int sig)
 {
@@ -39,6 +43,34 @@ int handleRequestServer(int sockfd, char req[])
     
 }
 
+int pass_authen_server(int sockfd, passwd* pw)
+{
+  Packet* name_packet;
+  Packet* pass_packet;
+  passwd* pw;
+  char* user_name;
+  char* user_pass;
+  int len;
+
+  packet_read_expect(name_packet, FTP_PASS_AUTHEN);
+  packet_get_str(name_packet, user_name, &len);
+
+
+  pw = getpwnam(user_name);
+
+  if (!pw || !allowed_user(pw))
+  {
+    LOG("Athentication failed for user %s", pw->pw_name);
+    return 0;
+  }
+
+  start_pam(pw); 
+  packet_read_expect(pass_packet, FTP_PASS_AUTHEN);
+  packet_get_str(pass_packet, user_pass, &len);
+
+  return auth_pam_password(pw, user_pass);
+  
+}
 
 int get() {
   // Implement get function here
@@ -276,7 +308,7 @@ int user() {
 
 int main()
 {
-    socketServer = cre_FTPSocket(NULL, AF_INET, SERVER);
+    socketServer = create_ftp_socket(NULL, AF_INET, SERVER);
     bool isRunning = 1;
     int pid, newsock;
     unsigned int maxClientSocket = 0;
@@ -284,7 +316,6 @@ int main()
     fd_set readfds;
     int activity;
     int activity_client;
-    Asym_Infos as_infos; 
     pthread_t pub_key_thread;
     char buf[BUF_LEN];
 
@@ -307,7 +338,7 @@ int main()
 
         if (FD_ISSET(socketServer->sockfd, &readfds))
         {
-            newsock = accept_New_ConnectionFTP(socketServer);
+            newsock = accept_new_connection_ftp(socketServer);
 
             if(clientfd < 0 )
             {
@@ -336,18 +367,23 @@ int main()
     }
 
     // Client process handle
-    as_infos.as_type = SERVER;
+    control_channel channel; 
+    control_channel_init(&channel, clientfd, clientfd, SERVER, -1 );
     
     signal(SIGALRM, time_out_alarm);
 		alarm(30);
 
-    if(public_key_Authentication(&as_infos) == Faillure)
+    if(public_key_authentication(&channel, 1) == 0 || 
+       public_key_authentication(&channel, 0) == 0)
     {
-        LOG("Pub authen failed with socket %d\n", clientfd);
-        exit(1);
+      LOG("Pub authen failed with socket %d\n", clientfd);
+      exit(1);
     }
 
+    if(!pass_authen_server(clientfd))
+      exit(1);
+    
     alarm(0);
-
+    
     return 0;
 }

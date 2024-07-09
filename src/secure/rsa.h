@@ -14,7 +14,7 @@
 
 #define KEY_SIZE 2048  
 
-void generate_RSA_KEYPAIR(RSA * rsa);
+void generate_RSA_KEYPAIR(RSA *prv, RSA *pub);
 
 void save_RSApublic_key(RSA * rsa, char path[]);
 
@@ -24,12 +24,16 @@ int rsa_pub_encrypt( RSA * rsa, const unsigned char *challenge,
                     int challenge_len, unsigned char *signature, 
                     size_t *signature_len);
 
-int rsa_priv_decrypt(RSA * rsa, const unsigned char *challenge, 
-                    int challenge_len, const unsigned char *signature, 
+int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge, 
+                    int challenge_len, BIGNUM *signature, 
                     size_t* signature_len);
 
-int read_RSAauth_key(RSA * rsa, char path[], char* pattern);
+int load_rsa_auth_key(RSA * pub_key, char path[]);
 
-int read_privateRSA_key(RSA * rsa, char path[]);
+int load_private_rsa_key(RSA * private_key, char path[]);
+
+void rsa_read_public_key(char path[], char* key);
+
+void rsa_read_private_key(char path[], char* key);
 
 #endif

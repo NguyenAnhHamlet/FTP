@@ -10,229 +10,162 @@
 #include "receive.h"
 #include <time.h>
 #include <openssl/bn.h>
+#include "packet.h"
 
-int public_key_Authentication(Asym_Infos* as_infos)
+int public_key_authentication(control_channel* channel, int evolution)
 {
-    switch (as_infos->conn)
+    switch (evolution)
     {
-    case CLIENT:
+    case 0:
     {
-        // determine the host key algorithm to use
-        if(HostKey(as_infos) == Faillure) fatal("Could not agree and use host key algorithm\n");
-
-        BIGNUM *challenge, *sig;
-        BN_CTX *ctx = BN_CTX_new();
+        BIGNUM *challenge, *sig, recv_challenge;
         challenge = BN_new(); 
         sig = BN_new();  
+        RSA *private_key;
 
         size_t sig_length;
 
-        switch (as_infos->as_type)
+        // Send the RSA public key to endpoint
+        control_channel_append_int(FTP_PUB_KEY_SEND, channel);
+        channel_send_public_key(channel, public_RSAkey_file);
+
+        if(control_channel_read_expect(channel, FTP_ACK) != 1)
         {
-        case _ECDSA:
-        {
-            EDCSA_key_pair *ECDSA;
-
-            // Send the ECDSA public key to server
-            send_file(as_infos->setupSocket,BUF_LEN,public_ECDSAkey_file);
-            
-            // sign the challenge
-            read_private_key(ECDSA, private_ECDSAkey_file);
-            sign_Challenge(ECDSA, challenge, sizeof(challenge), sig, &sig_length);
-
-            // send the chalenge and the signature to server
-            send_msg(as_infos->setupSocket,CHALLENGE_LENGTH,challenge);
-            send_msg(as_infos->setupSocket, sig_length, sig);
-
-            break;
-
-        }
-
-        
-        case _RSA:
-        {   
-            RSA *rsa;
-
-            // Send the ECDSA public key to server
-            send_file(as_infos->setupSocket,BUF_LEN,public_RSAkey_file);
-            
-            // sign the challenge
-            read_privateRSA_key(rsa, private_RSAkey_file);
-            rsa_pub_encrypt(rsa, challenge, sizeof(challenge), sig, &sig_length);
-
-            // send the challenge to server
-            send_msg(as_infos->setupSocket,CHALLENGE_LENGTH,challenge);
-            send_msg(as_infos->setupSocket, sig_length, sig);
-
-            break;
-        }
-            
-        
-        default:
-        {
-            fatal("There is no such key\n");
-            break;
-        }
-        }
-
-    }
-        
-    
-    case SERVER:
-    {
-        // determine the host key algorithm to use
-        if(HostKey(as_infos) == Faillure) fatal("Could not agree and use host key algorithm\n");
-
-        char key[BUF_LEN];
-        char res[BUF_LEN];
-        char challenge[CHALLENGE_LENGTH];
-        char sig[BUF_LEN];
-        size_t sig_length;
-
-        switch (as_infos->as_type)
-        {
-        case _ECDSA:
-        {
-            EDCSA_key_pair *ECDSA;
-
-            // receive the public key of client
-            recv_msg(as_infos->setupSocket, BUF_LEN, key);
-            BIO *bio = BIO_new_mem_buf(key, -1);
-            ECDSA->eckey = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, NULL);
-
-            // receive the challenge and the signature
-            recv_msg(as_infos->setupSocket, CHALLENGE_LENGTH, challenge);
-            recv_msg(as_infos->setupSocket, BUF_LEN, sig);
-
-            // use that public key to verify the challenge
-            // reject/accept the connection by opening a new port 
-            // for data transfer
-
-            if(ecdsa_priv_decrypt(ECDSA,challenge,sizeof(challenge),sig,sig_length) <= 0)
-            {
-                strcpy(res, PUB_AUTHEN_FAIL);
-                send_msg(as_infos,BUF_LEN, res);
-                close(as_infos->setupSocket);
-                return Faillure;
-            }
-            else 
-            {
-                strcpy(res, PUB_AUTHEN_SUCCESS);
-                send_msg(as_infos,BUF_LEN, res);
-            }
-
-            BIO_free(bio);
-
-            break;
-
+            LOG("Server fails to receive RSA pub_key");
+            return 0;
         }
         
-        case _RSA:
+        // encrypt the challenge
+        load_private_rsa_key(private_key, private_RSAkey_file);
+        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), sig, &sig_length);
+
+        control_channel_append_int(FTP_ASYM_AUTHEN, channel);
+        control_channel_append_bignum(sig, channel );
+
+        // send the challenge to endpoint
+        control_channel_send_wait(channel);
+
+        if(control_channel_read_expect(channel, FTP_ACK) != 1)
         {
-            RSA *rsa;
-
-            // receive the public key of client
-            recv_msg(as_infos->setupSocket, BUF_LEN, key);
-            BIO *bio = BIO_new_mem_buf(key, -1);
-            rsa = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, NULL);
-
-            // receive the challenge and the signature
-            recv_msg(as_infos->setupSocket, CHALLENGE_LENGTH, challenge);
-            recv_msg(as_infos->setupSocket, BUF_LEN, sig);
-
-            // use that public key to verify the challenge
-            // reject/accept the connection by opening a new port 
-            // for data transfer
-
-            if(verify_RSAchallenge(rsa,challenge,sizeof(challenge),sig,sig_length) <= 0)
-            {
-                strcpy(res, PUB_AUTHEN_FAIL);
-                send_msg(as_infos,BUF_LEN, res);
-                close(as_infos->setupSocket);
-                return Faillure;
-            }
-            else 
-            {
-                strcpy(res, PUB_AUTHEN_SUCCESS);
-                send_msg(as_infos,BUF_LEN, res);
-            }
-
-            BIO_free(bio);
-
-            break;
+            LOG("Server fails to receive RSA challenge");
+            return 0;
         }
-        
-        default:
+
+        if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN))
         {
-            fatal("There is no such key\n");
-            break;
-        }
-        }
-    }
+            control_channel_get_bignum(recv_challenge, channel);
 
+            if(!BN_cmp(recv_challenge, challenge))
+                fatal("%s", "Pub_key authentication failed\n");
+        }
 
-    default:
-    {
-        // something wrong happened, error handle
-        fatal("No such type of endpoint\n");
+        BN_clear(challenge);
+        BN_clear(recv_challenge);
+        BN_clear(sig);
+        RSA_free(private_key);
+
         break;
     }
-    }
 
-    return Success;
-}
-
-int HostKey(Asym_Infos* as_infos)
-{
-    // send to endpoint the list of available hostkey algo
-    char bufSend[256];
-    char bufRecv[256];
-    memset(bufSend,'\0',sizeof(bufSend));
-    memset(bufRecv,'\0',sizeof(bufRecv));
-
-    // create message
-    strcpy(bufSend,"Hostkey:");
-
-    // check for pair key 
-    int rsa = !notExist(private_RSAkey_file) | !notExist(public_RSAkey_file);
-    int ecdsa = !notExist(private_ECDSAkey_file) | !notExist(public_ECDSAkey_file);
-
-    if(!(rsa | ecdsa)) return Faillure;
-
-    if(rsa) strcat(bufSend,":rsa");
-    
-
-    if(ecdsa) strcat(bufSend,":ecdsa");
-    
-    // condition sastified, send message to server
-    send_msg(as_infos->setupSocket,BUF_LEN,bufSend);
-
-    // receive the message from server 
-    recv_msg(as_infos->setupSocket,BUF_LEN,bufRecv);
-
-    int matchRSA = rsa & (strstr(":rsa", bufRecv) ? 1 : 0);
-    int matchECDSA = ecdsa & (strstr(":ecdsa", bufRecv) ? 1 : 0);
-
-    if(matchRSA | matchECDSA) return Faillure;
-
-    if(matchECDSA) 
-        as_infos->as_type = _ECDSA;
-    else if(matchRSA)
-        as_infos->as_type = _RSA;
-    else 
-        return Faillure;
-    
-    return Success;
-}
-
-void generateChallenge(char challenge[])
-{
-    srand(time(NULL));
-
-    for (size_t i = 0; i < CHALLENGE_LENGTH - 1 ; ++i) 
+    case 1 :
     {
-        challenge[i] = tochar(rand() % 62);
+        RSA *pub_key;
+        BIGNUM* challenge, *decrypt_challenge;
+
+        if(control_channel_read_expect(channel, FTP_PUB_KEY_SEND) <= 0)
+        {
+            LOG("Faild receive public key\n");
+            return 0;
+        }
+
+        channel_recv_public_key(channel, pub_key);
+        
+        control_channel_append_int(FTP_ACK, channel);
+        control_channel_send(channel);
+
+        if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
+        {
+            LOG("Failed receive challange\n");
+            return 0;
+        }
+
+        control_channel_get_bignum(challenge, channel);
+        rsa_pub_decrypt(pub_key, challenge, BN_num_bits(challenge),
+                        decrypt_challenge, BN_num_bits(decrypt_challenge))
+
+        control_channel_append_int(FTP_ASYM_AUTHEN);
+        control_channel_append_bignum(decrypt_challenge, channel);
+
+        control_channel_send(channel);
+
+        BN_clear(challenge);
+        BN_clear(decrypt_challenge);
+        RSA_free(pub_key);
+
+        break;
+    }
+        
+    default:
+        LOG("Unknown choice evolution\n");
+        break;
     }
 
-    challenge[CHALLENGE_LENGTH] = '\0';
+    return 1;
+}
+
+int channel_send_public_key(control_channel* channel, char path[])
+{
+    RSA* pub_key;
+    BIGNUM *pub_key_e, *pub_key_n;
+
+    load_rsa_auth_key(pub_key, path);
+
+    pub_key_e = BN_new();
+    pub_key_n = BN_new();
+
+    BN_copy(pub_key->e, pub_key_e);
+    BN_copy(pub_key->n, pub_key_n);
+
+    packet_init(channel->data_out, channel->data_out->out_port, 
+                FTP_PUB_KEY_SEND, -1, -1 );
+    packet_append_bignum(pub_key_e, channel->data_out);
+    packet_append_bignum(pub_key_n, channel->data_out);
+    packet_send_wait(channel->data_out);
+
+    BN_clear(pub_key_e);
+    BN_clear(pub_key_n);
+    RSA_free(pub_key);
+
+    return 1;
+}
+
+int channel_recv_public_key(control_channel* channel, RSA* pub_key)
+{
+    BIGNUM *pub_key_e, *pub_key_n;
+
+    int packet_type = packet_get_int(channel->data_in);
+
+    if(packet_type != FTP_PUB_KEY_SEND)
+    {
+        channel->data_in->buf -= sizeof(packet_type);
+        BN_clear(pub_key_e);
+        BN_clear(pub_key_n);
+        return -1;
+    }
+    
+    if( packet_get_bignum(pub_key_e, channel->data_in) < 0 || 
+        packet_get_bignum(pub_key_n, channel->data_in) < 0)
+    {
+        BN_clear(pub_key_e);
+        BN_clear(pub_key_n);
+        return -1;
+    }
+
+    BN_copy(pub_key->e, pub_key_e);
+    BN_copy(pub_key->n, pub_key_n);
+    
+    BN_clear(pub_key_e);
+    BN_clear(pub_key_n);
+
+    return 1;
 }

@@ -1,16 +1,16 @@
 #include "algo.h"
 
-char tochar(int num)
+char to_char(int num)
 {
     return num +0;
 }
 
-int toint(char c)
+int to_int(char c)
 {
     return (int)(c);
 }
 
-int toInt(char num[], unsigned int size)
+int to_int(char num[], unsigned int size)
 {
     int res = 0;
     for(int i= 0; i < size; i++)

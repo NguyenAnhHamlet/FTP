@@ -83,13 +83,13 @@ int auth_pam_password(struct passwd *pw, const char *password)
     if (pam_retval == PAM_SUCCESS) 
     {
         LOG("PAM Password authentication accepted for user \"%.100s\"", pw->pw_name);
-        return Success;
+        return 1;
 	} 
     else
     {
 		LOG("PAM Password authentication for \"%.100s\" failed: %s", 
 			pw->pw_name, PAM_STRERROR((pam_handle_t *)pamh, pam_retval));
-		return Faillure;
+		return 0;
 	}
 }
 

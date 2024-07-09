@@ -4,7 +4,7 @@
 #include "file.h"
 #include "status.h"
 
-int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, Status_FTP* status)
+int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, status_ftp* status)
 {
     fd_set read_fds;
     char buf[BUF_LEN];

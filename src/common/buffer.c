@@ -22,7 +22,7 @@ void buffer_clear(Buffer * buffer)
 	buffer->end = 0;
 }
 
-void buffer_append(Buffer * buffer, const char *data, unsigned int len)
+void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
 {
 	if (buffer->offset == buffer->end) 
 	{
@@ -53,6 +53,12 @@ restart:
     
 }
 
+void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)
+{
+	data = buffer->buf + buffer->offset;
+	*len = buffer->end - buffer->offset;
+}
+
 unsigned int buffer_len(Buffer * buffer)
 {
     return buffer->end - buffer->offset;
@@ -63,6 +69,7 @@ void buffer_get(Buffer * buffer, char *buf, unsigned int len)
     if (len > buffer->end - buffer->offset)
 		fatal("buffer_get trying to get more bytes than in buffer");
 	memcpy(buf, buffer->buf + buffer->offset, len);
+	buffer->offset += len;
 }
 
 void
@@ -82,9 +89,9 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 
 	/* Store the number of bits in the buffer in two bytes, msb first. */
 	PUT_16BIT(msg, bits);
-	buffer_append(buffer, msg, 2);
+	buffer_append_str(buffer, msg, 2);
 	/* Store the binary data. */
-	buffer_append(buffer, buf, oi);
+	buffer_append_str(buffer, buf, oi);
 
 	memset(buf, 0, bin_size);
 	xfree(buf);
@@ -103,9 +110,12 @@ buffer_get_bignum(Buffer *buffer, BIGNUM *value)
 	bytes = (bits + 7) / 8;
 	if (buffer_len(buffer) < bytes)
 		fatal("buffer_get_bignum: input buffer too small");
-	bin = buffer_ptr(buffer);
+	bin = buffer->buf + buffer->offset;
 	BN_bin2bn(bin, bytes, value);
-	buffer_consume(buffer, bytes);
+	buffer->buf += bytes;
+
+	if(BN_num_bits(value) != bits)
+		return -1;
 
 	return 2 + bytes;
 }
@@ -123,5 +133,5 @@ buffer_put_int(Buffer *buffer, unsigned int value)
 {
 	char buf[4];
 	PUT_32BIT(buf, value);
-	buffer_append(buffer, buf, 4);
+	buffer_append_str(buffer, buf, 4);
 }

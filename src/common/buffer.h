@@ -6,7 +6,8 @@
 
 #define BUF_SIZE 4096
 
-typedef struct {
+typedef struct 
+{
 	char   *buf;
 	unsigned int offset;	
 	unsigned int alloc;	
@@ -19,7 +20,9 @@ void buffer_free(Buffer * buffer);
 
 void buffer_clear(Buffer * buffer);
 
-void buffer_append(Buffer * buffer, const char *data, unsigned int len);
+void buffer_append_str(Buffer * buffer, const char *data, unsigned int len);
+
+void buffer_get_data(Buffer* buffer, char* data, unsigned int* len);
 
 unsigned int buffer_len(Buffer * buffer);
 

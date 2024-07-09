@@ -3,32 +3,32 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void initTimerSemaphore(Timer* timer) 
+void initTimerSemaphore(timer* timer) 
 {
     sem_init(&timer->timerSemaphore, 0, 2); 
 }
 
-void waitTimerSemaphore(Timer* timer) 
+void wait_timer_semaphore(timer* timer) 
 {
     sem_wait(&timer->timerSemaphore);
 }
 
-void signalTimerSemaphore(Timer* timer) 
+void signal_timer_semaphore(timer* timer) 
 {
     sem_post(&timer->timerSemaphore);
 }
 
-int startTimer(Timer* timer, callbackFunc func)
+int start_timer(timer* timer, callbackFunc func)
 {
     if(!timer) return Faillure;
 
-    waitTimerSemaphore(timer);
+    wait_timer_semaphore(timer);
 
     timer->in_used++;
     timer->running = 1;
     timer->current_time = time(NULL);
 
-    delayTimer(timer);
+    delay_timer(timer);
 
     if(timer->running) func(timer);
 
@@ -36,25 +36,25 @@ int startTimer(Timer* timer, callbackFunc func)
 
     timer->in_used--;
 
-    signalTimerSemaphore(timer);
+    signal_timer_semaphore(timer);
 }
 
-void* timerThreadWrapper(void* arg) 
+void* timer_thread_wrapper(void* arg) 
 {
     TimerThreadArgs* args = (TimerThreadArgs*)arg; 
-    startTimer(args->timer, args->func);
+    start_timer(args->timer, args->func);
     return NULL;
 }
 
-int startTimerThread(TimerThreadArgs* args, Timer* timer, callbackFunc func)
+int start_timerThread(TimerThreadArgs* args, timer* timer, callbackFunc func)
 {
     pthread_t thread;
     args->timer = timer;
     args->func = func;
-    pthread_create(&thread, NULL, timerThreadWrapper, args);
+    pthread_create(&thread, NULL, timer_thread_wrapper, args);
 }
 
-int cancelTimer(Timer* timer)
+int cancel_timer(timer* timer)
 {
     if(!timer) return Faillure;
 
@@ -65,18 +65,18 @@ int cancelTimer(Timer* timer)
     free(timer);
 }
 
-int cancelTimerThread(TimerThreadArgs* arg)
+int cancel_timer_thread(TimerThreadArgs* arg)
 {
     if(!arg) return Faillure;
-    cancelTimer(arg->timer);
+    cancel_timer(arg->timer);
     free(arg);
 }
 
-int delayTimer(Timer* timer)
+int delay_timer(timer* timer)
 {
     if(!timer) return Faillure;
 
-    waitTimerSemaphore(timer);
+    wait_timer_semaphore(timer);
 
     timer->in_used++;
 
@@ -84,12 +84,12 @@ int delayTimer(Timer* timer)
 
     timer->in_used--;
 
-    signalTimerSemaphore(timer);
+    signal_timer_semaphore(timer);
 
     return Success;
 }
 
-void setTimer(Timer* timer, time_t start , time_t end)
+void set_timer(timer* timer, time_t start , time_t end)
 {
     if(!timer) return Faillure;
 

@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-char tochar(int num);
-int toint(char c);
-int toInt(char num[], unsigned int size);
+char to_char(int num);
+int to_int(char c);
+int to_int(char num[], unsigned int size);
 int max(int a, int b);
 
 #endif

@@ -2,7 +2,7 @@
 #include "common.h"
 #include "status.h"
 
-int send_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, Status_FTP* status)
+int send_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, status_ftp* status)
 {
     FILE* file = fopen(_filename, "rb");
     char buf[BUF_LEN];
