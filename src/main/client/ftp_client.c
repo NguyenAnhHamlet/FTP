@@ -15,7 +15,13 @@
 
 char* name;
 char* pass;
-bool FTPrunning;
+bool ftp_running;
+control_channel c_channel;
+data_channel d_channel;
+socket_ftp* c_socket;
+socket_ftp* d_socket;
+char ipaddr[32];
+unsigned int iptype;
 
 
 void time_out_alarm(int sig)
@@ -36,6 +42,27 @@ void splitArgs(socket_ftp* socketFTP, int argc, ...)
         arg = va_arg(ptr, char*);
         if(!handleOp(socketFTP, arg)) fatal("Faillure in handle options\n"); 
     }
+}
+
+int client_data_conn( control_channel* c_channel, 
+                      data_channel* d_channel)
+{
+    control_channel_append_int(GET, c_channel);
+    control_channel_send(c_channel);
+
+    if(control_channel_read_expect(c_channel, FTP_ACK) <= 0 )
+    {
+        LOG("Fail to establish the data connection\n");
+        return 0;
+    }
+
+    d_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_DATA, DATA);
+    data_channel_init_socket_ftp(d_channel, d_socket, d_socket, CLIENT, -1);
+}
+
+int client_data_get(control_channel* c_channel, data_channel* d_channel)
+{
+    
 }
 
 int quit() 
@@ -84,8 +111,9 @@ int umask()
 }
 
 // Data command functions
-int get(control_channel* channel) 
+int get(control_channel* c_channel, data_channel* d_channel) 
 {
+  control_channel_append_int(GET, c_channel);
   
 }
 
@@ -131,9 +159,9 @@ void callBackTimer(timer* timer)
     fatal("Time out\n");
 }
 
-int password_authen_client(socket_ftp* socketFTP)
+int password_authen_client(socket_ftp* c_socket)
 {
-    if(!socketFTP) return -1;
+    if(!c_socket) return -1;
 
     Packet* packet_name;
     Packet* packet_pass;
@@ -149,7 +177,7 @@ int password_authen_client(socket_ftp* socketFTP)
     if(!fgets(pass, BUF_SIZE, stdin))
       fatal("Error reading name\n");
 
-    Packet* packet = packet_init(packet, socketFTP->sockfd, FTP_PASS_AUTHEN);
+    Packet* packet = packet_init(packet, c_socket->sockfd, FTP_PASS_AUTHEN);
 
     packet_append_str(name, packet_name, BUF_LEN);
     packet_append_str(pass, packet_pass, BUF_LEN);
@@ -170,41 +198,36 @@ int password_authen_client(socket_ftp* socketFTP)
 
 int main(int argc, char* argvs[])
 {
-    control_channel channel;
-    TimerThreadArgs *arg = (TimerThreadArgs*) malloc(sizeof(TimerThreadArgs));
-    timer* pubAuthentimer = (timer*) malloc(sizeof(timer));
     char option[8];
-    char ipaddr[32];
     char buffer[BUF_LEN];
-    unsigned int iptype;
 
     // Create a FTP socket
-    socket_ftp* socketFTP = create_ftp_socket(ipaddr, iptype, CLIENT);
+    c_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_CONTROL, CONTROL);
     
     // public key authen 
-    control_channel_init(&channel, PORT, PORT, CLIENT, -1);
+    control_channel_init_socket_ftp(&c_channel, c_socket, c_socket, CLIENT, -1);
 
     // set alarm for 30 seconds
     signal(SIGALRM, time_out_alarm);
 		alarm(30);
 
-    if( !public_key_authentication(channel, 0) || 
-        !public_key_authentication(channel, 1))
+    if( !public_key_authentication(c_channel, 0) || 
+        !public_key_authentication(c_channel, 1))
         fatal("Public key authentication failed\n");
 
     // perform password authentication
-    password_authen_client(socketFTP);
+    password_authen_client(c_socket);
     
     // Pub authen done successfully, cancel alarm
     alarm(0);
 
-    FTPrunning = true;
+    ftp_running = true;
 
     // Enter into ftp virtual environment
-    while(FTPrunning)
+    while(ftp_running)
     {
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
-        handleRequest(buffer, &channel, (timer*) malloc(sizeof(timer)));
+        handleRequest(buffer, &c_channel, (timer*) malloc(sizeof(timer)));
     } 
 }

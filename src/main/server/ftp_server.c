@@ -43,32 +43,39 @@ int handleRequestServer(int sockfd, char req[])
     
 }
 
+int server_data_conn(control_channel* c_channel,
+                     data_channel* d_channel,
+                     socket_ftp* d_socket)
+{
+  
+}
+
 int pass_authen_server(int sockfd, passwd* pw)
 {
-  Packet* name_packet;
-  Packet* pass_packet;
-  passwd* pw;
-  char* user_name;
-  char* user_pass;
-  int len;
+    Packet* name_packet;
+    Packet* pass_packet;
+    passwd* pw;
+    char* user_name;
+    char* user_pass;
+    int len;
 
-  packet_read_expect(name_packet, FTP_PASS_AUTHEN);
-  packet_get_str(name_packet, user_name, &len);
+    packet_read_expect(name_packet, FTP_PASS_AUTHEN);
+    packet_get_str(name_packet, user_name, &len);
 
 
-  pw = getpwnam(user_name);
+    pw = getpwnam(user_name);
 
-  if (!pw || !allowed_user(pw))
-  {
-    LOG("Athentication failed for user %s", pw->pw_name);
-    return 0;
-  }
+    if (!pw || !allowed_user(pw))
+    {
+      LOG("Athentication failed for user %s", pw->pw_name);
+      return 0;
+    }
 
-  start_pam(pw); 
-  packet_read_expect(pass_packet, FTP_PASS_AUTHEN);
-  packet_get_str(pass_packet, user_pass, &len);
+    start_pam(pw); 
+    packet_read_expect(pass_packet, FTP_PASS_AUTHEN);
+    packet_get_str(pass_packet, user_pass, &len);
 
-  return auth_pam_password(pw, user_pass);
+    return auth_pam_password(pw, user_pass);
   
 }
 

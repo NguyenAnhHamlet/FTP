@@ -11,11 +11,11 @@
 
 // choose port 50000 as default port 
 // for sending and receiving data
-#define PORT 50000
+#define PORT_DATA 50000
 
 // choose port 51000 for initial setup 
 // and initial authentication
-#define PORT_SETUP 51000
+#define PORT_CONTROL 51000
 
 #define BUF_LEN 4096    
 
@@ -24,18 +24,24 @@
 
 mode_t R_O_ALL;
 
-typedef enum Status
+typedef enum 
 {
     Faillure,
     Success,
     Unknown 
 } Status;
 
-typedef enum endpoint_type
+typedef enum 
 {
     CLIENT,
     SERVER
 } endpoint_type;
+
+typedef enum 
+{
+    CONTROL,
+    DATA
+} channel_type;
 
 
 bool is_ip_addr(char* buf);

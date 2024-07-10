@@ -13,10 +13,14 @@ typedef struct
 
 int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,
                 char* _ip_addr, unsigned int _PORT_, unsigned int _endpoint_addr_size,
-                unsigned int IPTYPE,  endpoint_type type);
+                unsigned int IPTYPE,  endpoint_type type, channel_type c_type);
 
-socket_ftp* create_ftp_socket(char* _ip_addr, unsigned int IPTYPE, endpoint_type type);
+socket_ftp* create_ftp_socket(char* _ip_addr, unsigned int IPTYPE, 
+                              endpoint_type type, unsigned int PORT,
+                              channel_type c_type);
+
 void destroy_ftp_socket(socket_ftp* socket);
+
 // create a new raw socket
 // and return it
 int cre_socket();

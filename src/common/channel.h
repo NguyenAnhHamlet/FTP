@@ -83,9 +83,15 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel);
 void data_channel_init( data_channel* channel,
                         unsigned int out_port, unsigned int in_port,
                         cipher_context* cipher_ctx);
+
+void data_channel_init_socket_ftp(data_channel* channel,
+                                  socket_ftp* out_socket, 
+                                  socket_ftp* in_socket,
+                                  endpoint_type conn,
+                                  unsigned int cypher_type)
                         
-void data_channel_decrypt(data_channel* channel);
-void data_channel_encrypt(data_channel* channel);
+void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len);
+void data_channel_encrypt(data_channel* channel, char* outbuf, unsigned int out_len);
 void set_data_channel_compress(data_channel* channel);
 void unset_data_channel_compress(data_channel* channel);
 
