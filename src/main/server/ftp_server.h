@@ -4,15 +4,17 @@
 #include "cmd.h"
 #include "channel.h"
 
-// Handle the request :
-// Open data PORT to send, recv file
-// Send back the data to control PORT
 int handleRequestServer(int sockfd, char req[]);
 
 int pass_authen_server(int sockfd, passwd* pw);
 
-int server_data_conn(control_channel* c_channel, data_channel* d_channel);
-int server_data_get(control_channel* c_channel, data_channel* d_channel);
+int server_data_conn(control_channel* c_channel,
+                     data_channel* d_channel,
+                     socket_ftp* d_socket)
+
+int server_data_get(control_channel* c_channel,
+                    data_channel* d_channel,
+                    socket_ftp* d_socket);
 
 int get();
 int put();

@@ -123,10 +123,15 @@ int packet_read(Packet* packet)
 
 int packet_read_header(Packet* packet)
 {
-    unsigned int tt_len, packet_type, compression_mode;
+    unsigned int    tt_len;
+    unsigned int    identification;
+    bool            fragment_offset;
+    unsigned int    packet_type;
+    unsigned int    compression_mode;
+
     char interger[4];
 
-    for(int i=0; i < 3; i++)
+    for(int i=0; i < 5; i++)
     {
         if(recv(packet->in_port, interger, 4, 0) < 0)
             return 0;
@@ -137,26 +142,34 @@ int packet_read_header(Packet* packet)
             tt_len = GET_32BIT(interger);
             break;
         case 1:
-            packet_type = GET_32BIT(interger);
+            identification = GET_32BIT(interger);
             break;
         case 2:
-            compression_mode = GET_32BIT(interger);
+            fragment_offset = GET_32BIT(interger);
             break;            
+        case 3 :
+            packet_type = GET_32BIT(interger);
+            break;
+        case 4 :
+            compression_mode = GET_32BIT(interger);
         default:
             break;
         }
     }
 
-    packet->len = tt_len;
-    packet->packet_type = packet_type;
-    packet->packet_compress = compression_mode;
+    packet->p_header->tt_len = tt_len;
+    packet->p_header->packet_type = packet_type;
+    packet->p_header->compression_mode = compression_mode;
+    packet->p_header->fragment_offset = fragment_offset;
+    packet->p_header->identification = identification;
 
     return 1;
 }
 
 int packet_send_wait(Packet* packet)
 {
-    if(packet->packet_compress)
+    packet_append_header(packet);
+    if(packet->p_header->packet_compress)
     {
         Buffer* outbuf;
         compress(packet->buf, outbuf );
@@ -207,11 +220,9 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
     }
 
     packet_read(packet);
-    packet_type = packet_get_int(packet);
+    packet_type = packet->p_header->packet_type;
 
     return packet_type == expect_value ? 1 : 0;      
-
-    return 1;
 }
 
 int packet_append_str(char* str, Packet* packet, unsigned int len)
@@ -242,4 +253,13 @@ int packet_get_str(Packet* packet, char* str, unsigned int* len)
 int packet_get_bignum(BIGNUM* bignum, Packet* packet)
 {
     return buffer_get_bignum(packeet->buf, bignum);
+}
+
+void packet_append_header(Packet* packet)
+{
+    buffer_put_int(packet->buf, packet->p_header->tt_len);
+    buffer_put_int(packet->buf, packet->p_header->identification);
+    buffer_put_int(packet->buf, packet->p_header->fragment_offset);
+    buffer_put_int(packet->buf, packet->p_header->packet_type);
+    buffer_put_int(packet->buf, packet->p_header->compression_mode);
 }

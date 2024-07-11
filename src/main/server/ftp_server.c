@@ -22,6 +22,7 @@
 #include "pam.h"
 #include "packet.h"
 #include <pwd.h>
+#include "cmd.h"
 
 socket_ftp* socketServer;
 
@@ -47,7 +48,35 @@ int server_data_conn(control_channel* c_channel,
                      data_channel* d_channel,
                      socket_ftp* d_socket)
 {
-  
+    d_socket = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA);
+    data_channel_init_socket_ftp(d_channel, d_socket, d_socket, SERVER, -1);
+
+    control_channel_append_int(FTP_ACK, c_channel);
+    control_channel_send(c_channel);
+
+    if(!control_channel_read_expect(c_channel, FTP_ACK))
+    { 
+        LOG("Failed to receive ACK from client\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+int server_data_get(control_channel* c_channel,
+                    data_channel* d_channel,
+                    socket_ftp* d_socket)
+{
+    if(!data_channel_read_expect(d_channel, SEND))
+    {
+        control_channel_append_int(FTP_UNACK, c_channel);
+        control_channel_send(c_channel);
+
+        return 0;
+    }
+
+    
+
 }
 
 int pass_authen_server(int sockfd, passwd* pw)
@@ -61,7 +90,6 @@ int pass_authen_server(int sockfd, passwd* pw)
 
     packet_read_expect(name_packet, FTP_PASS_AUTHEN);
     packet_get_str(name_packet, user_name, &len);
-
 
     pw = getpwnam(user_name);
 

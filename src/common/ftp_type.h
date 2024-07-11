@@ -12,4 +12,7 @@
 
 #define FTP_PASS_AUTHEN             9
 
+#define FTP_DATA_TAIL               10
+#define FTP_DATA_HEAD               11
+
 
