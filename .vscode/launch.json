@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/nguyenanh/Programming/PTP",
-      "program": "/home/nguyenanh/Programming/PTP/build/Debug/outDebug",
+      "cwd": "/home/nguyenanh/Programming/FTP",
+      "program": "/home/nguyenanh/Programming/FTP/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
