@@ -13,8 +13,15 @@ int server_data_conn(control_channel* c_channel,
                      socket_ftp* d_socket)
 
 int server_data_get(control_channel* c_channel,
+<<<<<<< HEAD
                     data_channel* d_channel);
 
+=======
+                    data_channel* d_channel,
+                    socket_ftp* d_socket);
+
+int get();
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 int put();
 int recv();
 int send();

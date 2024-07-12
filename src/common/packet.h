@@ -7,11 +7,19 @@
 
 typedef struct 
 {
+<<<<<<< HEAD
     int    identification;
     int    tt_len;
     bool   fragment_offset;
     int    packet_type;
     int    compression_mode;
+=======
+    unsigned int    tt_len;
+    unsigned int    identification;
+    bool            fragment_offset;
+    unsigned int    packet_type;
+    unsigned int    compression_mode;
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 
 } packet_header;
 
@@ -47,6 +55,7 @@ int packet_append_bignum(BIGNUM* bignum, Packet* packet);
 int packet_append_int(int num, Packet* packet);
 void packet_append_header(Packet* packet);
 
+<<<<<<< HEAD
 void packet_set_header( Packet*packet, int identification,
                         int tt_len, bool fragment_offset,
                         int packet_type, int compression_mode);
@@ -56,5 +65,10 @@ int packet_get_str(Packet* packet, char* str, unsigned int* len);
 int packet_get_bignum(BIGNUM* bignum, Packet* packet);
 void packet_clear_data(Packet* packet);
 void packet_free(Packet* packet);
+=======
+unsigned int packet_get_int(Packet* packet);
+int packet_get_str(Packet* packet, char* str, unsigned int* len);
+int packet_get_bignum(BIGNUM* bignum, Packet* packet);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 
 #endif

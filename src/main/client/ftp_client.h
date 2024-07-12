@@ -15,9 +15,16 @@ int client_data_conn(control_channel* c_channel, data_channel* d_channel);
 int client_data_get(control_channel* c_channel, data_channel* d_channel);
 
 // Options functions
+<<<<<<< HEAD
 void ipv4_op_set(socket_ftp* s_ftp);
 void ipv6_op_set(socket_ftp* s_ftp);
 
+=======
+void ipv4_op(socket_ftp* socketFTP);
+void ipv6_op(socket_ftp* socketFTP);
+
+int get(control_channel* c_channel, data_channel* d_channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 int put();
 int recv();
 int send();

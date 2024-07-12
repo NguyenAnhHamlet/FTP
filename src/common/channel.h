@@ -71,9 +71,14 @@ int control_channel_send_wait(control_channel* channel);
 int control_channel_append_str(char* str, control_channel* channel, unsigned int len);
 int control_channel_append_bignum(BIGNUM* bignum, control_channel* channel);
 int control_channel_append_int(int num, control_channel* channel);
+<<<<<<< HEAD
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel);
 
 int control_channel_get_int(control_channel* channel);
+=======
+
+unsigned int control_channel_get_int(control_channel* channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 int control_channel_get_str(control_channel* channel, char* str, unsigned int* len);
 int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel);
 
@@ -89,7 +94,11 @@ void data_channel_init_socket_ftp(data_channel* channel,
                                   socket_ftp* out_socket, 
                                   socket_ftp* in_socket,
                                   endpoint_type conn,
+<<<<<<< HEAD
                                   unsigned int cypher_type);
+=======
+                                  unsigned int cypher_type)
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
                         
 void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len);
 void data_channel_encrypt(data_channel* channel, char* outbuf, unsigned int out_len);
@@ -106,6 +115,7 @@ int data_channel_append_str(char* str, data_channel* channel, unsigned int len);
 int data_channel_append_bignum(BIGNUM* bignum, data_channel* channel);
 int data_channel_append_int(int num, data_channel* channel);
 
+<<<<<<< HEAD
 int data_channel_set_header(data_channel* channel,
                             int  identification,
                             int  tt_len,
@@ -117,5 +127,10 @@ int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, unsigned int* len);
 int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
 void data_channel_clean_datain_clear(data_channel* channel);
+=======
+unsigned int data_channel_get_int(data_channel* channel);
+int data_channel_get_str(data_channel* channel, char* str, unsigned int* len);
+int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 
 #endif

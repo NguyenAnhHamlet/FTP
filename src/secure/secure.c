@@ -26,7 +26,11 @@ int public_key_authentication(control_channel* channel, int evolution)
         size_t sig_length;
 
         // Send the RSA public key to endpoint
+<<<<<<< HEAD
         control_channel_append_ftp_type(FTP_PUB_KEY_SEND, channel);
+=======
+        control_channel_append_int(FTP_PUB_KEY_SEND, channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
         channel_send_public_key(channel, public_RSAkey_file);
 
         if(control_channel_read_expect(channel, FTP_ACK) != 1)
@@ -39,7 +43,11 @@ int public_key_authentication(control_channel* channel, int evolution)
         load_private_rsa_key(private_key, private_RSAkey_file);
         rsa_pub_encrypt(private_key, challenge, sizeof(challenge), sig, &sig_length);
 
+<<<<<<< HEAD
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
+=======
+        control_channel_append_int(FTP_ASYM_AUTHEN, channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
         control_channel_append_bignum(sig, channel );
 
         // send the challenge to endpoint
@@ -80,7 +88,11 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         channel_recv_public_key(channel, pub_key);
         
+<<<<<<< HEAD
         control_channel_append_ftp_type(FTP_ACK, channel);
+=======
+        control_channel_append_int(FTP_ACK, channel);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
         control_channel_send(channel);
 
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
@@ -93,7 +105,11 @@ int public_key_authentication(control_channel* channel, int evolution)
         rsa_pub_decrypt(pub_key, challenge, BN_num_bits(challenge),
                         decrypt_challenge, BN_num_bits(decrypt_challenge))
 
+<<<<<<< HEAD
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
+=======
+        control_channel_append_int(FTP_ASYM_AUTHEN);
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
         control_channel_append_bignum(decrypt_challenge, channel);
 
         control_channel_send(channel);
