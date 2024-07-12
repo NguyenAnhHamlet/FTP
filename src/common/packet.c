@@ -262,7 +262,6 @@ void packet_append_header(Packet* packet)
     buffer_put_int(packet->buf, packet->p_header->fragment_offset);
     buffer_put_int(packet->buf, packet->p_header->packet_type);
     buffer_put_int(packet->buf, packet->p_header->compression_mode);
-<<<<<<< HEAD
 }
 
 void packet_set_header( Packet*packet, int identification,
@@ -287,6 +286,4 @@ void packet_free(Packet* packet)
     buffer_free(packet->buf);
     free(packet->p_header);
     free(packet);
-=======
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 }

@@ -23,11 +23,8 @@
 #include "packet.h"
 #include <pwd.h>
 #include "cmd.h"
-<<<<<<< HEAD
 #include "file.h"
 #include "common/data.h"
-=======
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 
 socket_ftp* socketServer;
 
@@ -56,11 +53,7 @@ int server_data_conn(control_channel* c_channel,
     d_socket = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA);
     data_channel_init_socket_ftp(d_channel, d_socket, d_socket, SERVER, -1);
 
-<<<<<<< HEAD
     control_channel_append_ftp_type(FTP_ACK, c_channel);
-=======
-    control_channel_append_int(FTP_ACK, c_channel);
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
     control_channel_send(c_channel);
 
     if(!control_channel_read_expect(c_channel, FTP_ACK))
@@ -73,25 +66,9 @@ int server_data_conn(control_channel* c_channel,
 }
 
 int server_data_get(control_channel* c_channel,
-<<<<<<< HEAD
                     data_channel* d_channel)
 {
     return get(c_channel, d_channel);
-=======
-                    data_channel* d_channel,
-                    socket_ftp* d_socket)
-{
-    if(!data_channel_read_expect(d_channel, SEND))
-    {
-        control_channel_append_int(FTP_UNACK, c_channel);
-        control_channel_send(c_channel);
-
-        return 0;
-    }
-
-    
-
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 }
 
 int pass_authen_server(int sockfd, passwd* pw)

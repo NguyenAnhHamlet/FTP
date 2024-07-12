@@ -249,7 +249,6 @@ int data_channel_get_str(data_channel* channel, char* str, unsigned int* len)
 int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel)
 {
     return packet_get_bignum(bignum, channel->data_in);
-<<<<<<< HEAD
 }
 
 
@@ -268,6 +267,4 @@ int data_channel_set_header(data_channel* channel,
 void data_channel_clean_datain_clear(data_channel* channel)
 {
     packet_clear_data(channel->data_in);
-=======
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
 }

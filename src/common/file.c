@@ -80,11 +80,8 @@ bool is_empty(char path[], FILE* fp)
 
     size_t bytes_read = fread(buffer, 1, 1, fp);
 
-<<<<<<< HEAD
     fclose(fp);
 
-=======
->>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
     if(bytes_read) return false;
 
     return true;
