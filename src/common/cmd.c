@@ -27,7 +27,7 @@ unsigned int get_cmd(char* cmd)
     }
 
     fseek(fp, 0, SEEK_END);
-    len = = ftell(fp);
+    len = ftell(fp);
     rewind(fp);
 
     res = (char *)malloc(sizeof(char) * len);
