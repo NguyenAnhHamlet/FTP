@@ -22,8 +22,16 @@ void write_file(char path[], char data[], FILE* fp)
     if(!fp) fatal("Could not create file descriptor\n");
 
     fprintf(fp, data);
+<<<<<<< HEAD
 
     fclose(fp);
+=======
+<<<<<<< HEAD
+
+    fclose(fp);
+=======
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 }
 
 mode_t permission(char path[])
@@ -41,7 +49,14 @@ mode_t permission(char path[])
 void create_file(char path[], FILE* fp)
 {
     fp = fopen(path, "w");
+<<<<<<< HEAD
     fclose(fp);
+=======
+<<<<<<< HEAD
+    fclose(fp);
+=======
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 }
 
 void delete_file(char path[])
@@ -49,17 +64,34 @@ void delete_file(char path[])
     remove(path);
 }
 
+<<<<<<< HEAD
 void append_file(char path[], char data[])
 {
     FILE* fp;
     
+=======
+<<<<<<< HEAD
+void append_file(char path[], char data[])
+=======
+void append_file(char path[], char data[],FILE* fp)
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+{
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
     fp = fopen(path, "a");
 
     if(!fp) fatal("Could not create file descriptor\n");
 
     fprintf(fp, data);
+<<<<<<< HEAD
 
     fclose(fp);
+=======
+<<<<<<< HEAD
+
+    fclose(fp);
+=======
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 }
 
 bool is_empty(char path[], FILE* fp)

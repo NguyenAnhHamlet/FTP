@@ -1,5 +1,8 @@
 #include "algo.h"
+<<<<<<< HEAD
 #include <ctype.h>
+=======
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 
 char to_char(int num)
 {
@@ -26,6 +29,7 @@ int to_int(char num[], unsigned int size)
 int max(int a, int b)
 {
     return a > b ? a : b;
+<<<<<<< HEAD
 }
 
 void upper_case_str(char* str, unsigned int str_len)
@@ -42,4 +46,6 @@ void lower_case_tr(char* str, unsigned int str_len)
     {
         str[i] = tolower(str[i]);
     }
+=======
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 }

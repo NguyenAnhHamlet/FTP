@@ -31,7 +31,6 @@ int client_data_append(control_channel* c_channel, data_channel* d_channel,
                        endpoint_type type, char* file_name, unsigned int n_len,
                        char* remote_file_name, unsigned int rn_len);
 
-int case_();
 int cd();
 int chmod();
 int delete_();

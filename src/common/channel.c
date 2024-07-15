@@ -106,7 +106,15 @@ int control_channel_append_int(int num, control_channel* channel)
     return packet_append_int(num, channel->data_out);
 }
 
+<<<<<<< HEAD
 int control_channel_get_int(control_channel* channel)
+=======
+<<<<<<< HEAD
+int control_channel_get_int(control_channel* channel)
+=======
+unsigned int control_channel_get_int(control_channel* channel)
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 {
     return packet_get_int(channel->data_in);
 }
@@ -121,6 +129,10 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
     return packet_get_bignum(bignum, channel->data_in);
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
 {
     int res = 1;
@@ -134,6 +146,11 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
     return res;
 }
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 
 
 void data_channel_init( data_channel* channel,
@@ -225,7 +242,15 @@ int data_channel_append_int(int num, data_channel* channel)
     return packet_append_int(num, channel->data_out);
 }
 
+<<<<<<< HEAD
 int data_channel_get_int(data_channel* channel)
+=======
+<<<<<<< HEAD
+int data_channel_get_int(data_channel* channel)
+=======
+unsigned int data_channel_get_int(data_channel* channel)
+>>>>>>> 14a728ce950b1f1d31e5c2ca3e3777f82f231bd5
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
 {
     return packet_get_int(channel->data_in);
 }

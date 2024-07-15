@@ -12,6 +12,7 @@
 
 #define FTP_PASS_AUTHEN             9
 #define FTP_FILE_NAME               10
+<<<<<<< HEAD
 
 #define ABORT                       11
 #define SUCCESS                     12
@@ -22,3 +23,8 @@
 
 #define FTP_REMOTE_FILE_NAME        16
 
+=======
+#define ABORT                       11
+#define SUCCESS                     12
+
+>>>>>>> bad9d9234c108c8a8e237bdaa51e6b43677a4e18
