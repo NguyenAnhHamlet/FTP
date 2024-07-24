@@ -14,5 +14,7 @@ void upper_case_str(char* str, unsigned int str_len);
 void lower_case_tr(char* str, unsigned int str_len);
 int convert_to_datetime(char* org, struct tm* datetime);
 bool is_older(struct tm* datetime_1, struct tm* datetime_2);
+void upper_case_str(char* str, unsigned int str_len);
+void lower_case_tr(char* str, unsigned int str_len);
 
 #endif

@@ -1,5 +1,6 @@
 #include "algo.h"
 #include <ctype.h>
+#include <ctype.h>
 
 char to_char(int num)
 {
@@ -25,7 +26,7 @@ int to_int(char num[], unsigned int size)
 
 int max(int a, int b)
 {
-    return a > b ? a : b;
+    return a > b ? a : b;                               
 }
 
 void upper_case_str(char* str, unsigned int str_len)
@@ -43,7 +44,6 @@ void lower_case_tr(char* str, unsigned int str_len)
         str[i] = tolower(str[i]);
     }
 }
-
 int convert_to_datetime(char* org, struct tm* datetime)
 {
     return strptime(org, "%Y-%m-%d %H:%M:%S", datetime) != NULL;

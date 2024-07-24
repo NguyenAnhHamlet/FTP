@@ -146,8 +146,6 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
     return res;
 }
 
-
-
 void data_channel_init( data_channel* channel,
                         unsigned int out_port, 
                         unsigned int in_port,
@@ -237,7 +235,7 @@ int data_channel_append_int(int num, data_channel* channel)
     return packet_append_int(num, channel->data_out);
 }
 
-int data_channel_get_int(data_channel* channel)
+unsigned int data_channel_get_int(data_channel* channel)
 {
     return packet_get_int(channel->data_in);
 }
