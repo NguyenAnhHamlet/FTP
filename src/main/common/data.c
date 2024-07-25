@@ -22,6 +22,7 @@ int data_conn(control_channel* c_channel, data_channel* d_channel,
         if(control_channel_read_expect(c_channel, FTP_ACK) <= 0 )
         {
             LOG("Fail to establish the data connection\n");
+            operation_abort(c_channel);
             return 0;
         }
 
@@ -45,12 +46,17 @@ int data_conn(control_channel* c_channel, data_channel* d_channel,
         if(!control_channel_read_expect(c_channel, FTP_ACK))
         { 
             LOG("Failed to receive ACK from client\n");
+            operation_abort(c_channel);
             return 0;
         }
     }
     
     default:
+    {
+        operation_abort(c_channel);
         break;
+    }
+
     }
 
     return 1;
@@ -74,6 +80,7 @@ int get(control_channel* c_channel, data_channel* d_channel,
         !control_channel_read_expect(c_channel, FILE_EXIST))
         {
             LOG("GET operation failed\n");
+            operation_abort(c_channel);
             
             return 0;
         }
@@ -97,7 +104,11 @@ int get(control_channel* c_channel, data_channel* d_channel,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     while(!last_fragment)
@@ -113,6 +124,7 @@ int get(control_channel* c_channel, data_channel* d_channel,
     {
         remove(file_name);
         LOG("Error when getting file\n");
+        operation_abort(c_channel);
         return 0;
     }
 
@@ -156,7 +168,11 @@ int put(control_channel* c_channel, data_channel* d_channel,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     file = fopen(file_name, "rb");
@@ -216,6 +232,7 @@ int data_append(control_channel* c_channel, data_channel* d_channel,
         if (file == NULL)
         {
             LOG("Error opening file\n");
+            operation_abort(c_channel);
             return 0;
         } 
 
@@ -230,8 +247,7 @@ int data_append(control_channel* c_channel, data_channel* d_channel,
         if(byte < 0)
         {
             LOG("Error sending file\n");
-            control_channel_append_ftp_type(ABORT, c_channel);
-            control_channel_send(c_channel);
+            operation_abort(c_channel);
 
             return 0;
         }
@@ -284,7 +300,11 @@ int data_append(control_channel* c_channel, data_channel* d_channel,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 }
 
@@ -347,7 +367,11 @@ int data_newer(control_channel* c_channel, data_channel* d_channel,
     }
 
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 0;
@@ -396,7 +420,11 @@ int data_reget(control_channel* c_channel, data_channel* d_channel,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;

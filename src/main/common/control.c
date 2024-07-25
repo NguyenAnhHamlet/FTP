@@ -70,10 +70,10 @@ int remote_file_exist(control_channel* c_channel, endpoint_type type,
 
     default:
     {
-        LOG("Unknown type %d\n", type);
+        operation_abort(c_channel);
         return -1;
-        break;
     }
+
     }
 
     return 1;
@@ -131,8 +131,13 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
     }
+
+    }
+
     return res;
 }
 
@@ -212,7 +217,11 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
     }
 
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -268,7 +277,11 @@ int delete_file(control_channel* c_channel, char* file_name,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -338,7 +351,11 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -385,8 +402,13 @@ int idle_set_remote(control_channel* c_channel, unsigned int* time_out,
 
         break;
     }
+
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 }
 
@@ -447,7 +469,11 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
     }
 
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -527,7 +553,11 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
     }
 
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -578,7 +608,11 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
     }
     
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
+    }
+
     }
 
     return 1;
@@ -639,9 +673,12 @@ int remove_remote_dir(control_channel* c_channel, char* dir, int d_len, endpoint
     }
 
     default:
-        break;
+    {
+        operation_abort(c_channel);
+        return -1;
     }
 
+    }
 
     return 1;
 }

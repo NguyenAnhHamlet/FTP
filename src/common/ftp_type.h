@@ -21,4 +21,3 @@
 #define ASK_FILE_EXIST              15
 
 #define FTP_REMOTE_FILE_NAME        16
-
