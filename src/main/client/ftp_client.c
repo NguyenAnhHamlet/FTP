@@ -109,6 +109,47 @@ int client_idle_set_remote(control_channel* c_channel, unsigned int* time_out)
     return idle_set_remote(c_channel, time_out, CLIENT);
 }
 
+int client_remote_mode_time(control_channel* c_channel, char* file_name, 
+                            unsigned int* n_len, char* modetime, 
+                            unsigned int* m_len)
+{
+    return remote_modtime(c_channel, CLIENT, file_name, n_len, modetime, m_len);
+}
+
+int client_data_newer(control_channel* c_channel, data_channel* d_channel,
+                      socket_ftp* c_socket, socket_ftp* d_socket,
+                      char* file_name, int n_len)
+{
+    return data_newer(c_channel, d_channel, c_socket, d_socket, 
+                      file_name, n_len, CLIENT);
+}
+
+int client_data_reget(control_channel* c_channel, data_channel* d_channel,
+                      socket_ftp* c_socket, socket_ftp* d_socket,
+                      char* file_name, int n_len)
+{
+    return data_reget(c_channel, d_channel, c_socket, 
+                      d_socket, file_name, n_len, CLIENT );
+}
+
+int client_remote_change_name(control_channel* c_channel, char* file_name, 
+                              int n_len, char* update_name, int u_len)
+{
+    return remote_change_name(c_channel, file_name, n_len, 
+                              update_name, u_len, CLIENT);
+}
+
+int client_remove_remote_dir(control_channel* c_channel, char* dir, int d_len)
+{
+    return client_remove_remote_dir(c_channel, dir, d_len);
+}
+
+int client_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
+                           unsigned int* file_size)
+{
+    return remote_get_size(c_channel, file_name, n_len, file_size, CLIENT);
+}
+
 int quit() 
 {
     ftp_running = 0;

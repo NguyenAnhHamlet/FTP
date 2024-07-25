@@ -133,6 +133,43 @@ int server_idle_set_remote(control_channel* c_channel, unsigned int* time_out)
     return idle_set_remote(c_channel, time_out, SERVER);
 }
 
+int server_remote_mode_time(control_channel* c_channel, char* file_name, 
+                            unsigned int* n_len, char* modetime, 
+                            unsigned int* m_len)
+{
+    return remote_modtime(c_channel, SERVER, file_name, n_len, modetime, m_len);
+}
+
+int server_data_newer(control_channel* c_channel, data_channel* d_channel,
+                      socket_ftp* c_socket, socket_ftp* d_socket,
+                      char* file_name, int n_len)
+{
+    return data_newer(c_channel, d_channel, c_socket, d_socket, 
+                      file_name, n_len, SERVER);
+}
+
+int server_data_reget(control_channel* c_channel, data_channel* d_channel,
+                      socket_ftp* c_socket, socket_ftp* d_socket,
+                      char* file_name, int n_len)
+{
+    return data_reget(c_channel, d_channel, c_socket, 
+                      d_socket, file_name, n_len, SERVER );
+}
+
+int server_remote_change_name(control_channel* c_channel, char* file_name, 
+                              int n_len, char* update_name, int u_len)
+{
+    return remote_change_name(c_channel, file_name, n_len, 
+                              update_name, u_len, SERVER);
+}
+
+int server_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
+                           unsigned int* file_size)
+{
+    return remote_get_size(c_channel, file_name, n_len, file_size, SERVER);
+}
+
+
 int main()
 {
     socket_server = create_ftp_socket(NULL, AF_INET, SERVER);
