@@ -9,7 +9,7 @@
 
 void take_cmd(char* buffer, char* cmd, char* arg);
 
-int handle_option(socket_ftp* s_ftp, char op[]);
+int handle_option(socket_ftp* s_ftp, unsigned int op);
 
 int password_authen_client(socket_ftp* c_socket);
 

@@ -171,16 +171,18 @@ void ipv6_op_set(socket_ftp* s_ftp)
     s_ftp->endpoint_addr->sin_family = AF_INET6;
 }
 
-int handle_option(socket_ftp* s_ftp, char op[])
+int handle_option(socket_ftp* s_ftp, unsigned int op)
 {
-    if(strcmp(op, IPV4_OP))         
-      ipv4_op(s_ftp);
-    else if(strcmp(op, IPV6_OP))    
-      ipv6_op(s_ftp);
-    else                            
-      return 0;
-
-    return 1;
+    switch (op)
+    {
+    case IPV4_OP:
+        ipv4_op_set(s_ftp);
+        break;
+    case IPV6_OP:
+        ipv6_op_set(s_ftp);
+    default:
+        break;
+    }
 }
 
 void callBackTimer(timer* timer)
@@ -266,6 +268,16 @@ int main(int argc, char* argvs[])
         
         switch (request_int)
         {
+        case IPV4_OP:
+        {
+            operation_sucess = handle_option(c_socket, IPV4_OP);
+            break;
+        }
+        case IPV6_OP:
+        {
+            operation_sucess = handle_option(c_socket, IPV6_OP);
+            break;
+        }
         case GET:
         {
             operation_sucess = client_data_get(c_channel, d_channel, c_socket, 

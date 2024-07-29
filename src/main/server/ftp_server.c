@@ -231,16 +231,17 @@ int main()
     }
 
     // Client process handle
-    control_channel channel; 
+    control_channel c_channel; 
+    data_channel d_channel;
     int time_out = 30 * 60;
 
-    control_channel_init(&channel, clientfd, clientfd, SERVER, -1 );
+    control_channel_init(&c_channel, clientfd, clientfd, SERVER, -1 );
     
     signal(SIGALRM, time_out_alarm);
 		alarm(30);
 
-    if(public_key_authentication(&channel, 1) == 0 || 
-       public_key_authentication(&channel, 0) == 0)
+    if(public_key_authentication(&c_channel, 1) == 0 || 
+       public_key_authentication(&c_channel, 0) == 0)
     {
       LOG("Pub authen failed with socket %d\n", clientfd);
       exit(1);
@@ -250,6 +251,12 @@ int main()
       exit(1);
     
     alarm(0);
+
+
+    for(;;)
+    {
+        
+    }
     
     return 0;
 }
