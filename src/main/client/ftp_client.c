@@ -14,6 +14,7 @@
 #include "packet.h"
 #include "common/data.h"
 #include "common/control.h"
+#include "cmd.h"
 
 char* name;
 char* pass;
@@ -31,45 +32,50 @@ void time_out_alarm(int sig)
     fatal("Time out");
 }
 
-void splitArgs(socket_ftp* s_ftp, int argc, ...)
+void take_cmd(char* buffer, char* cmd, char* arg)
 {
-    va_list ptr;
+    char* split_ptr;
 
-    va_start(ptr, argc);
-    char* arg = va_arg(ptr, char*);
-    strcpy(s_ftp->ip_addr, arg);
-
-    for(int i =1; i < argc; i++)
+    if(!split_ptr) 
+        return;
+    arg = split_ptr;
+    
+    while(split_ptr = strchr(buffer, ' '))
     {
-        arg = va_arg(ptr, char*);
-        if(!handleOp(s_ftp, arg)) fatal("Faillure in handle options\n"); 
+        *split_ptr = '\0';
+        split_ptr++;
     }
 }
 
 int client_data_put(control_channel* c_channel, data_channel* d_channel,
                     socket_ftp* c_socket, socket_ftp* d_socket, 
-                    endpoint_type type)
+                    char* file_name, int n_len, endpoint_type type)
 {
-    return data_conn(c_channel, d_channel, c_socket, d_socket, type);
+    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) & 
+              put(c_channel, d_channel, file_name, n_len, CLIENT);
+    
+    return res;
 }
 
-int client_data_get(control_channel* c_channel, data_channel* d_channel)
+int client_data_get(control_channel* c_channel, data_channel* d_channel, 
+                    socket_ftp* c_socket, socket_ftp* d_socket,
+                    char* file_name, int n_len, endpoint_type type)
 {
-    return get(c_channel, d_channel);
-}
-
-int client_data_put(control_channel* c_channel, data_channel* d_channel,
-                    char* file_name, int n_len)
-{
-    return put(c_channel, d_channel, file_name, n_len);
+    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) &  
+              get(c_channel, d_channel, file_name, n_len, CLIENT);
+    
+    return res;
 }
 
 int client_data_append(control_channel* c_channel, data_channel* d_channel,
                        endpoint_type type, char* file_name, unsigned int n_len,
                        char* remote_file_name, unsigned int rn_len)
 {
-    return data_append(c_channel, d_channel, CLIENT, file_name, 
-                       n_len, remote_file_name, rn_len);
+    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) &  
+              data_append(c_channel, d_channel, CLIENT, file_name, 
+                          n_len, remote_file_name, rn_len);
+    
+    return res;
 }
 
 int client_change_dir(control_channel* c_channel, char* dir, int d_len)
@@ -165,7 +171,7 @@ void ipv6_op_set(socket_ftp* s_ftp)
     s_ftp->endpoint_addr->sin_family = AF_INET6;
 }
 
-int handleOp(socket_ftp* s_ftp, char op[])
+int handle_option(socket_ftp* s_ftp, char op[])
 {
     if(strcmp(op, IPV4_OP))         
       ipv4_op(s_ftp);
@@ -223,6 +229,9 @@ int main(int argc, char* argvs[])
 {
     char option[8];
     char buffer[BUF_LEN];
+    unsigned char* request_str; 
+    unsigned int request_int;
+    unsigned char* arg;
 
     // Create a FTP socket
     c_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_CONTROL, CONTROL);
@@ -251,6 +260,116 @@ int main(int argc, char* argvs[])
     {
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
-        handleRequest(buffer, &c_channel, (timer*) malloc(sizeof(timer)));
+        take_cmd(buffer, request_str, arg);
+        request_int = get_cmd(request_str);
+        int operation_sucess = 1;
+        
+        switch (request_int)
+        {
+        case GET:
+        {
+            operation_sucess = client_data_get(c_channel, d_channel, c_socket, 
+                                               d_socket, arg, strlen(arg), CLIENT);
+            break;
+        }
+        case PUT:
+        {
+            operation_sucess = client_data_put(c_channel, d_channel, c_socket, 
+                                               d_socket, arg, strlen(arg), CLIENT);
+            break;
+        }
+        case APPEND:
+        {
+            operation_sucess = client_data_append(c_channel, d_channel, CLIENT, 
+                                                  arg, strlen(arg), strchr(arg, '\0')++, 
+                                                  strlen(strchr(arg, '\0')++));
+            break;
+        }
+        case NEWER:
+        {
+            operation_sucess = client_data_newer(c_channel, d_channel, c_socket, 
+                                                 d_socket, arg, strlen(arg));
+            break;
+        }
+        case REGET:
+        {
+            operation_sucess = client_data_reget(c_channel, d_channel, c_socket, 
+                                                 d_socket, arg, strlen(arg));
+            break;
+        }
+        case CD:
+        {
+            operation_sucess = client_change_dir(c_channel, arg, strlen(arg));
+            break;
+        }
+        case CHMOD:
+        {
+            operation_sucess = client_change_mode(c_channel, arg, strlen(arg));
+            break;
+        }
+        case DELETE:
+        {
+            operation_sucess = client_delete_remote_file(c_channel, arg, strlen(arg));
+            break;
+        }
+        case DIR:
+        {
+            char* res;
+            unsigned int r_len;
+            operation_sucess = client_list_remote_dir(c_channel, arg, strlen(arg), res, &r_len);
+
+            if (operation_sucess) 
+                printf("%s\n", res);
+
+            break;
+        }
+        case IDLE:
+        {
+            operation_sucess = idle_set_remote(c_channel, to_int(arg), CLIENT);
+            break;
+        }
+        case MODTIME:
+        {
+            char* res;
+            unsigned int r_len;
+
+            operation_sucess = client_remote_mode_time(c_channel, arg, strlen(arg), res, &r_len);
+
+            if (operation_sucess) 
+                printf("%s\n", res);
+
+            break;
+        }
+        case SIZE:
+        {
+            unsigned int f_size;
+
+            operation_sucess = client_remote_get_size(c_channel, arg, strlen(arg), &f_size);
+
+            if(operation_sucess)
+                printf("%d\n", f_size);
+
+            break;
+        }
+        case RENAME:
+        {
+            operation_sucess = client_remote_change_name(c_channel, arg, strlen(arg), 
+                                                         strchr(arg, '\0')++, 
+                                                         strlen(strchr(arg, '\0')++))
+            break;
+        }
+        case RMDIR:
+        {
+            operation_sucess = client_remove_remote_dir(c_channel, arg, strlen(arg));
+            break;
+        }
+        
+        default:
+            printf("Unknown operation\n Abort\n");
+            break;
+        }
+
+        if(!operation_sucess)
+            printf("Operation failed\n Retry\n");
     } 
 }

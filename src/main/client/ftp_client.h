@@ -7,9 +7,9 @@
 #include "common/socket_ftp.h"
 #include "common/channel.h"
 
-void splitArgs(socket_ftp* s_ftp, int argc, ...);
+void take_cmd(char* buffer, char* cmd, char* arg);
 
-int handleOp(socket_ftp* s_ftp, char op[]);
+int handle_option(socket_ftp* s_ftp, char op[]);
 
 int password_authen_client(socket_ftp* c_socket);
 
@@ -19,7 +19,7 @@ void ipv6_op_set(socket_ftp* s_ftp);
 
 int client_data_put(control_channel* c_channel, data_channel* d_channel,
                     socket_ftp* c_socket, socket_ftp* d_socket, 
-                    endpoint_type type);
+                    char* file_name, int n_len, endpoint_type type);
 
 int client_data_get(control_channel* c_channel, data_channel* d_channel);
 
