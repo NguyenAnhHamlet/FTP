@@ -32,6 +32,16 @@ void time_out_alarm(int sig)
     fatal("Time out");
 }
 
+void signal_handler(int sig)
+{
+    LOG("Received signal %d; terminating.", sig);
+    // TODO 
+    // Send termination signal to server
+    // Destroy channel
+    // Terminating process
+    exit(255);
+}
+
 void take_cmd(char* buffer, char* cmd, char* arg)
 {
     char* split_ptr;
@@ -234,6 +244,11 @@ int main(int argc, char* argvs[])
     unsigned char* request_str; 
     unsigned int request_int;
     unsigned char* arg;
+
+    // signal and handle
+    signal(SIGINT, signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
     // Create a FTP socket
     c_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_CONTROL, CONTROL);
