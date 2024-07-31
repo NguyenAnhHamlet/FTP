@@ -17,7 +17,7 @@ int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _e
 
 socket_ftp* create_ftp_socket(char* _ip_addr, unsigned int IPTYPE, 
                               endpoint_type type, unsigned int PORT,
-                              channel_type c_type);
+                              channel_type c_type, unsigned int sockfd);
 
 void destroy_ftp_socket(socket_ftp* socket);
 

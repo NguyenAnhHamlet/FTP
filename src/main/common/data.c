@@ -28,7 +28,7 @@ int data_conn(control_channel* c_channel, data_channel* d_channel,
 
         d_socket = create_ftp_socket(c_socket->ip_addr, 
                                      c_socket->endpoint_addr->sin_family, 
-                                     CLIENT, PORT_DATA, DATA);
+                                     CLIENT, PORT_DATA, DATA, cre_socket());
                                      
         data_channel_init_socket_ftp(d_channel, d_socket, d_socket, CLIENT, -1);
 
@@ -37,7 +37,7 @@ int data_conn(control_channel* c_channel, data_channel* d_channel,
 
     case SERVER:
     {
-        d_socket = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA);
+        d_socket = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
         data_channel_init_socket_ftp(d_channel, d_socket, d_socket, SERVER, -1);
 
         control_channel_append_ftp_type(FTP_ACK, c_channel);

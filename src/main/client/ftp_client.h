@@ -65,6 +65,8 @@ int client_remote_change_name(control_channel* c_channel, char* file_name, int n
 int client_remove_remote_dir(control_channel* c_channel, char* dir, int d_len);     
 
 int client_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
-                           unsigned int* file_size);         
+                           unsigned int* file_size);  
+
+void client_terminate_connection(control_channel* c_channel);       
 
 #endif

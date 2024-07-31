@@ -35,11 +35,7 @@ void time_out_alarm(int sig)
 void signal_handler(int sig)
 {
     LOG("Received signal %d; terminating.", sig);
-    // TODO 
-    // Send termination signal to server
-    // Destroy channel
-    // Terminating process
-    exit(255);
+    quit();
 }
 
 void take_cmd(char* buffer, char* cmd, char* arg)
@@ -166,9 +162,16 @@ int client_remote_get_size(control_channel* c_channel, char* file_name, int n_le
     return remote_get_size(c_channel, file_name, n_len, file_size, CLIENT);
 }
 
+void client_terminate_connection(control_channel* c_channel)
+{
+    control_channel_append_ftp_type(TERMINATE, c_channel);
+    control_channel_send(c_channel);
+}
+
 int quit() 
 {
     ftp_running = 0;
+    client_terminate_connection(&c_channel);
 }
 
 void ipv4_op_set(socket_ftp* s_ftp)
@@ -251,7 +254,7 @@ int main(int argc, char* argvs[])
     signal(SIGTERM, signal_handler);
 
     // Create a FTP socket
-    c_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_CONTROL, CONTROL);
+    c_socket = create_ftp_socket(ipaddr, iptype, CLIENT, PORT_CONTROL, CONTROL, cre_socket());
     
     // public key authen 
     control_channel_init_socket_ftp(&c_channel, c_socket, c_socket, CLIENT, -1);
@@ -371,7 +374,8 @@ int main(int argc, char* argvs[])
         {
             unsigned int f_size;
 
-            operation_sucess = client_remote_get_size(c_channel, arg, strlen(arg), &f_size);
+            operation_sucess = client_remote_get_size(c_channel, arg, 
+                                                      strlen(arg), &f_size);
 
             if(operation_sucess)
                 printf("%d\n", f_size);
@@ -399,4 +403,7 @@ int main(int argc, char* argvs[])
         if(!operation_sucess)
             printf("Operation failed\n Retry\n");
     } 
+
+    control_channel_destroy(&c_channel);
+    data_channel_destroy(&d_channel);
 }

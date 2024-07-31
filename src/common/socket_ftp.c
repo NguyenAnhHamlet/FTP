@@ -79,42 +79,59 @@ int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _e
     socket->endpoint_addr_size = _endpoint_addr_size;
     int opt = 1;
 
-    res *= set_end_point(socket->endpoint_addr, socket->ip_addr, socket->PORT_, IPTYPE, type);
     switch (type)
     {
     case CLIENT:
     {
-        res *= connect_endpoint(socket->sockfd, socket->endpoint_addr, socket->endpoint_addr_size);
+        res &= connect_endpoint(socket->sockfd, socket->endpoint_addr, 
+                                socket->endpoint_addr_size);
         break;
     }
     case SERVER:
     {
+        res &= set_end_point(socket->endpoint_addr, socket->ip_addr, 
+                                socket->PORT_, IPTYPE, type);
+
         if (setsockopt(socket->sockfd, SOL_SOCKET,
-                   SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) 
+                SO_REUSEADDR | SO_REUSEPORT, &opt,
+                sizeof(opt))) 
         {
             LOG("Set socket option failed\n");
             return 0;
         }
 
-        res *= bind_endpoint(socket->sockfd, socket->endpoint_addr,socket->endpoint_addr_size);
-        c_type ? res *= listen_endpoint(socket->sockfd, 1) : 
-                 res *= listen_endpoint(socket->sockfd, NUMCLIENT); 
-        break;
+        res &= bind_endpoint(socket->sockfd, socket->endpoint_addr,
+                             socket->endpoint_addr_size);        
+
+        switch (c_type)
+        {
+        case DATA:
+        {
+            res &= listen_endpoint(socket->sockfd, 1);
+            break;
+        }
+        case SERVER_LISTENTING:
+        {
+            res &= listen_endpoint(socket->sockfd, NUMCLIENT); 
+            break;
+        }
+        
+        default:
+            break;
+        }
     }
 
     default:
         LOG("Unknown endpoint_type\n");
         break;
     }
-    res *= connect_endpoint(socket->sockfd, socket->endpoint_addr, socket->endpoint_addr_size);
     
     return res > 0;
 }
 
 socket_ftp* create_ftp_socket(char* _ip_addr, unsigned int IPTYPE,  
                               endpoint_type type, unsigned int PORT, 
-                              channel_type c_type )
+                              channel_type c_type, unsigned int sockfd )
 {
     int sock_fd;
     struct sockaddr_in* endpoint_address = 
@@ -125,7 +142,7 @@ socket_ftp* create_ftp_socket(char* _ip_addr, unsigned int IPTYPE,
 
     socket_ftp* socket = (socket_ftp*)malloc(sizeof(socket_ftp));
 
-    set_socket(socket, cre_socket(), endpoint_address, _ip_addr, 
+    set_socket(socket, sockfd, endpoint_address, _ip_addr, 
                PORT, addrlen, IPTYPE, type, c_type);
 }
 

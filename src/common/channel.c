@@ -48,12 +48,12 @@ void control_channel_set_nonblocking(control_channel* channel)
     packet_set_nonblocking(channel->data_out);
 }
 
-void control_channel_destroy(control_channel* channel)
+void control_channel_destroy(control_channel* c_channel)
 {
-    packet_destroy(channel->data_in);
-    packet_destroy(channel->data_out);
+    packet_destroy(c_channel->data_in);
+    packet_destroy(c_channel->data_out);
 
-    free(channel);
+    free(c_channel);
 }
 
 void set_control_channel_compress(control_channel* channel)
@@ -266,4 +266,12 @@ int data_channel_set_header(data_channel* channel,
 void data_channel_clean_datain_clear(data_channel* channel)
 {
     packet_clear_data(channel->data_in);
+}
+
+void data_channel_destroy(data_channel* d_channel)
+{
+    packet_destroy(d_channel->data_in);
+    packet_destroy(d_channel->data_out);
+
+    free(d_channel);
 }

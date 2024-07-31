@@ -67,7 +67,7 @@ int server_data_append(control_channel* c_channel, data_channel* d_channel,
                        n_len, remote_file_name, rn_len);
 }
 
-int pass_authen_server(int sockfd, passwd* pw)
+int pass_authen_server(int sockfd)
 {
     Packet* name_packet;
     Packet* pass_packet;
@@ -172,7 +172,9 @@ int server_remote_get_size(control_channel* c_channel, char* file_name, int n_le
 
 int main()
 {
-    socket_server = create_ftp_socket(NULL, AF_INET, SERVER);
+    socket_server = create_ftp_socket(NULL, AF_INET, SERVER, 
+                                      PORT_CONTROL, CONTROL, 
+                                      cre_socket());
     bool isRunning = 1;
     int pid, newsock;
     unsigned int maxClientSocket = 0;
@@ -234,6 +236,13 @@ int main()
     control_channel c_channel; 
     data_channel d_channel;
     int time_out = 30 * 60;
+    int conn_remain = 1;
+    unsigned request_int;
+    bool operation_sucess = 1;
+    socket_ftp* d_socket;
+    socket_ftp* c_socket = create_ftp_socket(NULL, AF_INET, SERVER, 
+                                             PORT_CONTROL, SERVER_LISTENING, 
+                                             clientfd);
 
     control_channel_init(&c_channel, clientfd, clientfd, SERVER, -1 );
     
@@ -253,8 +262,125 @@ int main()
     alarm(0);
 
 
-    for(;;)
+    while(conn_remain)
     {
+        if(control_channel_read_expect(c_channel, TERMINATE))
+        {
+            LOG("Terminate connection with client fd %d", clientfd);
+            exit(1);
+        }
+
+        request_int = control_channel_get_int(c_channel);
+
+        switch (request_int)
+        {
+        case GET:
+        {
+            char* f_name;
+            unsigned int n_len;
+            control_channel_get_str(c_channel, f_name, n_len );
+            operation_sucess = server_data_put(c_channel, d_channel, f_name, n_len);
+            break;
+        }
+        case PUT:
+        {
+            operation_sucess = server_data_get(c_channel, d_channel);
+            break;
+        }
+        case APPEND:
+        {
+            operation_sucess = server_data_append(c_channel, d_channel, CLIENT, 
+                                                  arg, strlen(arg), strchr(arg, '\0')++, 
+                                                  strlen(strchr(arg, '\0')++));
+            break;
+        }
+        case NEWER:
+        {
+            operation_sucess = client_data_newer(c_channel, d_channel, c_socket, 
+                                                 d_socket, arg, strlen(arg));
+            break;
+        }
+        case REGET:
+        {
+            operation_sucess = client_data_reget(c_channel, d_channel, c_socket, 
+                                                 d_socket, arg, strlen(arg));
+            break;
+        }
+        case CD:
+        {
+            operation_sucess = client_change_dir(c_channel, arg, strlen(arg));
+            break;
+        }
+        case CHMOD:
+        {
+            operation_sucess = client_change_mode(c_channel, arg, strlen(arg));
+            break;
+        }
+        case DELETE:
+        {
+            operation_sucess = client_delete_remote_file(c_channel, arg, strlen(arg));
+            break;
+        }
+        case DIR:
+        {
+            char* res;
+            unsigned int r_len;
+            operation_sucess = client_list_remote_dir(c_channel, arg, strlen(arg), res, &r_len);
+
+            if (operation_sucess) 
+                printf("%s\n", res);
+
+            break;
+        }
+        case IDLE:
+        {
+            operation_sucess = idle_set_remote(c_channel, to_int(arg), CLIENT);
+            break;
+        }
+        case MODTIME:
+        {
+            char* res;
+            unsigned int r_len;
+
+            operation_sucess = client_remote_mode_time(c_channel, arg, strlen(arg), res, &r_len);
+
+            if (operation_sucess) 
+                printf("%s\n", res);
+
+            break;
+        }
+        case SIZE:
+        {
+            unsigned int f_size;
+
+            operation_sucess = client_remote_get_size(c_channel, arg, 
+                                                      strlen(arg), &f_size);
+
+            if(operation_sucess)
+                printf("%d\n", f_size);
+
+            break;
+        }
+        case RENAME:
+        {
+            operation_sucess = client_remote_change_name(c_channel, arg, strlen(arg), 
+                                                         strchr(arg, '\0')++, 
+                                                         strlen(strchr(arg, '\0')++))
+            break;
+        }
+        case RMDIR:
+        {
+            operation_sucess = client_remove_remote_dir(c_channel, arg, strlen(arg));
+            break;
+        }
+        
+        default:
+            printf("Unknown operation\n Abort\n");
+            break;
+        }
+
+        if(!operation_sucess)
+            printf("Operation failed\n Retry\n");
         
     }
     

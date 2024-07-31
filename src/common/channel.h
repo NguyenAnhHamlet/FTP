@@ -58,7 +58,6 @@ void control_channel_init_socket_ftp(control_channel* channel,
 void control_channel_set_port(control_channel* channel, unsigned int in_port, unsigned int out_port);
 void control_channel_set_cipher(control_channel* channel, unsigned int cypher_type);
 void control_channel_set_nonblocking(control_channel* channel);
-void control_channel_destroy(control_channel* channel);
 void set_control_channel_compress(control_channel* channel);
 void unset_control_channel_compress(control_channel* channel);
 int  control_channel_set_header(control_channel* channel,
@@ -82,6 +81,7 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel);
 int control_channel_get_int(control_channel* channel);
 int control_channel_get_str(control_channel* channel, char* str, unsigned int* len);
 int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel);
+void control_channel_destroy(control_channel* c_channel);
 
 // 
 // data channel
@@ -123,5 +123,6 @@ int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, unsigned int* len);
 int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
 void data_channel_clean_datain_clear(data_channel* channel);
+void data_channel_destroy(data_channel* =d_channel);
 
 #endif

@@ -40,7 +40,8 @@ typedef enum
 typedef enum 
 {
     CONTROL,
-    DATA
+    DATA,
+    SERVER_LISTENING
 } channel_type;
 
 
