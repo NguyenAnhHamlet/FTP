@@ -50,4 +50,6 @@ int server_remote_change_name(control_channel* c_channel, char* file_name, int n
 int server_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
                            unsigned int* file_size);   
 
+int server_remove_remote_dir(control_channel* c_channel, char* dir, int d_len);
+
 #endif
