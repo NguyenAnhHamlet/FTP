@@ -42,11 +42,6 @@ void time_out_alarm(int sig)
     exit(1);
 }
 
-int handleRequestServer(int sockfd, char req[])
-{
-    
-}
-
 int server_data_conn(control_channel* c_channel, data_channel* d_channel,
                     socket_ftp* c_socket, socket_ftp* d_socket, 
                     endpoint_type type)
@@ -393,7 +388,6 @@ int main()
 
         if(!operation_sucess)
             printf("Operation failed\n");
-        
     }
     
     return 0;

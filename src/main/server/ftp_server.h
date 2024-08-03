@@ -4,8 +4,6 @@
 #include "cmd.h"
 #include "channel.h"
 
-int handleRequestServer(int sockfd, char req[]);
-
 int pass_authen_server(int sockfd);
 
 int server_data_conn(control_channel* c_channel, data_channel* d_channel,
