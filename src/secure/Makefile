@@ -5,6 +5,7 @@ CFLAGS=-MMD -MP
 SRC=$(wildcard *.c)
 OBJ=$(patsubst %.c,obj/%.o,$(SRC))
 DEPS=$(OBJS:.o=.d)
+INCLUDES_FLAGS=-I ../
 
 # create a storage
 define storage_create
@@ -18,12 +19,11 @@ endef
 # main rules here
 all: create_dirs ${OBJ}
 
-
 create_dirs:
 	$(call storage_create,obj)
 
 obj/%.o: %.c 
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -c $< -o $@ 
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} ${INCLUDES_FLAGS} -c $< -o $@ 
 
 clean: 
 	rm -rf obj

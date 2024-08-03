@@ -1,7 +1,8 @@
 #include "rsa.h"
-#include "common.h"
-#include "file.h"
+#include "common/common.h"
+#include "common/file.h"
 #include <string.h>
+#include <openssl/rsa.h>
 
 void generate_RSA_KEYPAIR(RSA *prv, RSA *pub)
 {
@@ -68,17 +69,17 @@ int rsa_pub_encrypt( RSA * rsa, const unsigned char *challenge,
     char *inbuf, *outbuf;
 	int len, ilen, olen;
 
-    ctx = EVP_PKEY_CTX_new();
+    ctx = EVP_PKEY_CTX_new(rsa, NULL);
     size_t sig_size = RSA_size(rsa);
 
     olen = BN_num_bytes(rsa);                       // might be an issue
 	outbuf = (char*)malloc(olen);
 
-	ilen = BN_num_bytes(in);
+	ilen = BN_num_bytes(inbuf);
 	inbuf = (char*)malloc(ilen);
 	BN_bn2binpad(signature, inbuf, ilen);
 
-    if (EVP_PKEY_encrypt_init_ex(ctx, NULL, NULL, rsa) != 1) 
+    if (EVP_PKEY_encrypt_init(ctx) != 1) 
     {
         ERR_print_errors_fp(stderr);
         return -1;
@@ -104,7 +105,7 @@ int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge,
 	char *inbuf, *outbuf;
 	int len, ilen, olen;
 
-    ctx = EVP_PKEY_CTX_new();
+    ctx = EVP_PKEY_CTX_new(rsa,NULL);
 
 	olen = BN_num_bytes(rsa);                           // might be an issue
 	outbuf = (char*)malloc(olen);
@@ -113,7 +114,7 @@ int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge,
 	inbuf = (char*)malloc(ilen);
 	BN_bn2binpad(signature, inbuf, ilen);
 
-    if (EVP_PKEY_decrypt_init_ex(ctx, NULL, NULL, rsa) != 1) 
+    if (EVP_PKEY_decrypt_init(ctx) != 1) 
     {
         ERR_print_errors_fp(stderr);
         return -1;

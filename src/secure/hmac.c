@@ -1,5 +1,5 @@
 #include "hmac.h"
-#include "common.h"
+#include "common/common.h"
 
 int HMACdecrypt(EVP_CIPHER_CTX *ctx, unsigned char *key, int key_len,
                 unsigned char *input, int input_len,

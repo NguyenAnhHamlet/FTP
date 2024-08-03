@@ -1,7 +1,7 @@
 #include "aescipher.h"
 #include "kex.h"
 #include "rsa.h"
-#include "putnum.h"
+#include "common/putnum.h"
 
 void aes_key_setup(cipher_context* cipher_ctx)
 {
@@ -23,7 +23,7 @@ void aes_iv_setup(cipher_context* cipher_ctx)
     BN_rand(iv, AES_BLOCK_SIZE, NULL, NULL);
     
     BN_copy(cipher_ctx->iv, iv);
-    cipher_ctx->iv_len = BN_num_bits(cipher_context->iv);
+    cipher_ctx->iv_len = BN_num_bits(cipher_ctx->iv);
 }
 
 int aes_cipher_init(cipher_context* cipher_ctx)
