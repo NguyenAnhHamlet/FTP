@@ -57,6 +57,16 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "*.tcc": "c"
+    "*.tcc": "c",
+    "common.h": "c",
+    "secure.h": "c",
+    "buffer.h": "c",
+    "channel.h": "c",
+    "rsa.h": "c",
+    "aescipher.h": "c",
+    "receive.h": "c",
+    "send.h": "c",
+    "packet.h": "c",
+    "stdlib.h": "c"
   }
 }

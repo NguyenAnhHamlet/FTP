@@ -25,7 +25,7 @@ typedef struct
     int len;
 } Packet;
 
-void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type 
+void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type,
                  unsigned int in_port, unsigned int cypher_type );
 void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port);
 void packet_set_cipher(Packet* packet, unsigned int cypher_type);

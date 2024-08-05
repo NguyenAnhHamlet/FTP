@@ -2,11 +2,10 @@
 #define __SECURE__ 
 
 #include <stdio.h>
-#include "edcsa.h"
 #include "hmac.h"
 #include "rsa.h"
-#include "buffer.h"
-#include "channel.h"
+#include "common/buffer.h"
+#include "common/channel.h"
 
 #define PUB_AUTHEN_SUCCESS  "pub authen success"
 #define PUB_AUTHEN_FAIL     "pub authen fail"

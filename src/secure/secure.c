@@ -1,16 +1,15 @@
 #include <stdio.h>
-#include "edcsa.h"
 #include "hmac.h"
 #include "rsa.h"
-#include "common.h"
-#include "secure.h"
-#include "file.h"
+#include "common/common.h"
+#include "secure/secure.h"
+#include "common/file.h"
 #include <string.h>
-#include "send.h"
-#include "receive.h"
+#include "common/send.h"
+#include "common/receive.h"
 #include <time.h>
 #include <openssl/bn.h>
-#include "packet.h"
+#include "common/packet.h"
 
 int public_key_authentication(control_channel* channel, int evolution)
 {
@@ -18,7 +17,7 @@ int public_key_authentication(control_channel* channel, int evolution)
     {
     case 0:
     {
-        BIGNUM *challenge, *sig, recv_challenge;
+        BIGNUM *challenge, *sig, *recv_challenge;
         challenge = BN_new(); 
         sig = BN_new();  
         RSA *private_key;
@@ -91,7 +90,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         control_channel_get_bignum(challenge, channel);
         rsa_pub_decrypt(pub_key, challenge, BN_num_bits(challenge),
-                        decrypt_challenge, BN_num_bits(decrypt_challenge))
+                        decrypt_challenge, BN_num_bits(decrypt_challenge));
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(decrypt_challenge, channel);
@@ -116,24 +115,15 @@ int public_key_authentication(control_channel* channel, int evolution)
 int channel_send_public_key(control_channel* channel, char path[])
 {
     RSA* pub_key;
-    BIGNUM *pub_key_e, *pub_key_n;
 
     load_rsa_auth_key(pub_key, path);
 
-    pub_key_e = BN_new();
-    pub_key_n = BN_new();
-
-    BN_copy(pub_key->e, pub_key_e);
-    BN_copy(pub_key->n, pub_key_n);
-
     packet_init(channel->data_out, channel->data_out->out_port, 
                 FTP_PUB_KEY_SEND, -1, -1 );
-    packet_append_bignum(pub_key_e, channel->data_out);
-    packet_append_bignum(pub_key_n, channel->data_out);
+    packet_append_bignum(RSA_get0_e(pub_key), channel->data_out);
+    packet_append_bignum(RSA_get0_n(pub_key), channel->data_out);
     packet_send_wait(channel->data_out);
 
-    BN_clear(pub_key_e);
-    BN_clear(pub_key_n);
     RSA_free(pub_key);
 
     return 1;
@@ -161,8 +151,7 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
         return -1;
     }
 
-    BN_copy(pub_key->e, pub_key_e);
-    BN_copy(pub_key->n, pub_key_n);
+    RSA_set0_key(pub_key ,pub_key_n, pub_key_e, NULL);
     
     BN_clear(pub_key_e);
     BN_clear(pub_key_n);

@@ -6,10 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "status.h"
-
-// recv file over to the server
-int recv_file(unsigned int _socket_fd, unsigned int _BUF_LEN ,char* _filename, status_ftp* status);
+#include "common/status.h"
 
 // recv msg over to the server
 int recv_msg(unsigned int _socket_fd, unsigned int _BUF_LEN, char* msg);

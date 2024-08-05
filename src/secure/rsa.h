@@ -14,7 +14,7 @@
 
 #define KEY_SIZE 2048  
 
-void generate_RSA_KEYPAIR(RSA *prv, RSA *pub);
+void generate_RSA_KEYPAIR(RSA *key_pair);
 
 void save_RSApublic_key(RSA * rsa, char path[]);
 

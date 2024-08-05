@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
-#include "stack.h"
+#include "algo/stack.h"
 
 // choose port 50000 as default port 
 // for sending and receiving data

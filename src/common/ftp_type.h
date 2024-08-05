@@ -1,4 +1,7 @@
 
+#ifndef __FTP_TYPE__
+#define __FTP_TYPE__
+
 #define FTP_SYM_AUTHEN              1
 #define FTP_DATA_TRANSMISSION       2
 #define FTP_DATA_COMPRESS           3
@@ -16,3 +19,5 @@
 #define ASK_FILE_EXIST              15
 #define FTP_REMOTE_FILE_NAME        16
 #define TERMINATE                   17
+
+#endif

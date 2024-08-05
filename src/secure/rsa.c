@@ -4,41 +4,14 @@
 #include <string.h>
 #include <openssl/rsa.h>
 
-void generate_RSA_KEYPAIR(RSA *prv, RSA *pub)
+void generate_RSA_KEYPAIR(RSA *key_pair)
 {
-    RSA* key_pair = RSA_new();
+    key_pair = RSA_new();
     if (!key_pair) 
         fatal("Could not initialize object rsa\n");
 
     if (RSA_generate_key_ex(key_pair, KEY_SIZE, RSA_3, NULL) != 1) 
        fatal("Could not generate RSA key pair\n");
-
-    pub->n = BN_new();
-	BN_copy(pub->n, key_pair->n);
-	pub->e = BN_new();
-	BN_copy(pub->e, key_pair->e);
-
-    prv->n = BN_new();
-	BN_copy(prv->n, key_pair->n);
-	prv->e = BN_new();
-	BN_copy(prv->e, key_pair->e);
-	prv->d = BN_new();
-	BN_copy(prv->d, key_pair->d);
-	prv->p = BN_new();
-	BN_copy(prv->p, key_pair->p);
-	prv->q = BN_new();
-	BN_copy(prv->q, key_pair->q);
-
-	prv->dmp1 = BN_new();
-	BN_copy(prv->dmp1, key_pair->dmp1);
-
-	prv->dmq1 = BN_new();
-	BN_copy(prv->dmq1, key_pair->dmq1);
-
-	prv->iqmp = BN_new();
-	BN_copy(prv->iqmp, key_pair->iqmp);
-
-	RSA_free(key_pair);
 }
 
 void save_RSApublic_key(RSA * rsa, char path[])
@@ -68,8 +41,9 @@ int rsa_pub_encrypt( RSA * rsa, const unsigned char *challenge,
     EVP_PKEY_CTX *ctx;
     char *inbuf, *outbuf;
 	int len, ilen, olen;
-
-    ctx = EVP_PKEY_CTX_new(rsa, NULL);
+    EVP_PKEY *pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(pkey, rsa);
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
     size_t sig_size = RSA_size(rsa);
 
     olen = BN_num_bytes(rsa);                       // might be an issue
@@ -104,8 +78,9 @@ int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge,
     EVP_PKEY_CTX *ctx;
 	char *inbuf, *outbuf;
 	int len, ilen, olen;
-
-    ctx = EVP_PKEY_CTX_new(rsa,NULL);
+    EVP_PKEY *pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(pkey, rsa);
+    ctx = EVP_PKEY_CTX_new(pkey, NULL);
 
 	olen = BN_num_bytes(rsa);                           // might be an issue
 	outbuf = (char*)malloc(olen);

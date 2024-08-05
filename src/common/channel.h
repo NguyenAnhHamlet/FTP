@@ -2,12 +2,13 @@
 #define __CHANNEL__
 
 #include <stdio.h>
-#include "edcsa.h"
-#include "hmac.h"
-#include "rsa.h"
+#include "secure/hmac.h"
+#include "secure/rsa.h"
 #include "buffer.h"
 #include "common.h"
-#include "aescipher.h"
+#include "secure/aescipher.h"
+#include "common/packet.h"
+#include "common/socket_ftp.h"
 
 // 
 // Control channel
@@ -123,6 +124,6 @@ int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, unsigned int* len);
 int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
 void data_channel_clean_datain_clear(data_channel* channel);
-void data_channel_destroy(data_channel* =d_channel);
+void data_channel_destroy(data_channel* d_channel);
 
 #endif
