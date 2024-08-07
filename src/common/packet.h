@@ -28,7 +28,6 @@ typedef struct
 void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type,
                  unsigned int in_port, unsigned int cypher_type );
 void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port);
-void packet_set_cipher(Packet* packet, unsigned int cypher_type);
 void packet_set_nonblocking(Packet* packet);
 void packet_destroy(Packet* packet);
 void set_packet_compress(Packet* packet);

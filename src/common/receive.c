@@ -3,6 +3,7 @@
 #include "common.h"
 #include "file.h"
 #include "status.h"
+#include <errno.h>  #include <errno.h>  
 
 int recv_msg(unsigned int _socket_fd, unsigned int _BUF_LEN, char* msg)
 {
@@ -47,7 +48,7 @@ int recv_int(unsigned int _socket_fd, int* num)
             else return Faillure;
         
         default:
-            pos += _BUF_LEN;
+            pos += BUF_LEN;
             break;
         }
     }

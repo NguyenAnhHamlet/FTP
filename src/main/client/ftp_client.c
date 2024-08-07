@@ -355,7 +355,7 @@ int main(int argc, char* argvs[])
         }
         case IDLE:
         {
-            operation_sucess = idle_set_remote(c_channel, to_int(arg), CLIENT);
+            operation_sucess = idle_set_remote(c_channel, str_to_int(arg), CLIENT);
             break;
         }
         case MODTIME:

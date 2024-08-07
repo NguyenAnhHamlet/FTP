@@ -7,12 +7,12 @@ char to_char(int num)
     return num +0;
 }
 
-int to_int(char c)
+int char_to_int(char c)
 {
     return (int)(c);
 }
 
-int to_int(char num[], unsigned int size)
+int str_to_int(char num[], unsigned int size)
 {
     int res = 0;
     for(int i= 0; i < size; i++)

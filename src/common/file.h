@@ -5,6 +5,7 @@
 #include<string.h>
 #include<stdbool.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 void read_file(char path[], FILE* fp);
 void write_file(char path[], char data[],FILE* fp);

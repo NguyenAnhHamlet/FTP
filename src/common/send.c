@@ -1,6 +1,7 @@
 #include "send.h"
 #include "common.h"
 #include "status.h"
+#include <errno.h>  
 
 int send_msg(unsigned int socket_fd, unsigned int _BUF_LEN, char* msg)
 {
@@ -41,7 +42,7 @@ int send_int(unsigned int socket_fd, int num)
             else return Faillure;
         
         default:
-            pos += _BUF_LEN;
+            pos += BUF_LEN;
             break;
         }
     }

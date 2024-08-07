@@ -3,7 +3,7 @@
 
 #include "buffer.h"
 
-void compress(Buffer* inbuf, Buffer* outbuf);
-void uncompress(Buffer* inbuf, Buffer* outbuf);
+void buffer_compress(Buffer* inbuf, Buffer* outbuf);
+void buffer_uncompress(Buffer* inbuf, Buffer* outbuf);
 
 #endif

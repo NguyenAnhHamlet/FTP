@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "algo.h"
-#include "ftplog.h"
+#include "algo/algo.h"
+#include "log/ftplog.h"
 
 unsigned int get_cmd(char* cmd)
 {
@@ -31,9 +31,13 @@ unsigned int get_cmd(char* cmd)
     rewind(fp);
 
     res = (char *)malloc(sizeof(char) * len);
-    res = fread(res, 1, len, fp );
+    if(fread(res, 1, len, fp ) < 1)
+    {
+        LOG("Failed to read buffer\n");
+        return 0;
+    }
 
-    res_int = to_int(res, len);
+    res_int = str_to_int(res, len);
 
     fclose(fp);
     free(res);

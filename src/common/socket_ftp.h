@@ -1,6 +1,8 @@
 #ifndef __SOCKET_FTP__
 #define __SOCKET_FTP__
 
+#include "common/socket_ftp.h"
+#include "common/common.h"
 typedef struct 
 {
     unsigned int sockfd;

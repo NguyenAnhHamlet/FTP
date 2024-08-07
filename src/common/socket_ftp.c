@@ -110,7 +110,7 @@ int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _e
             res &= listen_endpoint(socket->sockfd, 1);
             break;
         }
-        case SERVER_LISTENTING:
+        case SERVER_LISTENING:
         {
             res &= listen_endpoint(socket->sockfd, NUMCLIENT); 
             break;

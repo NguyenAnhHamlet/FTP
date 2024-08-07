@@ -2,26 +2,23 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "compress.h"
+#include <fcntl.h>
+#include <errno.h>
+#include "common/common.h"
+#include <sys/select.h>
+#include "common/buffer.h"
 
-void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type 
+void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type,
                  unsigned int in_port, unsigned int cypher_type )
 {
     buffer_init(packet->buf);
-    packet_set_port(in_port, out_port);
-    packet->cypher_type = cypher_type;
-    packet->packet_compress = FTP_DATA_NON_COMPRESS;
-    packet->packet_type = packet_type;
+    packet_set_port(packet, in_port, out_port);
 }
 
 void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port)
 {
     packet->in_port = in_port;
     packet->out_port = out_port;
-}
-
-void packet_set_cipher(Packet* packet, unsigned int cypher_type)
-{
-    packet->cypher_type = cypher_type;
 }
 
 void packet_set_nonblocking(Packet* packet)
@@ -69,12 +66,12 @@ void packet_send(Packet* packet)
 
 void set_packet_compress(Packet* packet)
 {
-    packet->packet_compress = 1;
+    packet->p_header->compression_mode = 1;
 }
 
 void unset_packet_compress(Packet* packet)
 {
-    packet->packet_compress = 0;
+    packet->p_header->compression_mode = 0;
 }
 
 int packet_read(Packet* packet)
@@ -86,7 +83,7 @@ int packet_read(Packet* packet)
 
     packet_read_header(packet);
 
-    if(packet->packet_compress)
+    if(packet->p_header->compression_mode)
     {
         Buffer* outbuf;
         decompress(packet->buf, outbuf );
@@ -169,10 +166,10 @@ int packet_read_header(Packet* packet)
 int packet_send_wait(Packet* packet)
 {
     packet_append_header(packet);
-    if(packet->p_header->packet_compress)
+    if(packet->p_header->compression_mode)
     {
         Buffer* outbuf;
-        compress(packet->buf, outbuf );
+        buffer_compress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, outbuf, buffer_len(outbuf));
     }
@@ -195,7 +192,7 @@ int packet_wait(Packet* packet)
 
     FD_ZERO(&set);
 	FD_SET(packet->out_port, &set);
-    int res = select(packet->out_port + 1, NULL, &set, NULL, packet->time_out);
+    int res = select(packet->out_port + 1, NULL, &set, NULL, &packet->time_out);
 
     return res;
 }
@@ -215,7 +212,7 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
 
     if(res < 0)
     {
-        LOG("Error in select function\n")
+        LOG("Error in select function\n");
         return -1;
     }
 
@@ -227,17 +224,23 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
 
 int packet_append_str(char* str, Packet* packet, unsigned int len)
 {
-    return buffer_append_str(packet->buf, str, len);
+    buffer_append_str(packet->buf, str, len);
+
+    return 1;
 }
 
 int packet_append_bignum(BIGNUM* bignum, Packet* packet)
 {
-    return buffer_put_bignum(packet->buf, bignum);
+    buffer_put_bignum(packet->buf, bignum);
+
+    return 1;
 }
 
 int packet_append_int(int num, Packet* packet)
 {
-    return buffer_put_int(packet->buf, num);
+    buffer_put_int(packet->buf, num);
+
+    return 1;
 }
 
 unsigned int packet_get_int(Packet* packet)
@@ -247,12 +250,14 @@ unsigned int packet_get_int(Packet* packet)
 
 int packet_get_str(Packet* packet, char* str, unsigned int* len)
 {
-    return buffer_get_data(packeet->buf, str, len);
+    buffer_get_data(packet->buf, str, len);
+
+    return 1;
 }
 
 int packet_get_bignum(BIGNUM* bignum, Packet* packet)
 {
-    return buffer_get_bignum(packeet->buf, bignum);
+    return buffer_get_bignum(packet->buf, bignum);
 }
 
 void packet_append_header(Packet* packet)

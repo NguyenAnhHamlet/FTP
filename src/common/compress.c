@@ -1,7 +1,8 @@
 #include "compress.h"
 #include "zlib.h"
+#include "common/common.h"
 
-void compress(Buffer* inbuf, Buffer* outbuf)
+void buffer_compress(Buffer* inbuf, Buffer* outbuf)
 {
     z_stream outgoing_stream;
     char buf[4096];
@@ -21,8 +22,8 @@ void compress(Buffer* inbuf, Buffer* outbuf)
         {
         case Z_OK:
 			
-			buffer_append(outbuf, buf,
-				      sizeof(buf) - outgoing_stream.avail_out);
+			buffer_append_str(outbuf, buf, 
+						  	  sizeof(buf) - outgoing_stream.avail_out);
 			break;
 		case Z_STREAM_END:
 			fatal("buffer_compress: deflate returned Z_STREAM_END");
@@ -40,14 +41,14 @@ void compress(Buffer* inbuf, Buffer* outbuf)
     }
 }
 
-void uncompress(Buffer* inbuf, Buffer* outbuf)
+void buffer_uncompress(Buffer* inbuf, Buffer* outbuf)
 {
     z_stream incoming_stream;
     char buf[4096];
 	int status;
 
 	incoming_stream.avail_in = buffer_len(inbuf);
-	incoming_stream.next_in = buffer_ptr(inbuf);
+	incoming_stream.next_in = inbuf->buf + inbuf->offset;
 
 	incoming_stream.next_out = buf;
 	incoming_stream.avail_out = sizeof(buf);
@@ -56,8 +57,8 @@ void uncompress(Buffer* inbuf, Buffer* outbuf)
 		status = inflate(&incoming_stream, Z_PARTIAL_FLUSH);
 		switch (status) {
 		case Z_OK:
-			buffer_append(outbuf, buf,
-				      sizeof(buf) - incoming_stream.avail_out);
+			buffer_append_str(outbuf, buf,
+				      		  sizeof(buf) - incoming_stream.avail_out);
 			incoming_stream.next_out = buf;
 			incoming_stream.avail_out = sizeof(buf);
 			break;

@@ -18,13 +18,13 @@ typedef struct
     int in_used;
 } timer;
 
+
+typedef void (*callbackFunc)(timer*);
 typedef struct {
   timer* timer;
   callbackFunc func;
   unsigned int socketfd;
 } TimerThreadArgs;
-
-typedef void (*callbackFunc)(timer*);
 
 // Use semaphore to prevent user from setting the timer 
 // value start_time and current time during the function start_timer 

@@ -1,6 +1,6 @@
 #include "buffer.h"
 #include <string.h>
-
+#include "common/common.h"
 
 void buffer_init(Buffer * buffer)
 {
@@ -34,7 +34,7 @@ restart:
 	// enough space for data -> write in buffer
     if (buffer->end + len < buffer->alloc)
     {
-        memcpy(buffer->end, data, len);
+        memcpy(buffer->buf + buffer->end, data, len);
         return;
     }
 
@@ -94,7 +94,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 	buffer_append_str(buffer, buf, oi);
 
 	memset(buf, 0, bin_size);
-	xfree(buf);
+	free(buf);
 }
 
 int

@@ -7,8 +7,11 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <stdarg.h>
 
-R_O_ALL = 0444;
+#define R_O_ALL 0444
 
 bool is_ip_addr(char* buf) {
     int num_dots = 0;
@@ -158,7 +161,7 @@ int get_host_name(char* host)
         errgai = getaddrinfo(host, NULL, &hints, &ai);
         if (errgai == 0) {
             if (ai->ai_canonname != NULL)
-                host = xstrdup(ai->ai_canonname);
+                host = strdup(ai->ai_canonname);
             freeaddrinfo(ai);
         }
         return Success;

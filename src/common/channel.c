@@ -4,10 +4,10 @@
 void control_channel_init(  control_channel* channel,
                             unsigned int out_port, unsigned int in_port,
                             endpoint_type conn,
-                            unsigned int cypher_type)
+                            cipher_context* cipher_ctx)
 {
     channel->conn = conn;
-    channel->cypher_type = cypher_type;
+    channel->cipher_ctx = cipher_ctx;
 
     channel->data_in = (Packet*) malloc(sizeof(Packet));
     channel->data_in = (Packet*) malloc(sizeof(Packet));
@@ -22,10 +22,10 @@ void control_channel_init_socket_ftp(control_channel* channel,
                                     socket_ftp* out_socket, 
                                     socket_ftp* in_socket,
                                     endpoint_type conn,
-                                    unsigned int cypher_type)
+                                    cipher_context* cipher_ctx)
 {
-    control_channel_init(   channel, out_socket->PORT, 
-                            in_socket->PORT, conn, cypher_type)
+    control_channel_init(   channel, out_socket->PORT_, 
+                            in_socket->PORT_, conn, cipher_ctx);
 }
 
 void control_channel_set_port(control_channel* channel, 
@@ -34,12 +34,6 @@ void control_channel_set_port(control_channel* channel,
 {
     packet_set_port(channel->data_in, in_port, -1);
     packet_set_port(channel->data_in, -1, out_port);
-}
-
-void control_channel_set_cipher(control_channel* channel, unsigned int cypher_type)
-{
-    packet_set_cipher(channel->data_in, cypher_type);
-    packet_set_cipher(channel->data_out, cypher_type);
 }
 
 void control_channel_set_nonblocking(control_channel* channel)
@@ -58,7 +52,7 @@ void control_channel_destroy(control_channel* c_channel)
 
 void set_control_channel_compress(control_channel* channel)
 {
-    set_packet_compress(channel->data_out);
+    set_packet_compress(channel->data_out->p_header->compression_mode);
 }
 
 void unset_control_channel_compress(control_channel* channel)
@@ -166,23 +160,24 @@ void data_channel_init_socket_ftp(data_channel* channel,
                                   socket_ftp* out_socket, 
                                   socket_ftp* in_socket,
                                   endpoint_type conn,
-                                  unsigned int cypher_type)
+                                  cipher_context* cipher_ctx)
 {
-    data_channel_init(channel, out_socket->PORT, 
-                      in_socket->PORT, conn, 
-                      cypher_type)
+    data_channel_init(channel, out_socket->PORT_, 
+                      in_socket->PORT_, cipher_ctx);
 }
 
 void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len)
 {
-    aes_cypher_decrypt( channel->cipher_ctx, channel->data_in->buf, 
+    aes_cypher_decrypt( channel->cipher_ctx, channel->data_in->buf->buf , 
                         buffer_len(channel->data_in->buf), outbuf, out_len);
 }
 
 void data_channel_encrypt(data_channel* channel, char* outbuf, unsigned int out_len)
 {
-    aes_cypher_encrypt( channel->cipher_ctx, channel->data_out->buf, 
-                        buffer_len(channel->data_out->buf), outbuf, out_len);
+    char* buf;
+    int b_len;
+    data_channel_get_str(channel, buf, &b_len);
+    aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, out_len);
 }
 
 void set_data_channel_compress(data_channel* channel)
@@ -235,7 +230,7 @@ int data_channel_append_int(int num, data_channel* channel)
     return packet_append_int(num, channel->data_out);
 }
 
-unsigned int data_channel_get_int(data_channel* channel)
+int data_channel_get_int(data_channel* channel)
 {
     return packet_get_int(channel->data_in);
 }

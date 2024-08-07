@@ -17,7 +17,7 @@
 typedef struct
 {
     endpoint_type conn;             //client or server
-    unsigned int cypher_type;       
+    cipher_context* cipher_ctx;       
 
     RSA* rsa_public_key;
     RSA* rsa_private_key;
@@ -48,13 +48,13 @@ typedef struct
 void control_channel_init(  control_channel* channel,
                             unsigned int out_port, unsigned int in_port,
                             endpoint_type conn,
-                            unsigned int cypher_type);
+                            cipher_context* cipher_ctx);
 
 void control_channel_init_socket_ftp(control_channel* channel,
                                     socket_ftp* out_socket, 
                                     socket_ftp* in_socket,
                                     endpoint_type conn,
-                                    unsigned int cypher_type);
+                                    cipher_context* cipher_ctx);
 
 void control_channel_set_port(control_channel* channel, unsigned int in_port, unsigned int out_port);
 void control_channel_set_cipher(control_channel* channel, unsigned int cypher_type);
@@ -89,14 +89,15 @@ void control_channel_destroy(control_channel* c_channel);
 // 
 
 void data_channel_init( data_channel* channel,
-                        unsigned int out_port, unsigned int in_port,
+                        unsigned int out_port, 
+                        unsigned int in_port,
                         cipher_context* cipher_ctx);
 
 void data_channel_init_socket_ftp(data_channel* channel,
                                   socket_ftp* out_socket, 
                                   socket_ftp* in_socket,
                                   endpoint_type conn,
-                                  unsigned int cypher_type);
+                                  cipher_context* cipher_ctx);
                         
 void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len);
 void data_channel_encrypt(data_channel* channel, char* outbuf, unsigned int out_len);

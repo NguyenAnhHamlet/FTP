@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pwd.h>
-#include "ftplog.h"
+#include "log/ftplog.h"
 #include "common.h"
 
 static int pamconv(int num_msg, const struct pam_message **msg,

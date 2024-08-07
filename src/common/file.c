@@ -15,8 +15,6 @@ void read_file(char path[], FILE* fp)
 
 void write_file(char path[], char data[], FILE* fp)
 {
-    FILE* fp = popen();
-
     fp = fopen(path, "wb");
 
     if(!fp) fatal("Could not create file descriptor\n");
@@ -52,9 +50,9 @@ void delete_file(char path[])
 }
 
 
-void append_file(char path[], char data[],FILE* fp)
+void append_file(char path[], char data[])
 {
-    fp = fopen(path, "a");
+    FILE* fp = fopen(path, "a");
 
     if(!fp) fatal("Could not create file descriptor\n");
 

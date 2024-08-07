@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void initTimerSemaphore(timer* timer) 
+void init_timer_semaphore(timer* timer) 
 {
     sem_init(&timer->timerSemaphore, 0, 2); 
 }
