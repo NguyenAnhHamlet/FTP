@@ -4,9 +4,12 @@
 
 void LOG(const char* format, ...)
 {
+    
     va_list args;
     va_start(args, format);
 
-    vfprintf(FTP_LOG_FILE, format, args);
+    FILE *logfile = fopen(FTP_LOG_FILE, "a");
+
+    vfprintf(logfile, format, args);
     va_end(args);
 }
