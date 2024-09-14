@@ -1,0 +1,35 @@
+#!/bin/bash
+
+trap "{ exit 255; }" SIGINT SIGTERM ERR EXIT
+
+pub_key=/etc/pub/RSApub.key
+pri_key=/etc/priv/RSAprivate.key
+keygen=/usr/bin/ftpkeygen
+
+if [ -s "${pri_key}" ] || [ -s "${pub_key}" ]; then
+    echo "Do you want to override the old RSA keys?"
+    read answer
+    if [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
+        echo "EXIT"
+        exit 0;
+    fi
+fi
+
+if [ ! -e "${pub_key}" ]; then
+    echo "Create an empty private key to be written in"
+    [ ! -d /etc/priv ] && sudo mkdir -p /etc/priv && sudo chmod 755 /etc/priv
+    sudo touch "${pri_key}"
+    sudo chmod 644 "${pri_key}"
+fi
+
+if [ ! -e "${pub_key}" ]; then
+    echo "Create an empty public key to be written in"
+    [ ! -d /etc/pub ] && sudo mkdir -p /etc/pub && sudo chmod 755 /etc/pub
+    sudo touch "${pub_key}"
+    sudo chmod 644 "${pub_key}"
+fi
+
+sudo ${keygen}
+
+
+
