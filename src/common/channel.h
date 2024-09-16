@@ -9,7 +9,7 @@
 #include "common/packet.h"
 #include "common/socket_ftp.h"
 
-#define DEFAULT_CHANNEL_TMOUT 1
+#define DEFAULT_CHANNEL_TMOUT 5
 
 // 
 // Control channel
@@ -137,7 +137,7 @@ int data_channel_get_str(data_channel* channel, char* str,
 int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
 void data_channel_clean_datain_clear(data_channel* channel);
 void data_channel_destroy(data_channel* d_channel);
-void data_channel_set_time_out(control_channel* channel, 
+void data_channel_set_time_out(data_channel* channel, 
                                unsigned int tmout);
 
 #endif

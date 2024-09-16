@@ -10,6 +10,7 @@
 #include "algo/stack.h"
 #include "common/putnum.h"
 #include <openssl/bn.h>
+#include <time.h>
 
 // choose port 50000 as default port 
 // for sending and receiving data
@@ -22,6 +23,8 @@
 #define BUF_LEN 4096    
 
 #define NUMCLIENT 2056
+
+#define IP_LEN 36
 
 #define AI_PASSIVE        1
 #define AI_CANONNAME      2
@@ -72,5 +75,6 @@ int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
                     unsigned int _endpoint_addr_size);
 int listen_endpoint(unsigned int _socket_fd, unsigned int num);
 int available_socket_fd(Stack* available);
+void date_time(char* res);
 
 #endif

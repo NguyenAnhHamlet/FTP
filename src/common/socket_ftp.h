@@ -7,7 +7,7 @@ typedef struct
 {
     unsigned int sockfd;
     struct sockaddr_in* endpoint_addr;
-    char* ip_addr;
+    char ip_addr[IP_LEN];
     unsigned int PORT_;
     unsigned int endpoint_addr_size;
     unsigned int op;

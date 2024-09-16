@@ -2,12 +2,14 @@
 #include <stdarg.h>
 #include "ftplog.h"
 #include <errno.h>
+#include "common/common.h"
 
 void LOG(ftplog_type type, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
     FILE *logfile;
+    char datetime[64];
 
     switch (type)
     {
@@ -27,6 +29,10 @@ void LOG(ftplog_type type, const char* format, ...)
         fprintf(stderr, "Error opening log file: %s\n", strerror(errno));
         return;
     }
+
+    date_time(datetime);
+
+    fprintf(logfile, "%s", datetime );
 
     int result = vfprintf(logfile, format, args);
     if (result < 0) 

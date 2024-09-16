@@ -150,3 +150,13 @@ int available_socket_fd(Stack* available)
     int sock = pop(available);
     return sock;
 }
+
+void date_time(char* res)
+{
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(res, 64, "%Y-%m-%d %H:%M:%S", timeinfo);
+}

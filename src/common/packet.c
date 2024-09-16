@@ -188,6 +188,8 @@ int packet_send_wait(Packet* packet)
             perror("Select failure\n");
         }
 
+        LOG(SERVER_LOG, "RUNNING HERE\n");
+
         packet_send(packet);
     }
 }

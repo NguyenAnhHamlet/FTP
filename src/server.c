@@ -32,14 +32,14 @@ socket_ftp* socket_server;
 
 void signal_handler(int sig)
 {
-    LOG(SERVER_LOG, "Received signal %d; terminating.", sig);
+    LOG(SERVER_LOG, "Received signal %d; terminating.\n", sig);
     close(socket_server->sockfd);
     exit(255);
 }
 
 void time_out_alarm(int sig)
 {
-    LOG(SERVER_LOG, "Time out");
+    LOG(SERVER_LOG, "Time out\n");
     exit(1);
 }
 
@@ -237,11 +237,12 @@ int main()
             if ((pid = fork()) == 0) 
             {
                 clientfd = newsock ;
-                LOG(SERVER_LOG, "New connection from client %d", clientfd);
+                LOG(SERVER_LOG, "New connection from client %d\n", clientfd);
                 break;
             } 
         }
     }
+
 
     // Client process handle
     control_channel c_channel; 
@@ -256,15 +257,17 @@ int main()
 
     ftp_socket_cp(c_socket, socket_server);
 
-    control_channel_init(&c_channel, clientfd, clientfd, SERVER, &ctx);
+    control_channel_init(&c_channel, clientfd, clientfd, SERVER, NULL);
     
     signal(SIGALRM, time_out_alarm);
 	alarm(30);
 
+    char buf_[4096];
+
     if(public_key_authentication(&c_channel, 1) == 0 || 
        public_key_authentication(&c_channel, 0) == 0)
     {
-        LOG(SERVER_LOG, "Pub authen failed with socket %d\n", clientfd);
+        LOG(SERVER_LOG, "Pub authen failed with socket %d\n", c_channel.data_in->in_port);
         exit(1);
     }
 

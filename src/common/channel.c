@@ -280,7 +280,7 @@ void data_channel_destroy(data_channel* d_channel)
     free(d_channel);
 }
 
-void data_channel_set_time_out(control_channel* channel, 
+void data_channel_set_time_out(data_channel* channel, 
                            unsigned int tmout)
 {
     packet_set_timeout(channel->data_in, tmout);

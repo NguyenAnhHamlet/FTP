@@ -128,6 +128,9 @@ int channel_send_public_key(control_channel* channel, char path[])
 
     packet_append_bignum(e, channel->data_out);
     packet_append_bignum(n, channel->data_out);
+
+    LOG(SERVER_LOG, "DATA: %s\n", channel->data_out->buf);
+
     packet_send_wait(channel->data_out);
 
     RSA_free(pub_key);
