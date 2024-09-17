@@ -139,11 +139,11 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
 
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
 {
-    return control_channel_append_int(0, channel) &&
-           control_channel_append_int(0, channel) &&
-           control_channel_append_int(0, channel) &&
+    return control_channel_append_int(INT_MAX, channel) &&
+           control_channel_append_int(INT_MAX, channel) &&
+           control_channel_append_int(INT_MAX, channel) &&
            control_channel_append_int(ftp_type, channel) &&
-           control_channel_append_int(0, channel);
+           control_channel_append_int(INT_MAX, channel);
 }
 
 void data_channel_init( data_channel* channel,

@@ -9,6 +9,7 @@ void buffer_init(Buffer * buffer)
 	buffer->offset = 0;
 	buffer->buf = (char*) malloc(buffer->alloc);
 	buffer->end = 0;
+	memset(buffer->buf, '\0', 4096);
 }
 
 void buffer_free(Buffer * buffer)
@@ -84,6 +85,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 	char *buf = (char*)malloc(bin_size);
 	int oi;
 	char msg[2];
+	char num_bit[1];
 
 	// Get the value of in binary 
 	oi = BN_bn2bin(value, buf);
@@ -91,9 +93,20 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
 		      oi, bin_size);
 
-	/* Store the number of bits in the buffer in two bytes, msb first. */
-	PUT_16BIT(msg, bits);
-	buffer_append_str(buffer, msg, 2);
+	if (bits > 255) 
+	{
+    	PUT_16BIT(num_bit, IS16BIT);
+		PUT_16BIT(msg, bits);
+	} 
+	else 
+	{
+    	PUT_8BIT(num_bit, IS8BIT);
+		PUT_8BIT(msg, bits);
+	}
+
+	buffer_append_str(buffer, num_bit, 1);
+	buffer_append_str(buffer, msg, strlen(msg));
+
 	/* Store the binary data. */
 	buffer_append_str(buffer, buf, oi);
 
@@ -104,12 +117,26 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 int
 buffer_get_bignum(Buffer *buffer, BIGNUM *value)
 {
+	int num_bit;
 	int bits, bytes;
 	unsigned char buf[2], *bin;
 
 	/* Get the number for bits. */
-	buffer_get(buffer, (char *) buf, 2);
-	bits = GET_16BIT(buf);
+	buffer_get(buffer, (char *) buf, 1);
+
+	num_bit=GET_8BIT(buf);
+
+	if(num_bit == IS8BIT)
+	{
+		buffer_get(buffer, (char *) buf, 1);
+		bits = GET_8BIT(buf);
+	}
+	else 
+	{
+		buffer_get(buffer, (char *) buf, 2);
+		bits = GET_16BIT(buf);
+	}
+
 	/* Compute the number of binary bytes that follow. */
 	bytes = (bits + 7) / 8;
 	if (buffer_len(buffer) < bytes)

@@ -1,6 +1,9 @@
 #ifndef PUT_NUM
 #define PUT_NUM
 
+#define IS8BIT  1
+#define IS16BIT 2
+#define IS32BIT 3
 
 #define GET_32BIT(cp) (((unsigned long)(unsigned char)(cp)[0] << 24) | \
   		       ((unsigned long)(unsigned char)(cp)[1] << 16) | \
@@ -19,5 +22,11 @@
 #define PUT_16BIT(cp, value) do { \
   (cp)[0] = (value) >> 8; \
   (cp)[1] = (value); } while (0)
+
+#define GET_8BIT(cp) ((unsigned long)(unsigned char)(cp)[0])
+
+#define PUT_8BIT(cp, value) do {  \
+  (cp)[0] = (value);} while (0)
+
 
 #endif
