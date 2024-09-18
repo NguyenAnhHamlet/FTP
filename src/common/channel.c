@@ -31,6 +31,17 @@ void control_channel_init_socket_ftp(control_channel* channel,
                             in_socket->sockfd, conn, cipher_ctx);
 }
 
+void control_channel_append_header(control_channel* channel,
+                                   int identification,
+                                   int tt_len, int fragment_offset,
+                                   int packet_type, int compression_mode)
+{
+    packet_set_header(channel->data_out, identification, 
+                      tt_len, fragment_offset, packet_type, 
+                      compression_mode);
+    packet_append_header(channel->data_out);
+}
+
 void control_channel_set_port(control_channel* channel, 
                               unsigned int in_port, 
                               unsigned int out_port)
@@ -70,10 +81,10 @@ void unset_control_channel_compress(control_channel* channel)
     unset_packet_compress(channel->data_out);
 }
 
-int  control_channel_set_header(control_channel* channel,
+int control_channel_set_header(control_channel* channel,
                             int  identification,
                             int  tt_len,
-                            bool fragment_offset,
+                            int fragment_offset,
                             int packet_type,
                             int compression_mode)
 {
@@ -139,11 +150,9 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
 
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
 {
-    return control_channel_append_int(INT_MAX, channel) &&
-           control_channel_append_int(INT_MAX, channel) &&
-           control_channel_append_int(INT_MAX, channel) &&
-           control_channel_append_int(ftp_type, channel) &&
-           control_channel_append_int(INT_MAX, channel);
+    // Create a header with these fields
+    control_channel_set_header(channel, -1, -1, -1, ftp_type, -1);
+    control_channel_append_header(channel, -1, -1, -1, ftp_type, -1);
 }
 
 void data_channel_init( data_channel* channel,
@@ -163,6 +172,17 @@ void data_channel_init( data_channel* channel,
     channel->data_out->in_port = 0;
 
     channel->cipher_ctx = cipher_ctx;
+}
+
+void data_channel_append_header(data_channel* channel,
+                                int identification,
+                                int tt_len, int fragment_offset,
+                                int packet_type, int compression_mode)
+{
+    packet_set_header(channel->data_out, identification, 
+                      tt_len, fragment_offset, packet_type, 
+                      compression_mode);
+    packet_append_header(channel->data_out);
 }
 
 void data_channel_init_socket_ftp(data_channel* channel,
@@ -258,7 +278,7 @@ int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel)
 int data_channel_set_header(data_channel* channel,
                             int  identification,
                             int  tt_len,
-                            bool fragment_offset,
+                            int fragment_offset,
                             int packet_type,
                             int compression_mode)
 {

@@ -1,1 +1,3 @@
-# Buffer contains header which cause issue could not read data from it (Update the way it include the packet's header inside the buffer)
+# Update to include exact len of data in packet  
+# Added data_len beside tt_len
+# Include tt_len and data_len field as compulsory fields before sending 

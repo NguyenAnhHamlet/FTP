@@ -36,7 +36,7 @@ restart:
 	// enough space for data -> write in buffer
     if (buffer->end + len < buffer->alloc)
     {
-        strncpy(buffer->buf + buffer->end, data, len);
+        memcpy(buffer->buf + buffer->end, data, len);
 		buffer->end += len;
         return;
     }
@@ -58,8 +58,8 @@ restart:
 
 void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)
 {
-	data = buffer->buf + buffer->offset;
 	*len = buffer->end - buffer->offset;
+	memcpy(data, buffer->buf + buffer->offset, *len);
 }
 
 unsigned int buffer_len(Buffer * buffer)

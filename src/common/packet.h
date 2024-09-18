@@ -8,8 +8,8 @@
 typedef struct 
 {
     int    identification;
-    int    tt_len;
-    bool   fragment_offset;
+    int    tt_len;                  // tt len of the data only, does not include header nor other part
+    int    fragment_offset;
     int    packet_type;
     int    compression_mode;
 
@@ -47,7 +47,7 @@ int packet_append_int(int num, Packet* packet);
 void packet_append_header(Packet* packet);
 
 void packet_set_header( Packet*packet, int identification,
-                        int tt_len, bool fragment_offset,
+                        int tt_len, int fragment_offset,
                         int packet_type, int compression_mode);
 
 unsigned int packet_get_int(Packet* packet);

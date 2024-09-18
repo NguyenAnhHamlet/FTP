@@ -123,9 +123,6 @@ int channel_send_public_key(control_channel* channel, char path[])
     
     RSA_get0_key(pub_key, &n, &e, NULL );
 
-    packet_init(channel->data_out, channel->data_out->out_port, 
-                FTP_PUB_KEY_SEND, -1);
-
     packet_append_bignum(e, channel->data_out);
     packet_append_bignum(n, channel->data_out);
 

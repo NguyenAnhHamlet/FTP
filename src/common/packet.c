@@ -100,8 +100,8 @@ int packet_read(Packet* packet)
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
     
-
-    while(curr_len = read(packet->in_port, buf, BUF_LEN ) > 0)
+    while(  len < packet->p_header->tt_len && 
+            curr_len = read(packet->in_port, buf, BUF_LEN ) > 0)
     {
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
@@ -110,6 +110,10 @@ int packet_read(Packet* packet)
     return 1;
 }
 
+// Ought to read the header in this primitive manner
+// The total len of the packet needed to be got first 
+// to make sure the receiving endpoint get enough 
+// data from the sending endpoint
 int packet_read_header(Packet* packet)
 {
     unsigned int    tt_len;
@@ -122,7 +126,7 @@ int packet_read_header(Packet* packet)
 
     for(int i=0; i < 5; i++)
     {
-        if(recv(packet->in_port, interger, 4, 0) < 0)
+        if(read(packet->in_port, interger, 4, 0) < 0)
             return 0;
         
         switch (i)
@@ -146,21 +150,16 @@ int packet_read_header(Packet* packet)
         }
     }
 
-    packet->p_header->tt_len = tt_len;
-    packet->p_header->packet_type = packet_type;
-    packet->p_header->compression_mode = compression_mode;
-    packet->p_header->fragment_offset = fragment_offset;
-    packet->p_header->identification = identification;
-
-    buffer_consume(packet->buf, 5);
+    packet_set_header(packet, identification, tt_len, 
+                      fragment_offset, packet_type, 
+                      compression_mode);
 
     return 1;
 }
 
 int packet_send_wait(Packet* packet)
 {
-    packet_append_header(packet);
-    if(packet->p_header->compression_mode)
+    if(packet->p_header->compression_mode == 1)
     {
         Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
         buffer_init(outbuf);
@@ -281,7 +280,7 @@ void packet_append_header(Packet* packet)
 }
 
 void packet_set_header( Packet*packet, int identification,
-                        int tt_len, bool fragment_offset,
+                        int tt_len, int fragment_offset,
                         int packet_type, int compression_mode)
 {
     packet->p_header = (packet_header*) malloc(sizeof(packet_header));
