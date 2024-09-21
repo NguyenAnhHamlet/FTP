@@ -14,6 +14,8 @@ typedef struct
     int    packet_type;
     int    compression_mode;
 
+    Buffer* header_buf;             // header's data only
+
 } packet_header;
 
 typedef struct 
@@ -59,5 +61,9 @@ void packet_clear_data(Packet* packet);
 void packet_free(Packet* packet);
 int packet_get_tt_len(Packet* packet);
 int packet_get_data_len(Packet* packet);
+void packet_header_init(Packet* packet);
+int packet_header_len(Packet* packet);
+void packet_send_header(Packet* packet);
+void packet_convert_header(Packet* packet);
 
 #endif

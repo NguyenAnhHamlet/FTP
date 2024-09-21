@@ -127,8 +127,6 @@ int channel_send_public_key(control_channel* channel, char path[])
     packet_append_bignum(e, channel->data_out);
     packet_append_bignum(n, channel->data_out);
 
-    LOG(SERVER_LOG, "DATA: %s\n", channel->data_out->buf);
-
     packet_send_wait(channel->data_out);
 
     RSA_free(pub_key);
@@ -139,22 +137,13 @@ int channel_send_public_key(control_channel* channel, char path[])
 int channel_recv_public_key(control_channel* channel, RSA* pub_key)
 {
     BIGNUM *pub_key_e, *pub_key_n;
-
-    int packet_type = packet_get_int(channel->data_in);
-
-    if(packet_type != FTP_PUB_KEY_SEND)
-    {
-        channel->data_in->buf -= sizeof(packet_type);
-        BN_clear(pub_key_e);
-        BN_clear(pub_key_n);
-        return -1;
-    }
     
     if( packet_get_bignum(pub_key_e, channel->data_in) < 0 || 
         packet_get_bignum(pub_key_n, channel->data_in) < 0)
     {
         BN_clear(pub_key_e);
         BN_clear(pub_key_n);
+        LOG(SERVER_LOG, "Failed to receive rsa key\n");
         return -1;
     }
 

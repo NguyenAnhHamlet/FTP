@@ -16,12 +16,9 @@ void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type
                  unsigned int in_port )
 {
     packet->buf = (Buffer*) malloc(sizeof(Buffer));
-    packet->p_header = (packet_header*) malloc(sizeof(packet_header));
+
     buffer_init(packet->buf);
     packet_set_port(packet, in_port, out_port);
-    packet->p_header->compression_mode = 0;
-    packet->p_header->data_len = 0;
-    packet->p_header->tt_len = 0;
 }
 
 void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port)
@@ -109,6 +106,11 @@ int packet_read(Packet* packet)
         len += curr_len;
     }
 
+    LOG(SERVER_LOG, "Len data: %d\n", packet->p_header->data_len);
+    LOG(SERVER_LOG, "Len total: %d\n", packet->p_header->tt_len);
+    LOG(SERVER_LOG, "Len: %d\n", len);
+
+
     return 1;
 }
 
@@ -125,7 +127,7 @@ int packet_read_header(Packet* packet)
     unsigned int    packet_type;
     unsigned int    compression_mode;
 
-    char interger[4];
+    char interger[4] = "";
 
     for(int i=0; i < 6; i++)
     {
@@ -156,6 +158,13 @@ int packet_read_header(Packet* packet)
         }
     }
 
+    LOG(SERVER_LOG, "H: %d\n", tt_len);
+    LOG(SERVER_LOG, "K: %d\n", data_len);
+    LOG(SERVER_LOG, "L: %d\n", identification);
+    LOG(SERVER_LOG, "M: %d\n", fragment_offset);
+    LOG(SERVER_LOG, "N: %d\n", packet_type);
+    LOG(SERVER_LOG, "O: %d\n", compression_mode);
+
     packet_set_header(packet, identification, tt_len, 
                       fragment_offset, packet_type, 
                       compression_mode, data_len);
@@ -181,6 +190,9 @@ int packet_send_wait(Packet* packet)
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 1000000 ;
+
+    // send the header first
+    packet_send_header(packet);
 
     while(buffer_len(packet->buf) > 0)
     {
@@ -221,14 +233,12 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
     if(res == 0)
     {
         LOG(SERVER_LOG,"Time out receiving packet\n");
-        LOG(CLIENT_LOG,"Time out receiving packet\n");
         return 0;       
     }
 
     if(res < 0)
     {
         LOG(SERVER_LOG, "Error in select function\n");
-        LOG(CLIENT_LOG, "Error in select function\n");
         return -1;
     }
 
@@ -282,14 +292,12 @@ int packet_get_bignum(BIGNUM* bignum, Packet* packet)
 
 void packet_append_header(Packet* packet)
 {
-    buffer_put_int(packet->buf, packet->p_header->tt_len);
-    buffer_put_int(packet->buf, packet->p_header->data_len);
-    buffer_put_int(packet->buf, packet->p_header->identification);
-    buffer_put_int(packet->buf, packet->p_header->fragment_offset);
-    buffer_put_int(packet->buf, packet->p_header->packet_type);
-    buffer_put_int(packet->buf, packet->p_header->compression_mode);
-
-    packet->p_header->tt_len = packet_get_tt_len(packet);
+    packet_append_int(packet->p_header->tt_len, packet);
+    packet_append_int(packet->p_header->data_len, packet);
+    packet_append_int(packet->p_header->identification, packet);
+    packet_append_int(packet->p_header->fragment_offset, packet);
+    packet_append_int(packet->p_header->packet_type, packet);
+    packet_append_int(packet->p_header->compression_mode, packet);
 }
 
 void packet_set_header( Packet*packet, int identification,
@@ -322,7 +330,9 @@ int packet_get_tt_len(Packet* packet)
 {
     int len = 0;
     len += buffer_len(packet->buf);
-    len += sizeof(packet_header);
+    len += packet_header_len(packet);
+
+    LOG(SERVER_LOG, "TT LEN: %d\n", len);
 
     return len;
 }
@@ -330,4 +340,62 @@ int packet_get_tt_len(Packet* packet)
 int packet_get_data_len(Packet* packet)
 {   
     return buffer_len(packet->buf);
+}
+
+void packet_header_init(Packet* packet)
+{
+    packet->p_header = (packet_header*) malloc(sizeof(packet_header));
+    packet->p_header->compression_mode = 0;
+    packet->p_header->data_len = 0;
+    packet->p_header->tt_len = 0;
+    buffer_init(packet->p_header->header_buf);
+}
+
+int packet_header_len(Packet* packet)
+{
+    int len = 0;
+    len += buffer_len(packet->p_header->header_buf);
+    len += sizeof(int) * 6;
+
+    return len;
+}
+
+void packet_send_header(Packet* packet)
+{
+    int retval;
+    fd_set write_set;
+    struct timeval timeout;
+    int len;
+    char buf[BUF_LEN];
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 1000000 ;
+
+    retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
+
+    if(retval <= 0)
+    {
+        perror("Select failure\n");
+    }
+
+    packet_convert_header(packet);
+    buffer_get_data(packet->p_header->header_buf, buf, &len);
+    len = write(packet->out_port, buf, BUF_LEN); 
+
+    if(len <= 0)
+    {
+        if (errno == EAGAIN)
+            return;
+        else
+            fatal("Write failed: %.100s", strerror(errno));
+    }
+}
+
+void packet_convert_header(Packet* packet)
+{
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->tt_len);
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->data_len);    
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->identification);
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->packet_type);
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->compression_mode);
 }
