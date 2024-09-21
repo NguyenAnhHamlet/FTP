@@ -24,9 +24,7 @@ int remote_file_exist(control_channel* c_channel, endpoint_type type,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 
-                                   0, sizeof(Packet),
-                                   0, ASK_FILE_EXIST, 0);
+        control_channel_append_ftp_type(ASK_FILE_EXIST, c_channel);
         control_channel_send(c_channel);
         if(!control_channel_read_expect(c_channel, FILE_EXIST))
         {
@@ -88,9 +86,9 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 
-                                   0, sizeof(Packet),
-                                   0, CD, 0);
+        control_channel_append_header(c_channel, 
+                                      0, sizeof(Packet),
+                                      0, CD, 0, 0);
         control_channel_append_str(dir, c_channel, d_len);
 
         if(!control_channel_send(c_channel) || 
@@ -149,9 +147,9 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 
-                                   0, sizeof(Packet),
-                                   0, CHMOD, 0);
+        control_channel_append_header(c_channel, 
+                                      0, sizeof(Packet),
+                                      0, CHMOD, 0, 0);
         control_channel_append_str(chmod_cmd, c_channel, cmd_len);
 
 
@@ -235,9 +233,9 @@ int delete_remote_file(control_channel* c_channel, char* file_name,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 
-                                   0, sizeof(Packet),
-                                   0, DELETE, 0);
+        control_channel_append_header(c_channel, 
+                                      0, sizeof(Packet),
+                                      0, DELETE, 0, 0);
         control_channel_append_str(file_name, c_channel, n_len);
 
         if(!control_channel_send(c_channel) ||
@@ -295,8 +293,8 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet),
-                                   0, _DIR, 0);
+        control_channel_append_header(c_channel, 0, sizeof(Packet),
+                                      0, _DIR, 0, 0);
         control_channel_append_str(dir, c_channel, cmd_len);
 
         if(!control_channel_send(c_channel) ||
@@ -335,8 +333,7 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
             return 0;
         }
 
-        control_channel_set_header(c_channel, 0, sizeof(Packet),
-                                   0, _DIR, 0);
+        control_channel_append_ftp_type(_DIR, c_channel);
         control_channel_append_str(res, c_channel, r_len);
         
         if(!control_channel_send(c_channel) ||
@@ -375,8 +372,8 @@ int idle_set_remote(control_channel* c_channel, unsigned int* time_out,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 
-                                   0, IDLE, 0);
+        control_channel_append_header(c_channel, 0, sizeof(Packet), 
+                                      0, IDLE, 0, 0);
         control_channel_append_int( (int) *time_out, c_channel );
         if(!control_channel_send(c_channel) || 
            !control_channel_read_expect(c_channel, SUCCESS))
@@ -421,7 +418,8 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
     {
     case CLIENT :
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, MODTIME, 0);
+        control_channel_append_header( c_channel, 0, sizeof(Packet), 
+                                       0, MODTIME, 0, 0);
         control_channel_append_str(file_name, c_channel, *n_len);
         
         if(!control_channel_send(c_channel) ||
@@ -451,11 +449,12 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
         }
 
         control_channel_get_str(c_channel, file_name, n_len);
-
         stat(file_name, &attrib);
-        strftime(modetime, 50, "%Y-%m-%d %H:%M:%S", localtime(&attrib.st_mtime));
+        strftime(modetime, 50, "%Y-%m-%d %H:%M:%S", 
+                 localtime(&attrib.st_mtime));
 
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, MODTIME, 0);
+        control_channel_append_header( c_channel, 0, sizeof(Packet), 
+                                       0, MODTIME, 0, 0);
         control_channel_append_str(modetime, c_channel, strlen(modetime));
 
         if(!control_channel_send(c_channel))
@@ -506,7 +505,8 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
     {
     case CLIENT :
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, SIZE, 0);
+        control_channel_append_header(c_channel, 0, sizeof(Packet),
+                                      0, SIZE, 0, 0);
         control_channel_append_str(file_name, c_channel, n_len);
         
         if(!control_channel_send(c_channel) ||
@@ -536,10 +536,8 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
         }
 
         control_channel_get_str(c_channel, file_name, &n_len);
-
         stat(file_name, &attrib);
-
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, SIZE, 0);
+        control_channel_append_ftp_type(SIZE, c_channel);
         control_channel_append_int(attrib.st_size, c_channel);
 
         if(!control_channel_send(c_channel))
@@ -571,7 +569,7 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, RENAME, 0);
+        control_channel_append_ftp_type(RENAME, c_channel);
         control_channel_append_str(file_name, c_channel, n_len);
         control_channel_append_str(" ", c_channel, 1);
         control_channel_append_str(update_name, c_channel, u_len);
@@ -642,7 +640,8 @@ int remove_remote_dir(control_channel* c_channel, char* dir,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, RMDIR, 0);
+        control_channel_append_header(c_channel, 0, sizeof(Packet), 
+                                      0, RMDIR, 0, 0);
         control_channel_append_str(dir, c_channel, d_len);
 
         if(!control_channel_send(c_channel) || 

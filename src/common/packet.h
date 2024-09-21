@@ -8,7 +8,8 @@
 typedef struct 
 {
     int    identification;
-    int    tt_len;                  // tt len of the data only, does not include header nor other part
+    int    tt_len;                  // tt len of the packet 
+    int    data_len;                // tt len of data in buf
     int    fragment_offset;
     int    packet_type;
     int    compression_mode;
@@ -48,12 +49,15 @@ void packet_append_header(Packet* packet);
 
 void packet_set_header( Packet*packet, int identification,
                         int tt_len, int fragment_offset,
-                        int packet_type, int compression_mode);
+                        int packet_type, int compression_mode,
+                        int data_len);
 
 unsigned int packet_get_int(Packet* packet);
 int packet_get_str(Packet* packet, char* str, unsigned int* len);
 int packet_get_bignum(BIGNUM* bignum, Packet* packet);
 void packet_clear_data(Packet* packet);
 void packet_free(Packet* packet);
+int packet_get_tt_len(Packet* packet);
+int packet_get_data_len(Packet* packet);
 
 #endif

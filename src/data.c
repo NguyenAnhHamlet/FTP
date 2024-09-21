@@ -77,7 +77,8 @@ int get(control_channel* c_channel, data_channel* d_channel,
     {
     case CLIENT:
     {
-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, GET, 0);
+        control_channel_append_header(c_channel, 0, sizeof(Packet), 
+                                      0, GET, 0, 0);
         control_channel_append_str(file_name, c_channel, *n_len);
 
         if(!control_channel_send(c_channel) || 
@@ -189,8 +190,9 @@ int put(control_channel* c_channel, data_channel* d_channel,
 
     while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
     {
-        data_channel_set_header(d_channel, ident++, BUF_LEN, 
-                                byte == BUF_LEN, SEND, 1);
+        data_channel_append_header(d_channel, ident++, 0, 
+                                byte == BUF_LEN, SEND, 
+                                1, 0);
         data_channel_append_str(buf, d_channel, byte);
         data_channel_send(d_channel);
     }
@@ -242,8 +244,8 @@ int data_append(control_channel* c_channel, data_channel* d_channel,
 
         while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
         {
-            data_channel_set_header(d_channel, ident++, BUF_LEN, 
-                                    byte == BUF_LEN, APPEND, 1);
+            data_channel_append_header(d_channel, ident++, 0,
+                                       1, APPEND, 1, 0);
             data_channel_append_str(buf, d_channel, byte);
             data_channel_send(d_channel);
         }

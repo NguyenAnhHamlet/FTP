@@ -37,7 +37,8 @@ int public_key_authentication(control_channel* channel, int evolution)
         
         // encrypt the challenge
         load_private_rsa_key(private_key, private_RSAkey_file);
-        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), sig, &sig_length);
+        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), 
+                        sig, &sig_length);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(sig, channel );
@@ -177,7 +178,8 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     }
 
     // Sending the public key over to the endpoint
-    control_channel_set_header(channel, 0, sizeof(Packet), 0, FTP_PUB_KEX_SEND, 0);
+    control_channel_append_header(channel, 0, sizeof(Packet), 0, 
+                                  FTP_PUB_KEX_SEND, 0, 0);
     control_channel_append_bignum(DH_get0_pub_key(dh), channel);
     control_channel_send(channel);
     // Get the public key from endpoint

@@ -1,0 +1,590 @@
+diff --git a/README.md b/README.md
+index 8df5670..e69de29 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +0,0 @@
+-# Update to include exact len of data in packet  
+-# Added data_len beside tt_len
+-# Include tt_len and data_len field as compulsory fields before sending 
+\ No newline at end of file
+diff --git a/src/common/buffer.c b/src/common/buffer.c
+index 5b9d262..0e8b693 100644
+--- a/src/common/buffer.c
++++ b/src/common/buffer.c
+@@ -93,16 +93,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
+ 		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
+ 		      oi, bin_size);
+ 
+-	if (bits > 255) 
+-	{
+-    	PUT_16BIT(num_bit, IS16BIT);
+-		PUT_16BIT(msg, bits);
+-	} 
+-	else 
+-	{
+-    	PUT_8BIT(num_bit, IS8BIT);
+-		PUT_8BIT(msg, bits);
+-	}
++	PUT_16BIT(msg, bits);
+ 
+ 	buffer_append_str(buffer, num_bit, 1);
+ 	buffer_append_str(buffer, msg, strlen(msg));
+@@ -122,20 +113,8 @@ buffer_get_bignum(Buffer *buffer, BIGNUM *value)
+ 	unsigned char buf[2], *bin;
+ 
+ 	/* Get the number for bits. */
+-	buffer_get(buffer, (char *) buf, 1);
+-
+-	num_bit=GET_8BIT(buf);
+-
+-	if(num_bit == IS8BIT)
+-	{
+-		buffer_get(buffer, (char *) buf, 1);
+-		bits = GET_8BIT(buf);
+-	}
+-	else 
+-	{
+-		buffer_get(buffer, (char *) buf, 2);
+-		bits = GET_16BIT(buf);
+-	}
++	buffer_get(buffer, (char *) buf, 2);
++	bits = GET_16BIT(buf);
+ 
+ 	/* Compute the number of binary bytes that follow. */
+ 	bytes = (bits + 7) / 8;
+diff --git a/src/common/channel.c b/src/common/channel.c
+index fe58a0b..4881ddf 100644
+--- a/src/common/channel.c
++++ b/src/common/channel.c
+@@ -34,11 +34,12 @@ void control_channel_init_socket_ftp(control_channel* channel,
+ void control_channel_append_header(control_channel* channel,
+                                    int identification,
+                                    int tt_len, int fragment_offset,
+-                                   int packet_type, int compression_mode)
++                                   int packet_type, int compression_mode,
++                                   int data_len)
+ {
+     packet_set_header(channel->data_out, identification, 
+                       tt_len, fragment_offset, packet_type, 
+-                      compression_mode);
++                      compression_mode, data_len);
+     packet_append_header(channel->data_out);
+ }
+ 
+@@ -86,11 +87,12 @@ int control_channel_set_header(control_channel* channel,
+                             int  tt_len,
+                             int fragment_offset,
+                             int packet_type,
+-                            int compression_mode)
++                            int compression_mode,
++                            int data_len)
+ {
+     packet_set_header(channel->data_out, identification,
+                       tt_len, fragment_offset, packet_type,
+-                      compression_mode);
++                      compression_mode, data_len);
+ }
+ 
+ int control_channel_read(control_channel* channel)
+@@ -150,9 +152,8 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
+ 
+ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
+ {
+-    // Create a header with these fields
+-    control_channel_set_header(channel, -1, -1, -1, ftp_type, -1);
+-    control_channel_append_header(channel, -1, -1, -1, ftp_type, -1);
++    control_channel_append_header(channel, -1, 0, 
++                                  -1, ftp_type, -1, 0);
+ }
+ 
+ void data_channel_init( data_channel* channel,
+@@ -177,11 +178,12 @@ void data_channel_init( data_channel* channel,
+ void data_channel_append_header(data_channel* channel,
+                                 int identification,
+                                 int tt_len, int fragment_offset,
+-                                int packet_type, int compression_mode)
++                                int packet_type, int compression_mode,
++                                int data_len)
+ {
+     packet_set_header(channel->data_out, identification, 
+                       tt_len, fragment_offset, packet_type, 
+-                      compression_mode);
++                      compression_mode, data_len);
+     packet_append_header(channel->data_out);
+ }
+ 
+@@ -280,11 +282,12 @@ int data_channel_set_header(data_channel* channel,
+                             int  tt_len,
+                             int fragment_offset,
+                             int packet_type,
+-                            int compression_mode)
++                            int compression_mode,
++                            int data_len )
+ {
+     packet_set_header(channel->data_out, identification,
+                       tt_len, fragment_offset, packet_type,
+-                      compression_mode);
++                      compression_mode, data_len);
+ }
+ 
+ void data_channel_clean_datain_clear(data_channel* channel)
+diff --git a/src/common/channel.h b/src/common/channel.h
+index 737a559..1e2ca89 100644
+--- a/src/common/channel.h
++++ b/src/common/channel.h
+@@ -70,7 +70,8 @@ int  control_channel_set_header(control_channel* channel,
+                             int  tt_len,
+                             int fragment_offset,
+                             int packet_type,
+-                            int compression_mode);
++                            int compression_mode,
++                            int data_len);
+ 
+ int control_channel_read(control_channel* channel);
+ int control_channel_read_header(control_channel* channel);
+@@ -92,7 +93,8 @@ void control_channel_destroy(control_channel* c_channel);
+ void control_channel_append_header(control_channel* channel,
+                                    int identification,
+                                    int tt_len, int fragment_offset,
+-                                   int packet_type, int compression_mode);
++                                   int packet_type, int compression_mode,
++                                   int data_len);
+ 
+ // 
+ // data channel
+@@ -133,7 +135,8 @@ int data_channel_set_header(data_channel* channel,
+                             int  tt_len,
+                             int fragment_offset,
+                             int packet_type,
+-                            int compression_mode);
++                            int compression_mode,
++                            int data_len);
+ 
+ int data_channel_get_int(data_channel* channel);
+ int data_channel_get_str(data_channel* channel, char* str, 
+@@ -146,6 +149,7 @@ void data_channel_set_time_out(data_channel* channel,
+ void data_channel_append_header(data_channel* channel,
+                                 int identification,
+                                 int tt_len, int fragment_offset,
+-                                int packet_type, int compression_mode);
++                                int packet_type, int compression_mode,
++                                int data_len);
+ 
+ #endif
+\ No newline at end of file
+diff --git a/src/common/obj/buffer.o b/src/common/obj/buffer.o
+index 3bc906c..73c57fb 100644
+Binary files a/src/common/obj/buffer.o and b/src/common/obj/buffer.o differ
+diff --git a/src/common/obj/channel.o b/src/common/obj/channel.o
+index 98c48c7..0347d75 100644
+Binary files a/src/common/obj/channel.o and b/src/common/obj/channel.o differ
+diff --git a/src/common/packet.c b/src/common/packet.c
+index 21cb386..e650965 100644
+--- a/src/common/packet.c
++++ b/src/common/packet.c
+@@ -20,6 +20,8 @@ void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type
+     buffer_init(packet->buf);
+     packet_set_port(packet, in_port, out_port);
+     packet->p_header->compression_mode = 0;
++    packet->p_header->data_len = 0;
++    packet->p_header->tt_len = 0;
+ }
+ 
+ void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port)
+@@ -101,7 +103,7 @@ int packet_read(Packet* packet)
+     }
+     
+     while(  len < packet->p_header->tt_len && 
+-            curr_len = read(packet->in_port, buf, BUF_LEN ) > 0)
++            (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
+     {
+         buffer_append_str(packet->buf, buf, curr_len);
+         len += curr_len;
+@@ -117,6 +119,7 @@ int packet_read(Packet* packet)
+ int packet_read_header(Packet* packet)
+ {
+     unsigned int    tt_len;
++    unsigned int    data_len;
+     unsigned int    identification;
+     bool            fragment_offset;
+     unsigned int    packet_type;
+@@ -124,9 +127,9 @@ int packet_read_header(Packet* packet)
+ 
+     char interger[4];
+ 
+-    for(int i=0; i < 5; i++)
++    for(int i=0; i < 6; i++)
+     {
+-        if(read(packet->in_port, interger, 4, 0) < 0)
++        if(read(packet->in_port, interger, 4) < 0)
+             return 0;
+         
+         switch (i)
+@@ -134,16 +137,19 @@ int packet_read_header(Packet* packet)
+         case 0:
+             tt_len = GET_32BIT(interger);
+             break;
+-        case 1:
+-            identification = GET_32BIT(interger);
++        case 1 :
++            data_len = GET_32BIT(interger);
+             break;
+         case 2:
++            identification = GET_32BIT(interger);
++            break;
++        case 3:
+             fragment_offset = GET_32BIT(interger);
+             break;            
+-        case 3 :
++        case 4 :
+             packet_type = GET_32BIT(interger);
+             break;
+-        case 4 :
++        case 5 :
+             compression_mode = GET_32BIT(interger);
+         default:
+             break;
+@@ -152,7 +158,7 @@ int packet_read_header(Packet* packet)
+ 
+     packet_set_header(packet, identification, tt_len, 
+                       fragment_offset, packet_type, 
+-                      compression_mode);
++                      compression_mode, data_len);
+ 
+     return 1;
+ }
+@@ -235,20 +241,24 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
+ int packet_append_str(char* str, Packet* packet, unsigned int len)
+ {
+     buffer_append_str(packet->buf, str, len);
+-
++    packet->p_header->data_len = packet_get_data_len(packet);
++    packet->p_header->tt_len = packet_get_tt_len(packet); 
+     return 1;
+ }
+ 
+ int packet_append_bignum(BIGNUM* bignum, Packet* packet)
+ {
+     buffer_put_bignum(packet->buf, bignum);
+-
++    packet->p_header->data_len = packet_get_data_len(packet);
++    packet->p_header->tt_len = packet_get_tt_len(packet); 
+     return 1;
+ }
+ 
+ int packet_append_int(int num, Packet* packet)
+ {
+     buffer_put_int(packet->buf, num);
++    packet->p_header->data_len = packet_get_data_len(packet);
++    packet->p_header->tt_len = packet_get_tt_len(packet);  
+ 
+     return 1;
+ }
+@@ -273,20 +283,25 @@ int packet_get_bignum(BIGNUM* bignum, Packet* packet)
+ void packet_append_header(Packet* packet)
+ {
+     buffer_put_int(packet->buf, packet->p_header->tt_len);
++    buffer_put_int(packet->buf, packet->p_header->data_len);
+     buffer_put_int(packet->buf, packet->p_header->identification);
+     buffer_put_int(packet->buf, packet->p_header->fragment_offset);
+     buffer_put_int(packet->buf, packet->p_header->packet_type);
+     buffer_put_int(packet->buf, packet->p_header->compression_mode);
++
++    packet->p_header->tt_len = packet_get_tt_len(packet);
+ }
+ 
+ void packet_set_header( Packet*packet, int identification,
+                         int tt_len, int fragment_offset,
+-                        int packet_type, int compression_mode)
++                        int packet_type, int compression_mode,
++                        int data_len)
+ {
+     packet->p_header = (packet_header*) malloc(sizeof(packet_header));
+     packet->p_header->compression_mode = compression_mode;
+     packet->p_header->identification = identification;
+     packet->p_header->tt_len = tt_len;
++    packet->p_header->data_len = data_len;
+     packet->p_header->packet_type = packet_type;
+     packet->p_header->fragment_offset = fragment_offset;
+ }
+@@ -301,4 +316,18 @@ void packet_free(Packet* packet)
+     buffer_free(packet->buf);
+     free(packet->p_header);
+     free(packet);
++}
++
++int packet_get_tt_len(Packet* packet)
++{
++    int len = 0;
++    len += buffer_len(packet->buf);
++    len += sizeof(packet_header);
++
++    return len;
++}
++
++int packet_get_data_len(Packet* packet)
++{   
++    return buffer_len(packet->buf);
+ }
+\ No newline at end of file
+diff --git a/src/common/packet.h b/src/common/packet.h
+index e220999..70721f2 100644
+--- a/src/common/packet.h
++++ b/src/common/packet.h
+@@ -8,7 +8,8 @@
+ typedef struct 
+ {
+     int    identification;
+-    int    tt_len;                  // tt len of the data only, does not include header nor other part
++    int    tt_len;                  // tt len of the packet 
++    int    data_len;                // tt len of data in buf
+     int    fragment_offset;
+     int    packet_type;
+     int    compression_mode;
+@@ -48,12 +49,15 @@ void packet_append_header(Packet* packet);
+ 
+ void packet_set_header( Packet*packet, int identification,
+                         int tt_len, int fragment_offset,
+-                        int packet_type, int compression_mode);
++                        int packet_type, int compression_mode,
++                        int data_len);
+ 
+ unsigned int packet_get_int(Packet* packet);
+ int packet_get_str(Packet* packet, char* str, unsigned int* len);
+ int packet_get_bignum(BIGNUM* bignum, Packet* packet);
+ void packet_clear_data(Packet* packet);
+ void packet_free(Packet* packet);
++int packet_get_tt_len(Packet* packet);
++int packet_get_data_len(Packet* packet);
+ 
+ #endif
+\ No newline at end of file
+diff --git a/src/control.c b/src/control.c
+index 1782c7f..b5eaff8 100644
+--- a/src/control.c
++++ b/src/control.c
+@@ -24,9 +24,7 @@ int remote_file_exist(control_channel* c_channel, endpoint_type type,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 
+-                                   0, sizeof(Packet),
+-                                   0, ASK_FILE_EXIST, 0);
++        control_channel_append_ftp_type(ASK_FILE_EXIST, c_channel);
+         control_channel_send(c_channel);
+         if(!control_channel_read_expect(c_channel, FILE_EXIST))
+         {
+@@ -88,9 +86,9 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 
+-                                   0, sizeof(Packet),
+-                                   0, CD, 0);
++        control_channel_append_header(c_channel, 
++                                      0, sizeof(Packet),
++                                      0, CD, 0, 0);
+         control_channel_append_str(dir, c_channel, d_len);
+ 
+         if(!control_channel_send(c_channel) || 
+@@ -149,9 +147,9 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 
+-                                   0, sizeof(Packet),
+-                                   0, CHMOD, 0);
++        control_channel_append_header(c_channel, 
++                                      0, sizeof(Packet),
++                                      0, CHMOD, 0, 0);
+         control_channel_append_str(chmod_cmd, c_channel, cmd_len);
+ 
+ 
+@@ -235,9 +233,9 @@ int delete_remote_file(control_channel* c_channel, char* file_name,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 
+-                                   0, sizeof(Packet),
+-                                   0, DELETE, 0);
++        control_channel_append_header(c_channel, 
++                                      0, sizeof(Packet),
++                                      0, DELETE, 0, 0);
+         control_channel_append_str(file_name, c_channel, n_len);
+ 
+         if(!control_channel_send(c_channel) ||
+@@ -295,8 +293,8 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet),
+-                                   0, _DIR, 0);
++        control_channel_append_header(c_channel, 0, sizeof(Packet),
++                                      0, _DIR, 0, 0);
+         control_channel_append_str(dir, c_channel, cmd_len);
+ 
+         if(!control_channel_send(c_channel) ||
+@@ -335,8 +333,7 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
+             return 0;
+         }
+ 
+-        control_channel_set_header(c_channel, 0, sizeof(Packet),
+-                                   0, _DIR, 0);
++        control_channel_append_ftp_type(_DIR, c_channel);
+         control_channel_append_str(res, c_channel, r_len);
+         
+         if(!control_channel_send(c_channel) ||
+@@ -375,8 +372,8 @@ int idle_set_remote(control_channel* c_channel, unsigned int* time_out,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 
+-                                   0, IDLE, 0);
++        control_channel_append_header(c_channel, 0, sizeof(Packet), 
++                                      0, IDLE, 0, 0);
+         control_channel_append_int( (int) *time_out, c_channel );
+         if(!control_channel_send(c_channel) || 
+            !control_channel_read_expect(c_channel, SUCCESS))
+@@ -421,7 +418,8 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
+     {
+     case CLIENT :
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, MODTIME, 0);
++        control_channel_append_header( c_channel, 0, sizeof(Packet), 
++                                       0, MODTIME, 0, 0);
+         control_channel_append_str(file_name, c_channel, *n_len);
+         
+         if(!control_channel_send(c_channel) ||
+@@ -451,11 +449,12 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
+         }
+ 
+         control_channel_get_str(c_channel, file_name, n_len);
+-
+         stat(file_name, &attrib);
+-        strftime(modetime, 50, "%Y-%m-%d %H:%M:%S", localtime(&attrib.st_mtime));
++        strftime(modetime, 50, "%Y-%m-%d %H:%M:%S", 
++                 localtime(&attrib.st_mtime));
+ 
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, MODTIME, 0);
++        control_channel_append_header( c_channel, 0, sizeof(Packet), 
++                                       0, MODTIME, 0, 0);
+         control_channel_append_str(modetime, c_channel, strlen(modetime));
+ 
+         if(!control_channel_send(c_channel))
+@@ -506,7 +505,8 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
+     {
+     case CLIENT :
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, SIZE, 0);
++        control_channel_append_header(c_channel, 0, sizeof(Packet),
++                                      0, SIZE, 0, 0);
+         control_channel_append_str(file_name, c_channel, n_len);
+         
+         if(!control_channel_send(c_channel) ||
+@@ -536,10 +536,8 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
+         }
+ 
+         control_channel_get_str(c_channel, file_name, &n_len);
+-
+         stat(file_name, &attrib);
+-
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, SIZE, 0);
++        control_channel_append_ftp_type(SIZE, c_channel);
+         control_channel_append_int(attrib.st_size, c_channel);
+ 
+         if(!control_channel_send(c_channel))
+@@ -571,7 +569,7 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, RENAME, 0);
++        control_channel_append_ftp_type(RENAME, c_channel);
+         control_channel_append_str(file_name, c_channel, n_len);
+         control_channel_append_str(" ", c_channel, 1);
+         control_channel_append_str(update_name, c_channel, u_len);
+@@ -642,7 +640,8 @@ int remove_remote_dir(control_channel* c_channel, char* dir,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, RMDIR, 0);
++        control_channel_append_header(c_channel, 0, sizeof(Packet), 
++                                      0, RMDIR, 0, 0);
+         control_channel_append_str(dir, c_channel, d_len);
+ 
+         if(!control_channel_send(c_channel) || 
+diff --git a/src/data.c b/src/data.c
+index 87107f4..f99d124 100644
+--- a/src/data.c
++++ b/src/data.c
+@@ -77,7 +77,8 @@ int get(control_channel* c_channel, data_channel* d_channel,
+     {
+     case CLIENT:
+     {
+-        control_channel_set_header(c_channel, 0, sizeof(Packet), 0, GET, 0);
++        control_channel_append_header(c_channel, 0, sizeof(Packet), 
++                                      0, GET, 0, 0);
+         control_channel_append_str(file_name, c_channel, *n_len);
+ 
+         if(!control_channel_send(c_channel) || 
+@@ -189,8 +190,9 @@ int put(control_channel* c_channel, data_channel* d_channel,
+ 
+     while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
+     {
+-        data_channel_set_header(d_channel, ident++, BUF_LEN, 
+-                                byte == BUF_LEN, SEND, 1);
++        data_channel_append_header(d_channel, ident++, 0, 
++                                byte == BUF_LEN, SEND, 
++                                1, 0);
+         data_channel_append_str(buf, d_channel, byte);
+         data_channel_send(d_channel);
+     }
+@@ -242,8 +244,8 @@ int data_append(control_channel* c_channel, data_channel* d_channel,
+ 
+         while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
+         {
+-            data_channel_set_header(d_channel, ident++, BUF_LEN, 
+-                                    byte == BUF_LEN, APPEND, 1);
++            data_channel_append_header(d_channel, ident++, 0,
++                                       1, APPEND, 1, 0);
+             data_channel_append_str(buf, d_channel, byte);
+             data_channel_send(d_channel);
+         }
+diff --git a/src/obj/client.o b/src/obj/client.o
+index 0305462..df37b73 100644
+Binary files a/src/obj/client.o and b/src/obj/client.o differ
+diff --git a/src/obj/control.o b/src/obj/control.o
+index dbc7648..2862717 100644
+Binary files a/src/obj/control.o and b/src/obj/control.o differ
+diff --git a/src/obj/data.o b/src/obj/data.o
+index 49c0eb5..6740c7a 100644
+Binary files a/src/obj/data.o and b/src/obj/data.o differ
+diff --git a/src/obj/server.o b/src/obj/server.o
+index 63dde06..6365ab5 100644
+Binary files a/src/obj/server.o and b/src/obj/server.o differ
+diff --git a/src/secure/obj/secure.o b/src/secure/obj/secure.o
+index 88588dc..534c245 100644
+Binary files a/src/secure/obj/secure.o and b/src/secure/obj/secure.o differ
+diff --git a/src/secure/secure.c b/src/secure/secure.c
+index b39303b..d8bddc6 100644
+--- a/src/secure/secure.c
++++ b/src/secure/secure.c
+@@ -37,7 +37,8 @@ int public_key_authentication(control_channel* channel, int evolution)
+         
+         // encrypt the challenge
+         load_private_rsa_key(private_key, private_RSAkey_file);
+-        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), sig, &sig_length);
++        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), 
++                        sig, &sig_length);
+ 
+         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
+         control_channel_append_bignum(sig, channel );
+@@ -177,7 +178,8 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
+     }
+ 
+     // Sending the public key over to the endpoint
+-    control_channel_set_header(channel, 0, sizeof(Packet), 0, FTP_PUB_KEX_SEND, 0);
++    control_channel_append_header(channel, 0, sizeof(Packet), 0, 
++                                  FTP_PUB_KEX_SEND, 0, 0);
+     control_channel_append_bignum(DH_get0_pub_key(dh), channel);
+     control_channel_send(channel);
+     // Get the public key from endpoint

@@ -93,16 +93,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
 		      oi, bin_size);
 
-	if (bits > 255) 
-	{
-    	PUT_16BIT(num_bit, IS16BIT);
-		PUT_16BIT(msg, bits);
-	} 
-	else 
-	{
-    	PUT_8BIT(num_bit, IS8BIT);
-		PUT_8BIT(msg, bits);
-	}
+	PUT_16BIT(msg, bits);
 
 	buffer_append_str(buffer, num_bit, 1);
 	buffer_append_str(buffer, msg, strlen(msg));
@@ -122,20 +113,8 @@ buffer_get_bignum(Buffer *buffer, BIGNUM *value)
 	unsigned char buf[2], *bin;
 
 	/* Get the number for bits. */
-	buffer_get(buffer, (char *) buf, 1);
-
-	num_bit=GET_8BIT(buf);
-
-	if(num_bit == IS8BIT)
-	{
-		buffer_get(buffer, (char *) buf, 1);
-		bits = GET_8BIT(buf);
-	}
-	else 
-	{
-		buffer_get(buffer, (char *) buf, 2);
-		bits = GET_16BIT(buf);
-	}
+	buffer_get(buffer, (char *) buf, 2);
+	bits = GET_16BIT(buf);
 
 	/* Compute the number of binary bytes that follow. */
 	bytes = (bits + 7) / 8;

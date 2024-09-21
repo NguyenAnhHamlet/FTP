@@ -70,7 +70,8 @@ int  control_channel_set_header(control_channel* channel,
                             int  tt_len,
                             int fragment_offset,
                             int packet_type,
-                            int compression_mode);
+                            int compression_mode,
+                            int data_len);
 
 int control_channel_read(control_channel* channel);
 int control_channel_read_header(control_channel* channel);
@@ -92,7 +93,8 @@ void control_channel_destroy(control_channel* c_channel);
 void control_channel_append_header(control_channel* channel,
                                    int identification,
                                    int tt_len, int fragment_offset,
-                                   int packet_type, int compression_mode);
+                                   int packet_type, int compression_mode,
+                                   int data_len);
 
 // 
 // data channel
@@ -133,7 +135,8 @@ int data_channel_set_header(data_channel* channel,
                             int  tt_len,
                             int fragment_offset,
                             int packet_type,
-                            int compression_mode);
+                            int compression_mode,
+                            int data_len);
 
 int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, 
@@ -146,6 +149,7 @@ void data_channel_set_time_out(data_channel* channel,
 void data_channel_append_header(data_channel* channel,
                                 int identification,
                                 int tt_len, int fragment_offset,
-                                int packet_type, int compression_mode);
+                                int packet_type, int compression_mode,
+                                int data_len);
 
 #endif

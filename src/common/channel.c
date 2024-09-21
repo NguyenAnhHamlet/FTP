@@ -34,11 +34,12 @@ void control_channel_init_socket_ftp(control_channel* channel,
 void control_channel_append_header(control_channel* channel,
                                    int identification,
                                    int tt_len, int fragment_offset,
-                                   int packet_type, int compression_mode)
+                                   int packet_type, int compression_mode,
+                                   int data_len)
 {
     packet_set_header(channel->data_out, identification, 
                       tt_len, fragment_offset, packet_type, 
-                      compression_mode);
+                      compression_mode, data_len);
     packet_append_header(channel->data_out);
 }
 
@@ -86,11 +87,12 @@ int control_channel_set_header(control_channel* channel,
                             int  tt_len,
                             int fragment_offset,
                             int packet_type,
-                            int compression_mode)
+                            int compression_mode,
+                            int data_len)
 {
     packet_set_header(channel->data_out, identification,
                       tt_len, fragment_offset, packet_type,
-                      compression_mode);
+                      compression_mode, data_len);
 }
 
 int control_channel_read(control_channel* channel)
@@ -150,9 +152,8 @@ int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
 
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
 {
-    // Create a header with these fields
-    control_channel_set_header(channel, -1, -1, -1, ftp_type, -1);
-    control_channel_append_header(channel, -1, -1, -1, ftp_type, -1);
+    control_channel_append_header(channel, -1, 0, 
+                                  -1, ftp_type, -1, 0);
 }
 
 void data_channel_init( data_channel* channel,
@@ -177,11 +178,12 @@ void data_channel_init( data_channel* channel,
 void data_channel_append_header(data_channel* channel,
                                 int identification,
                                 int tt_len, int fragment_offset,
-                                int packet_type, int compression_mode)
+                                int packet_type, int compression_mode,
+                                int data_len)
 {
     packet_set_header(channel->data_out, identification, 
                       tt_len, fragment_offset, packet_type, 
-                      compression_mode);
+                      compression_mode, data_len);
     packet_append_header(channel->data_out);
 }
 
@@ -280,11 +282,12 @@ int data_channel_set_header(data_channel* channel,
                             int  tt_len,
                             int fragment_offset,
                             int packet_type,
-                            int compression_mode)
+                            int compression_mode,
+                            int data_len )
 {
     packet_set_header(channel->data_out, identification,
                       tt_len, fragment_offset, packet_type,
-                      compression_mode);
+                      compression_mode, data_len);
 }
 
 void data_channel_clean_datain_clear(data_channel* channel)
