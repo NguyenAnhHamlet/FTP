@@ -16,7 +16,7 @@ void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type
                  unsigned int in_port )
 {
     packet->buf = (Buffer*) malloc(sizeof(Buffer));
-
+    packet_header_init(packet);
     buffer_init(packet->buf);
     packet_set_port(packet, in_port, out_port);
 }
@@ -198,7 +198,7 @@ int packet_send_wait(Packet* packet)
     {
 		FD_ZERO(&write_set);
 		FD_SET(packet->out_port, &write_set);
-		retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
+		retval = select(packet->out_port + 1, NULL, &write_set, NULL, NULL);
 
         if(retval <= 0)
         {
@@ -218,7 +218,7 @@ int packet_wait(Packet* packet)
     FD_ZERO(&read_set);
 	FD_SET(packet->in_port, &read_set);
 
-    int res = select(packet->in_port + 1, &read_set, NULL, NULL, &packet->time_out);
+    int res = select(packet->in_port + 1, &read_set, NULL, NULL, NULL);
 
     return res;
 }
@@ -252,7 +252,7 @@ int packet_append_str(char* str, Packet* packet, unsigned int len)
 {
     buffer_append_str(packet->buf, str, len);
     packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet); 
+    // packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
@@ -260,7 +260,7 @@ int packet_append_bignum(BIGNUM* bignum, Packet* packet)
 {
     buffer_put_bignum(packet->buf, bignum);
     packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet); 
+    // packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
@@ -268,7 +268,7 @@ int packet_append_int(int num, Packet* packet)
 {
     buffer_put_int(packet->buf, num);
     packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet);  
+    // packet->p_header->tt_len = packet_get_tt_len(packet);  
 
     return 1;
 }
@@ -305,7 +305,6 @@ void packet_set_header( Packet*packet, int identification,
                         int packet_type, int compression_mode,
                         int data_len)
 {
-    packet->p_header = (packet_header*) malloc(sizeof(packet_header));
     packet->p_header->compression_mode = compression_mode;
     packet->p_header->identification = identification;
     packet->p_header->tt_len = tt_len;
@@ -348,6 +347,7 @@ void packet_header_init(Packet* packet)
     packet->p_header->compression_mode = 0;
     packet->p_header->data_len = 0;
     packet->p_header->tt_len = 0;
+    packet->p_header->header_buf =  (Buffer*) malloc(sizeof(Buffer));
     buffer_init(packet->p_header->header_buf);
 }
 
@@ -370,8 +370,10 @@ void packet_send_header(Packet* packet)
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 1000000 ;
+    FD_ZERO(&write_set);
+    FD_SET(packet->out_port, &write_set);
 
-    retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
+    retval = select(packet->out_port + 1, NULL, &write_set, NULL, NULL);
 
     if(retval <= 0)
     {
@@ -394,8 +396,16 @@ void packet_send_header(Packet* packet)
 void packet_convert_header(Packet* packet)
 {
     buffer_put_int(packet->p_header->header_buf, packet->p_header->tt_len);
-    buffer_put_int(packet->p_header->header_buf, packet->p_header->data_len);    
-    buffer_put_int(packet->p_header->header_buf, packet->p_header->identification);
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->data_len); 
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->identification);   
+    buffer_put_int(packet->p_header->header_buf, packet->p_header->fragment_offset);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->packet_type);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->compression_mode);
+
+    LOG(SERVER_LOG, "tt_len: %d\n", packet->p_header->tt_len);
+    LOG(SERVER_LOG, "data_len: %d\n", packet->p_header->data_len);
+    LOG(SERVER_LOG, "iden: %d\n", packet->p_header->identification);
+    LOG(SERVER_LOG, "frg: %d\n", packet->p_header->fragment_offset);
+    LOG(SERVER_LOG, "p_type: %d\n", packet->p_header->packet_type);
+    LOG(SERVER_LOG, "comp: %d\n", packet->p_header->compression_mode);
 }
