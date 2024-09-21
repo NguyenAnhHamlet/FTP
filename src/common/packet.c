@@ -99,7 +99,7 @@ int packet_read(Packet* packet)
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
     
-    while(  len < packet->p_header->tt_len && 
+    while(  len < packet->p_header->data_len && 
             (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
     {
         buffer_append_str(packet->buf, buf, curr_len);
