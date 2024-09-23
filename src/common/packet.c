@@ -58,7 +58,7 @@ void packet_send(Packet* packet)
     if(buffer_len(packet->buf) > 0)
     {
         buffer_get_data(packet->buf, buf, &len);
-        len = send(packet->out_port, buf, packet->p_header->data_len, 0); 
+        len = send(packet->out_port, buf, BUF_LEN, 0); 
 
         if(len <= 0)
         {
@@ -114,7 +114,7 @@ int packet_read(Packet* packet)
     }
 
     while(  len < packet->p_header->data_len && 
-            (curr_len = read(packet->in_port, buf, packet->p_header->data_len) ) > 0)
+            (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
     {
 
         buffer_append_str(packet->buf, buf, curr_len);
