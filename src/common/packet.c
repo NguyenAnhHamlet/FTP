@@ -58,7 +58,7 @@ void packet_send(Packet* packet)
     if(buffer_len(packet->buf) > 0)
     {
         buffer_get_data(packet->buf, buf, &len);
-        len = write(packet->out_port, buf, BUF_LEN); 
+        len = send(packet->out_port, buf, packet->p_header->data_len, 0); 
 
         if(len <= 0)
         {
@@ -99,17 +99,29 @@ int packet_read(Packet* packet)
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
     
-    while(  len < packet->p_header->data_len && 
-            (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
+    int res = packet_wait(packet);
+
+    if(res == 0)
     {
+        LOG(SERVER_LOG,"Time out receiving packet\n");
+        return 0;       
+    }
+
+    if(res < 0)
+    {
+        LOG(SERVER_LOG, "Error in select function\n");
+        return -1;
+    }
+
+    while(  len < packet->p_header->data_len && 
+            (curr_len = read(packet->in_port, buf, packet->p_header->data_len) ) > 0)
+    {
+
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
     }
 
-    LOG(SERVER_LOG, "Len data: %d\n", packet->p_header->data_len);
-    LOG(SERVER_LOG, "Len total: %d\n", packet->p_header->tt_len);
-    LOG(SERVER_LOG, "Len: %d\n", len);
-
+    for (int i=0 ; i< 135; i++) LOG(SERVER_LOG, "DATA: %s\n", buf + i);
 
     return 1;
 }
@@ -157,13 +169,6 @@ int packet_read_header(Packet* packet)
             break;
         }
     }
-
-    LOG(SERVER_LOG, "H: %d\n", tt_len);
-    LOG(SERVER_LOG, "K: %d\n", data_len);
-    LOG(SERVER_LOG, "L: %d\n", identification);
-    LOG(SERVER_LOG, "M: %d\n", fragment_offset);
-    LOG(SERVER_LOG, "N: %d\n", packet_type);
-    LOG(SERVER_LOG, "O: %d\n", compression_mode);
 
     packet_set_header(packet, identification, tt_len, 
                       fragment_offset, packet_type, 
@@ -252,7 +257,7 @@ int packet_append_str(char* str, Packet* packet, unsigned int len)
 {
     buffer_append_str(packet->buf, str, len);
     packet->p_header->data_len = packet_get_data_len(packet);
-    // packet->p_header->tt_len = packet_get_tt_len(packet); 
+    packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
@@ -260,7 +265,7 @@ int packet_append_bignum(BIGNUM* bignum, Packet* packet)
 {
     buffer_put_bignum(packet->buf, bignum);
     packet->p_header->data_len = packet_get_data_len(packet);
-    // packet->p_header->tt_len = packet_get_tt_len(packet); 
+    packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
@@ -268,7 +273,7 @@ int packet_append_int(int num, Packet* packet)
 {
     buffer_put_int(packet->buf, num);
     packet->p_header->data_len = packet_get_data_len(packet);
-    // packet->p_header->tt_len = packet_get_tt_len(packet);  
+    packet->p_header->tt_len = packet_get_tt_len(packet);  
 
     return 1;
 }
@@ -331,8 +336,6 @@ int packet_get_tt_len(Packet* packet)
     len += buffer_len(packet->buf);
     len += packet_header_len(packet);
 
-    LOG(SERVER_LOG, "TT LEN: %d\n", len);
-
     return len;
 }
 
@@ -382,7 +385,7 @@ void packet_send_header(Packet* packet)
 
     packet_convert_header(packet);
     buffer_get_data(packet->p_header->header_buf, buf, &len);
-    len = write(packet->out_port, buf, BUF_LEN); 
+    len = send(packet->out_port, buf, 6 * sizeof(int), 0); 
 
     if(len <= 0)
     {
@@ -401,11 +404,4 @@ void packet_convert_header(Packet* packet)
     buffer_put_int(packet->p_header->header_buf, packet->p_header->fragment_offset);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->packet_type);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->compression_mode);
-
-    LOG(SERVER_LOG, "tt_len: %d\n", packet->p_header->tt_len);
-    LOG(SERVER_LOG, "data_len: %d\n", packet->p_header->data_len);
-    LOG(SERVER_LOG, "iden: %d\n", packet->p_header->identification);
-    LOG(SERVER_LOG, "frg: %d\n", packet->p_header->fragment_offset);
-    LOG(SERVER_LOG, "p_type: %d\n", packet->p_header->packet_type);
-    LOG(SERVER_LOG, "comp: %d\n", packet->p_header->compression_mode);
 }

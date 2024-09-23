@@ -154,12 +154,13 @@ int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge,
 int load_rsa_auth_key(RSA **pub_key, char path[])
 {
     FILE *fp = fopen(public_RSAkey_file, "r");
+    RSA* t = RSA_new();
     if (!fp) 
     {
         fatal("Could not open pipe\n");
     }
 
-    *pub_key = PEM_read_RSAPublicKey(fp,NULL,NULL,NULL);
+    *pub_key = PEM_read_RSAPublicKey(fp, &t, NULL, NULL);
 
     if (!pub_key) 
     {
@@ -178,12 +179,13 @@ int load_rsa_auth_key(RSA **pub_key, char path[])
 int load_private_rsa_key(RSA **private_key, char path[])
 {
     FILE *fp = fopen(private_RSAkey_file, "r");
+    RSA* t = RSA_new();
     if (!fp) 
     {
         fatal("Could not open pipe\n");
     }
     
-    *private_key = PEM_read_RSAPrivateKey(fp,NULL,NULL,NULL);
+    *private_key = PEM_read_RSAPrivateKey(fp, &t, NULL, NULL);
 
     if (!private_key) 
     {

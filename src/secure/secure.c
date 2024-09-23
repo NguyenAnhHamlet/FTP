@@ -80,10 +80,16 @@ int public_key_authentication(control_channel* channel, int evolution)
             return 0;
         }
 
+        LOG(SERVER_LOG, "Received RSA public key\n");
+
         channel_recv_public_key(channel, pub_key);
+
+        LOG(SERVER_LOG, "R 2\n");
         
         control_channel_append_ftp_type(FTP_ACK, channel);
         control_channel_send(channel);
+
+        LOG(SERVER_LOG, "R 3\n");
 
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
@@ -138,6 +144,8 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
 {
     BIGNUM *pub_key_e, *pub_key_n;
     
+    LOG(SERVER_LOG, "HERE0 \n");
+
     if( packet_get_bignum(pub_key_e, channel->data_in) < 0 || 
         packet_get_bignum(pub_key_n, channel->data_in) < 0)
     {
@@ -147,10 +155,14 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
         return -1;
     }
 
+    LOG(SERVER_LOG, "HERE1 \n");
+
     RSA_set0_key(pub_key ,pub_key_n, pub_key_e, NULL);
     
     BN_clear(pub_key_e);
     BN_clear(pub_key_n);
+
+    LOG(SERVER_LOG, "HERE3 \n");
 
     return 1;
 }

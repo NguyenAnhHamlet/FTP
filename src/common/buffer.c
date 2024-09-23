@@ -2,6 +2,7 @@
 #include <string.h>
 #include "common/common.h"
 #include <openssl/bn.h>
+#include "log/ftplog.h"
 
 void buffer_init(Buffer * buffer)
 {
@@ -87,6 +88,8 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 	char msg[2];
 	char num_bit[1];
 
+	memset(buf, 0, bin_size);
+
 	// Get the value of in binary 
 	oi = BN_bn2bin(value, buf);
 	if (oi != bin_size)
@@ -95,8 +98,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 
 	PUT_16BIT(msg, bits);
 
-	buffer_append_str(buffer, num_bit, 1);
-	buffer_append_str(buffer, msg, strlen(msg));
+	buffer_append_str(buffer, msg, 2);
 
 	/* Store the binary data. */
 	buffer_append_str(buffer, buf, oi);
