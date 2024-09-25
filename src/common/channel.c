@@ -12,7 +12,7 @@ void control_channel_init(  control_channel* channel,
     channel->data_in = (Packet*) malloc(sizeof(Packet));
     channel->data_out = (Packet*) malloc(sizeof(Packet));
 
-    packet_init(channel->data_in, out_port, 0, in_port);
+    packet_init(channel->data_in, in_port, 0, in_port);
     packet_init(channel->data_out, out_port, 0, in_port);
 
     channel->data_in->in_port = in_port;

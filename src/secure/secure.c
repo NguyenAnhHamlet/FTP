@@ -36,7 +36,7 @@ int public_key_authentication(control_channel* channel, int evolution)
         }
         
         // encrypt the challenge
-        load_private_rsa_key(private_key, private_RSAkey_file);
+        load_private_rsa_key(&private_key, private_RSAkey_file);
         rsa_pub_encrypt(private_key, challenge, sizeof(challenge), 
                         sig, &sig_length);
 
@@ -70,7 +70,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 
     case 1 :
     {
-        RSA *pub_key;
+        RSA *pub_key = RSA_new();
         BIGNUM* challenge, *decrypt_challenge;
         size_t* decrypt_challenge_len;
 
@@ -124,7 +124,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 int channel_send_public_key(control_channel* channel, char path[])
 {
     RSA* pub_key = NULL;
-    BIGNUM *e, *n;
+    const BIGNUM *e, *n;
 
     load_rsa_auth_key(&pub_key, path);
     
@@ -143,8 +143,6 @@ int channel_send_public_key(control_channel* channel, char path[])
 int channel_recv_public_key(control_channel* channel, RSA* pub_key)
 {
     BIGNUM *pub_key_e, *pub_key_n;
-    
-    LOG(SERVER_LOG, "HERE0 \n");
 
     if( packet_get_bignum(pub_key_e, channel->data_in) < 0 || 
         packet_get_bignum(pub_key_n, channel->data_in) < 0)

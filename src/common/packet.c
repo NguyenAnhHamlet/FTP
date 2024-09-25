@@ -70,6 +70,8 @@ void packet_send(Packet* packet)
 
         buffer_consume(packet->buf, len);
     }
+
+    for (int i=0; i< 8; i++) LOG(SERVER_LOG, "DATA: %s\n", buf + i);
 }
 
 void set_packet_compress(Packet* packet)
@@ -89,6 +91,7 @@ int packet_read(Packet* packet)
     fd_set set;
     char buf[BUF_LEN];
 
+    memset(buf, '\0', BUF_LEN);
     packet_read_header(packet);
 
     if(packet->p_header->compression_mode)
@@ -121,7 +124,7 @@ int packet_read(Packet* packet)
         len += curr_len;
     }
 
-    for (int i=0 ; i< 135; i++) LOG(SERVER_LOG, "DATA: %s\n", buf + i);
+    LOG(SERVER_LOG, "DATA: %s\n", packet->buf->buf + 7);
 
     return 1;
 }
@@ -209,8 +212,6 @@ int packet_send_wait(Packet* packet)
         {
             perror("Select failure\n");
         }
-
-        LOG(SERVER_LOG, "RUNNING HERE\n");
 
         packet_send(packet);
     }
@@ -375,6 +376,8 @@ void packet_send_header(Packet* packet)
     timeout.tv_usec = 1000000 ;
     FD_ZERO(&write_set);
     FD_SET(packet->out_port, &write_set);
+
+    memset(buf, '\0', BUF_LEN);
 
     retval = select(packet->out_port + 1, NULL, &write_set, NULL, NULL);
 
