@@ -45,7 +45,7 @@ void packet_send(Packet* packet);
 int packet_send_wait(Packet* packet);
 
 int packet_append_str(char* str, Packet* packet, unsigned int len);
-int packet_append_bignum(BIGNUM* bignum, Packet* packet);
+int packet_append_bignum(BIGNUM** bignum, Packet* packet);
 int packet_append_int(int num, Packet* packet);
 void packet_append_header(Packet* packet);
 
@@ -56,7 +56,7 @@ void packet_set_header( Packet*packet, int identification,
 
 unsigned int packet_get_int(Packet* packet);
 int packet_get_str(Packet* packet, char* str, unsigned int* len);
-int packet_get_bignum(BIGNUM* bignum, Packet* packet);
+int packet_get_bignum(BIGNUM** bignum, Packet* packet);
 void packet_clear_data(Packet* packet);
 void packet_free(Packet* packet);
 int packet_get_tt_len(Packet* packet);

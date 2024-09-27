@@ -82,13 +82,13 @@ int control_channel_send_wait(control_channel* channel);
 
 int control_channel_append_str(char* str, control_channel* channel, 
                                unsigned int len);
-int control_channel_append_bignum(BIGNUM* bignum, control_channel* channel);
+int control_channel_append_bignum(BIGNUM** bignum, control_channel* channel);
 int control_channel_append_int(int num, control_channel* channel);
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel);
 
 int control_channel_get_int(control_channel* channel);
 int control_channel_get_str(control_channel* channel, char* str, unsigned int* len);
-int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel);
+int control_channel_get_bignum(BIGNUM** bignum, control_channel* channel);
 void control_channel_destroy(control_channel* c_channel);
 void control_channel_append_header(control_channel* channel,
                                    int identification,
@@ -127,7 +127,7 @@ int data_channel_send_wait(data_channel* channel);
 
 int data_channel_append_str(char* str, data_channel* channel, 
                             unsigned int len);
-int data_channel_append_bignum(BIGNUM* bignum, data_channel* channel);
+int data_channel_append_bignum(BIGNUM** bignum, data_channel* channel);
 int data_channel_append_int(int num, data_channel* channel);
 
 int data_channel_set_header(data_channel* channel,
@@ -141,7 +141,7 @@ int data_channel_set_header(data_channel* channel,
 int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, 
                          unsigned int* len);
-int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel);
+int data_channel_get_bignum(BIGNUM** bignum, data_channel* channel);
 void data_channel_clean_datain_clear(data_channel* channel);
 void data_channel_destroy(data_channel* d_channel);
 void data_channel_set_time_out(data_channel* channel, 

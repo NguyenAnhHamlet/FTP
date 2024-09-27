@@ -78,11 +78,11 @@ void buffer_get(Buffer * buffer, char *buf, unsigned int len)
 }
 
 void
-buffer_put_bignum(Buffer *buffer, BIGNUM *value)
+buffer_put_bignum(Buffer *buffer, BIGNUM **value)
 {
-	if(!value) return;
+	if(! *value) return;
 
-	int bits = BN_num_bits(value);
+	int bits = BN_num_bits(*value);
 	int bin_size = (bits + 7) / 8;
 	char *buf = (unsigned char*)malloc(bin_size);
 	int oi;
@@ -92,14 +92,22 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 	memset(buf, 0, bin_size);
 
 	// Get the value of in binary 
-	oi = BN_bn2bin(value, buf);
+	oi = BN_bn2bin(*value, buf);
 	if (oi != bin_size)
 		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
 		      oi, bin_size);
 
 	PUT_16BIT(msg, bits);
 
+	for(int i=0; i<3; i++) 
+		LOG(SERVER_LOG, "DATA CLIENT: %02x\n", buf[i]);
+
 	buffer_append_str(buffer, msg, 2);
+
+	if(!BN_bin2bn((const unsigned char*) buf, 3, *value))
+	{
+		perror("failed convert BIGNUM\n");
+	}
 
 	/* Store the binary data. */
 	buffer_append_str(buffer, buf, oi);
@@ -109,20 +117,15 @@ buffer_put_bignum(Buffer *buffer, BIGNUM *value)
 }
 
 int
-buffer_get_bignum(Buffer *buffer, BIGNUM *value)
+buffer_get_bignum(Buffer *buffer, BIGNUM **value)
 {
 	int num_bit;
 	int bits, bytes;
 	unsigned char buf[2];
 	unsigned char bin[BUF_LEN];
 
-	memset(buf, 0, bin_size);
-
-	// Get the value of in binary 
-	oi = BN_bn2bin(value, buf);
-	if (oi != bin_size)
-		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
-		      oi, bin_size);
+	if(! *value) 
+		*value = BN_new();
 
 	/* Get the number for bits. */
 	buffer_get(buffer, (char *) buf, 2);
@@ -136,15 +139,15 @@ buffer_get_bignum(Buffer *buffer, BIGNUM *value)
 	memset(bin, '\0', BUF_LEN);
 	buffer_get(buffer, bin, bytes);
 
-	if(!BN_bin2bn((const unsigned char*) buf, oi, value))
+	for(int i=0; i<3; i++) 
+		LOG(SERVER_LOG, "DATA: %02x\n", bin[i]);
+
+	if(!BN_bin2bn((const unsigned char*) buf, bytes, *value))
 	{
 		perror("failed convert BIGNUM\n");
 	}
 
 	LOG(SERVER_LOG, "NON_LOCK\n");
-
-	if(BN_num_bits(value) != bits)
-		return -1;
 
 	return 2 + bytes;
 }

@@ -262,7 +262,7 @@ int packet_append_str(char* str, Packet* packet, unsigned int len)
     return 1;
 }
 
-int packet_append_bignum(BIGNUM* bignum, Packet* packet)
+int packet_append_bignum(BIGNUM** bignum, Packet* packet)
 {
     buffer_put_bignum(packet->buf, bignum);
     packet->p_header->data_len = packet_get_data_len(packet);
@@ -291,7 +291,7 @@ int packet_get_str(Packet* packet, char* str, unsigned int* len)
     return 1;
 }
 
-int packet_get_bignum(BIGNUM* bignum, Packet* packet)
+int packet_get_bignum(BIGNUM** bignum, Packet* packet)
 {
     return buffer_get_bignum(packet->buf, bignum);
 }

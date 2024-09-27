@@ -124,7 +124,7 @@ int control_channel_append_str(char* str, control_channel* channel, unsigned int
     return packet_append_str(str, channel->data_out, len);
 }
 
-int control_channel_append_bignum(BIGNUM* bignum, control_channel* channel)
+int control_channel_append_bignum(BIGNUM** bignum, control_channel* channel)
 {
     return packet_append_bignum(bignum, channel->data_out);
 }
@@ -144,7 +144,7 @@ int control_channel_get_str(control_channel* channel, char* str, unsigned int* l
     return packet_get_str(channel->data_in, str, len);
 }
 
-int control_channel_get_bignum(BIGNUM* bignum, control_channel* channel)
+int control_channel_get_bignum(BIGNUM** bignum, control_channel* channel)
 {
     return packet_get_bignum(bignum, channel->data_in);
 }
@@ -249,7 +249,7 @@ int data_channel_append_str(char* str, data_channel* channel, unsigned int len)
     return packet_append_str(str, channel->data_out, len);
 }
 
-int data_channel_append_bignum(BIGNUM* bignum, data_channel* channel)
+int data_channel_append_bignum(BIGNUM** bignum, data_channel* channel)
 {
     return packet_append_bignum(bignum, channel->data_out);
 }
@@ -269,7 +269,7 @@ int data_channel_get_str(data_channel* channel, char* str, unsigned int* len)
     return packet_get_str(channel->data_in, str, len);
 }
 
-int data_channel_get_bignum(BIGNUM* bignum, data_channel* channel)
+int data_channel_get_bignum(BIGNUM** bignum, data_channel* channel)
 {
     return packet_get_bignum(bignum, channel->data_in);
 }

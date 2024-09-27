@@ -41,7 +41,7 @@ int public_key_authentication(control_channel* channel, int evolution)
                         sig, &sig_length);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
-        control_channel_append_bignum(sig, channel );
+        control_channel_append_bignum(&sig, channel );
 
         // send the challenge to endpoint
         control_channel_send_wait(channel);
@@ -54,7 +54,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN))
         {
-            control_channel_get_bignum(recv_challenge, channel);
+            control_channel_get_bignum(&recv_challenge, channel);
 
             if(!BN_cmp(recv_challenge, challenge))
                 fatal("%s", "Pub_key authentication failed\n");
@@ -97,12 +97,12 @@ int public_key_authentication(control_channel* channel, int evolution)
             return 0;
         }
 
-        control_channel_get_bignum(challenge, channel);
+        control_channel_get_bignum(&challenge, channel);
         rsa_pub_decrypt(pub_key, challenge, BN_num_bits(challenge),
                         decrypt_challenge, decrypt_challenge_len);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
-        control_channel_append_bignum(decrypt_challenge, channel);
+        control_channel_append_bignum(&decrypt_challenge, channel);
 
         control_channel_send(channel);
 
@@ -130,8 +130,8 @@ int channel_send_public_key(control_channel* channel, char path[])
     
     RSA_get0_key(pub_key, &n, &e, NULL );
 
-    packet_append_bignum(e, channel->data_out);
-    packet_append_bignum(n, channel->data_out);
+    packet_append_bignum(&e, channel->data_out);
+    packet_append_bignum(&n, channel->data_out);
 
     packet_send_wait(channel->data_out);
 
@@ -144,8 +144,11 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
 {
     BIGNUM *pub_key_e, *pub_key_n;
 
-    if( packet_get_bignum(pub_key_e, channel->data_in) < 0 || 
-        packet_get_bignum(pub_key_n, channel->data_in) < 0)
+    pub_key_e = BN_new();
+    pub_key_n = BN_new();
+
+    if( packet_get_bignum(&pub_key_e, channel->data_in) < 0 || 
+        packet_get_bignum(&pub_key_n, channel->data_in) < 0)
     {
         BN_clear(pub_key_e);
         BN_clear(pub_key_n);
@@ -179,7 +182,8 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     // Sending the public key over to the endpoint
     control_channel_append_header(channel, 0, sizeof(Packet), 0, 
                                   FTP_PUB_KEX_SEND, 0, 0);
-    control_channel_append_bignum(DH_get0_pub_key(dh), channel);
+    const BIGNUM* bn = DH_get0_pub_key(dh);
+    control_channel_append_bignum(&bn, channel);
     control_channel_send(channel);
     // Get the public key from endpoint
     if(!control_channel_read_expect(channel, FTP_PUB_KEX_SEND))
@@ -188,7 +192,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
         return 0;
     }
 
-    control_channel_get_bignum(pub, channel);
+    control_channel_get_bignum(&pub, channel);
 
     if(!generate_secret_key(dh, ctx->key, pub))
     {

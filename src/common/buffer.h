@@ -28,9 +28,9 @@ unsigned int buffer_len(Buffer * buffer);
 
 void buffer_get(Buffer * buffer, char *buf, unsigned int len);
 
-void buffer_put_bignum(Buffer * buffer, BIGNUM * value);
+void buffer_put_bignum(Buffer * buffer, BIGNUM **value);
 
-int buffer_get_bignum(Buffer * buffer, BIGNUM * value);
+int buffer_get_bignum(Buffer * buffer, BIGNUM **value);
 
 unsigned int buffer_get_int(Buffer * buffer);
 
