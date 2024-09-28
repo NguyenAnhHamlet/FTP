@@ -6,11 +6,11 @@
 
 void buffer_init(Buffer * buffer)
 {
-    buffer->alloc = 4096;
+    buffer->alloc = BUF_LEN;
 	buffer->offset = 0;
 	buffer->buf = (char*) malloc(buffer->alloc);
 	buffer->end = 0;
-	memset(buffer->buf, '\0', 4096);
+	memset(buffer->buf, '\0', BUF_LEN);
 }
 
 void buffer_free(Buffer * buffer)
@@ -46,8 +46,8 @@ restart:
     // Increase the size of buffer and 
     // retry the append operation
    
-    buffer->alloc += (len + BUF_SIZE);
-    char *new_point = realloc(buffer->buf, buffer->alloc);
+    buffer->alloc += len;
+    char *new_point = realloc(buffer->buf , buffer->alloc);
 
     if(!new_point) 
         fatal("xrealloc: out of memory (new_size %d bytes)", (int) buffer->alloc);
@@ -99,15 +99,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM **value)
 
 	PUT_16BIT(msg, bits);
 
-	for(int i=0; i<3; i++) 
-		LOG(SERVER_LOG, "DATA CLIENT: %02x\n", buf[i]);
-
 	buffer_append_str(buffer, msg, 2);
-
-	if(!BN_bin2bn((const unsigned char*) buf, 3, *value))
-	{
-		perror("failed convert BIGNUM\n");
-	}
 
 	/* Store the binary data. */
 	buffer_append_str(buffer, buf, oi);
@@ -139,15 +131,12 @@ buffer_get_bignum(Buffer *buffer, BIGNUM **value)
 	memset(bin, '\0', BUF_LEN);
 	buffer_get(buffer, bin, bytes);
 
-	for(int i=0; i<3; i++) 
-		LOG(SERVER_LOG, "DATA: %02x\n", bin[i]);
+	LOG(SERVER_LOG, "LEN OF BUF: %d\n", bits);
 
-	if(!BN_bin2bn((const unsigned char*) buf, bytes, *value))
+	if(!BN_bin2bn((const unsigned char*) bin, bytes, *value))
 	{
 		perror("failed convert BIGNUM\n");
 	}
-
-	LOG(SERVER_LOG, "NON_LOCK\n");
 
 	return 2 + bytes;
 }

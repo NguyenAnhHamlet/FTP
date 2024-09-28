@@ -70,8 +70,6 @@ void packet_send(Packet* packet)
 
         buffer_consume(packet->buf, len);
     }
-
-    for (int i=0; i< 8; i++) LOG(SERVER_LOG, "DATA: %s\n", buf + i);
 }
 
 void set_packet_compress(Packet* packet)
@@ -101,32 +99,23 @@ int packet_read(Packet* packet)
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
-    
-    int res = packet_wait(packet);
 
-    if(res == 0)
-    {
-        LOG(SERVER_LOG,"Time out receiving packet\n");
-        return 0;       
-    }
+    // In case this package only has header but no data, continue
+    if(packet->p_header->data_len <= 0)
+        return 1;
 
-    if(res < 0)
-    {
-        LOG(SERVER_LOG, "Error in select function\n");
-        return -1;
-    }
+    packet_wait(packet);
 
     while(  len < packet->p_header->data_len && 
             (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
     {
-
         buffer_append_str(packet->buf, buf, curr_len);
+        for (int i =0; i < 10 ; i++) LOG(SERVER_LOG, "DATA: %02x\n", buf[i]);
+        
         len += curr_len;
     }
 
-    LOG(SERVER_LOG, "DATA: %s\n", packet->buf->buf + 7);
-
-    return 1;
+    return len;
 }
 
 // Ought to read the header in this primitive manner

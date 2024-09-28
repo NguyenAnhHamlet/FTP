@@ -12,7 +12,7 @@
 #define public_RSAkey_file "/etc/pub/RSApub.key"
 #define private_RSAkey_file "/etc/priv/RSAprivate.key"
 
-#define KEY_SIZE 1024  
+#define KEY_SIZE 128  
 
 void generate_RSA_KEYPAIR(RSA *key_pair);
 
@@ -20,13 +20,9 @@ void save_RSApublic_key(RSA * rsa, char path[]);
 
 void save_RSAprivate_key(RSA * rsa, char path[]);
 
-int rsa_pub_encrypt( RSA * rsa, BIGNUM *challenge, 
-                    int challenge_len, BIGNUM *signature, 
-                    size_t *signature_len);
+int rsa_pub_encrypt(RSA * pub, BIGNUM** in, BIGNUM** out);
 
-int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge, 
-                    int challenge_len, BIGNUM *signature, 
-                    size_t* signature_len);
+int rsa_pub_decrypt(RSA * pub, BIGNUM** in, BIGNUM** out);
 
 int load_rsa_auth_key(RSA **pub_key, char path[]);
 

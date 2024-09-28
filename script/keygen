@@ -9,10 +9,12 @@ keygen=/usr/bin/ftpkeygen
 if [ -s "${pri_key}" ] || [ -s "${pub_key}" ]; then
     echo "Do you want to override the old RSA keys?"
     read answer
-    if [ "${answer}" == "no" ] || [ "${answer}" == "n" ]; then
+    if [[ "${answer}" == "no" || "${answer}" == "n" ]]; then
         echo "EXIT"
         exit 0;
     fi
+
+    rm -f ${pub_key}  
 fi
 
 if [ ! -e "${pub_key}" ]; then

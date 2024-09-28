@@ -19,11 +19,17 @@ int public_key_authentication(control_channel* channel, int evolution)
     case 0:
     {
         BIGNUM *challenge, *sig, *recv_challenge;
-        challenge = BN_new(); 
-        sig = BN_new();  
         RSA *private_key;
 
-        size_t sig_length;
+        challenge = BN_new(); 
+        sig = BN_new();  
+        recv_challenge = BN_new();
+
+        if (!BN_rand(challenge, KEY_SIZE - RSA_PKCS1_PADDING_SIZE , 0, 0)) 
+        {
+            LOG(SERVER_LOG, "Error generating random number\n");
+            return 0;
+        }
 
         // Send the RSA public key to endpoint
         control_channel_append_ftp_type(FTP_PUB_KEY_SEND, channel);
@@ -37,8 +43,9 @@ int public_key_authentication(control_channel* channel, int evolution)
         
         // encrypt the challenge
         load_private_rsa_key(&private_key, private_RSAkey_file);
-        rsa_pub_encrypt(private_key, challenge, sizeof(challenge), 
-                        sig, &sig_length);
+        rsa_pub_encrypt(private_key, &challenge, &sig);
+
+        int len = BN_num_bytes(sig);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&sig, channel );
@@ -72,7 +79,9 @@ int public_key_authentication(control_channel* channel, int evolution)
     {
         RSA *pub_key = RSA_new();
         BIGNUM* challenge, *decrypt_challenge;
-        size_t* decrypt_challenge_len;
+
+        challenge = BN_new();
+        decrypt_challenge = BN_new();
 
         if(control_channel_read_expect(channel, FTP_PUB_KEY_SEND) <= 0)
         {
@@ -91,15 +100,18 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         LOG(SERVER_LOG, "R 3\n");
 
+        buffer_init(channel->data_in->buf);
+
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
-            LOG(SERVER_LOG, "Failed receive challange\n");
+            LOG(SERVER_LOG, "Failed receive challenge\n");
             return 0;
         }
 
+        LOG(SERVER_LOG, "LEN: %d\n", channel->data_in->buf->offset);
         control_channel_get_bignum(&challenge, channel);
-        rsa_pub_decrypt(pub_key, challenge, BN_num_bits(challenge),
-                        decrypt_challenge, decrypt_challenge_len);
+        int len = BN_num_bytes(challenge);
+        rsa_pub_decrypt(pub_key, &challenge, &decrypt_challenge);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&decrypt_challenge, channel);
@@ -159,9 +171,6 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
     LOG(SERVER_LOG, "HERE1 \n");
 
     RSA_set0_key(pub_key ,pub_key_n, pub_key_e, NULL);
-    
-    BN_clear(pub_key_e);
-    BN_clear(pub_key_n);
 
     LOG(SERVER_LOG, "HERE3 \n");
 

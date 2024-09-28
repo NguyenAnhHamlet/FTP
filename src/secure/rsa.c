@@ -3,6 +3,9 @@
 #include "common/file.h"
 #include <string.h>
 #include <openssl/rsa.h>
+#include <node/openssl/rsa.h>
+#include <openssl/err.h>
+#include <log/ftplog.h>
 
 void generate_RSA_KEYPAIR(RSA *key_pair)
 {
@@ -57,98 +60,76 @@ void save_RSAprivate_key(RSA * rsa, char path[])
     fclose(fp);
 }
 
-int rsa_pub_encrypt(RSA * rsa, BIGNUM *challenge, 
-                    int challenge_len, BIGNUM *signature, 
-                    size_t *signature_len)
+int rsa_pub_encrypt(RSA * pub, BIGNUM** in, BIGNUM** out)
 {
-    EVP_PKEY_CTX *ctx;
     char *inbuf, *outbuf;
 	int len, ilen, olen;
-    EVP_PKEY *pkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pkey, rsa);
-    ctx = EVP_PKEY_CTX_new(pkey, NULL);
-    size_t sig_size = RSA_size(rsa);              
 
-	ilen = BN_num_bytes(signature);
-	inbuf = (char*)malloc(ilen);
+    const BIGNUM* n = RSA_get0_n(pub);
 
-    if (EVP_PKEY_encrypt(ctx, outbuf, (size_t*) &olen, inbuf, ilen) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
-        return -1;        
+    olen = BN_num_bytes(n);
+    outbuf = (char*) malloc(olen);
+
+    ilen = BN_num_bytes(*in);
+    inbuf = (char*) malloc(ilen);
+
+    memset(outbuf, 0, olen);
+	memset(inbuf, 0, ilen);
+
+    BN_bin2bn(inbuf, ilen, *in);
+
+    if ((len = RSA_public_encrypt(ilen, inbuf, outbuf, pub,
+				      RSA_PKCS1_PADDING)) <= 0)
+	{
+        unsigned long err = ERR_get_error();
+        char *error_str = ERR_error_string(err, NULL);
+        fatal("ENCRYPT : %s\n", error_str);
     }
 
-    outbuf = (char*)malloc(olen);
+    BN_bin2bn(outbuf, len, *out);
+    olen = BN_num_bytes(*out);
 
-	BN_bn2binpad(signature, inbuf, ilen);
-
-    if (EVP_PKEY_encrypt_init(ctx) != 1) 
-    {
-        ERR_print_errors_fp(stderr);
-        EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
-        return -1;
-    }
-
-    if (EVP_PKEY_encrypt(ctx, inbuf, (size_t*) &ilen, outbuf, olen) != 1) 
-    {
-        ERR_print_errors_fp(stderr);
-        EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
-        return -1;
-    }
-
-    BN_bin2bn(outbuf, len, signature);
-    *signature_len = olen;
-
-    return *signature_len;
+    memset(outbuf, 0, olen);
+	memset(inbuf, 0, ilen);
+	free(outbuf);
+	free(inbuf);
 }
 
-int rsa_pub_decrypt(RSA * rsa, BIGNUM *challenge, 
-                    int challenge_len, BIGNUM *signature, 
-                    size_t* signature_len)
+int rsa_pub_decrypt(RSA * priv, BIGNUM** in, BIGNUM** out)
 {
-    EVP_PKEY_CTX *ctx;
 	char *inbuf, *outbuf;
 	int len, ilen, olen;
-    EVP_PKEY *pkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pkey, rsa);
-    ctx = EVP_PKEY_CTX_new(pkey, NULL);
 
-    if (EVP_PKEY_encrypt(ctx, NULL, (size_t*) &olen, inbuf, ilen) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
-        return -1;        
+	const BIGNUM* n = RSA_get0_n(priv);
+
+    olen = BN_num_bytes(n);
+	outbuf = (char*) malloc(olen);
+
+	ilen = BN_num_bytes(*in);
+	inbuf = (char*) malloc(ilen);
+
+    memset(outbuf, 0, olen);
+	memset(inbuf, 0, ilen);
+
+    BN_bin2bn(inbuf, ilen, *in);
+
+    LOG(SERVER_LOG, "SIZE 2: %d\n", ilen);
+    LOG(SERVER_LOG, "SIZE 2: %d\n", olen);
+
+	if ((len = RSA_private_decrypt(ilen, inbuf, outbuf, priv,
+				       RSA_PKCS1_PADDING)) <= 0)
+	{
+        unsigned long err = ERR_get_error();
+        char *error_str = ERR_error_string(err, NULL);
+        fatal("DECRYPT : %s\n", error_str);
     }
 
-    outbuf = (char*)malloc(olen);
-
-	ilen = BN_num_bytes(signature);
-	inbuf = (char*)malloc(ilen);
-	BN_bn2binpad(signature, inbuf, ilen);
-
-    if (EVP_PKEY_decrypt_init(ctx) != 1) 
-    {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-    if (EVP_PKEY_decrypt(ctx, outbuf, (size_t*) &olen, inbuf, ilen) != 1) 
-    {
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-
-	BN_bin2bn(outbuf, len, challenge);
+	BN_bin2bn(outbuf, len, *out);
 
 	memset(outbuf, 0, olen);
 	memset(inbuf, 0, ilen);
 	free(outbuf);
-	free(inbuf);
+	free(inbuf);   
 }
 
 int load_rsa_auth_key(RSA **pub_key, char path[])
@@ -187,7 +168,7 @@ int load_private_rsa_key(RSA **private_key, char path[])
     
     *private_key = PEM_read_RSAPrivateKey(fp, &t, NULL, NULL);
 
-    if (!private_key) 
+    if (! *private_key) 
     {
         BIO *bio = BIO_new(BIO_s_file());
         BIO_set_fp(bio, stderr, BIO_NOCLOSE);
