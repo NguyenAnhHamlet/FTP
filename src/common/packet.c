@@ -11,6 +11,7 @@
 #include <stdio.h> 
 #include <fcntl.h>
 #include "log/ftplog.h"
+#include "algo/algo.h"
 
 void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type,
                  unsigned int in_port )
@@ -53,12 +54,15 @@ void packet_destroy(Packet* packet)
 void packet_send(Packet* packet)
 {
     int len;
+    int curr_l = BUF_LEN;
     char buf[BUF_LEN];
 
-    if(buffer_len(packet->buf) > 0)
+    if(( curr_l = buffer_len(packet->buf)) > 0)
     {
-        buffer_get_data(packet->buf, buf, &len);
-        len = send(packet->out_port, buf, BUF_LEN, 0); 
+        buffer_get(packet->buf, buf, min(BUF_LEN, curr_l));
+        len = send(packet->out_port, buf, min(BUF_LEN, curr_l), 0); 
+
+        LOG(SERVER_LOG, "len of buffer: %d\n",len );
 
         if(len <= 0)
         {
@@ -107,8 +111,9 @@ int packet_read(Packet* packet)
     packet_wait(packet);
 
     while(  len < packet->p_header->data_len && 
-            (curr_len = read(packet->in_port, buf, BUF_LEN) ) > 0)
+            (curr_len = read(packet->in_port, buf, min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
     {
+        LOG(SERVER_LOG, "len of buffer 2: %d\n", curr_len );
         buffer_append_str(packet->buf, buf, curr_len);
         for (int i =0; i < 10 ; i++) LOG(SERVER_LOG, "DATA: %02x\n", buf[i]);
         

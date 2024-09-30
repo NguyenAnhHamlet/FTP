@@ -21,6 +21,7 @@ void buffer_free(Buffer * buffer)
 
 void buffer_clear(Buffer * buffer)
 {
+	memset(buffer->buf, 0, buffer->alloc);
 	buffer->offset = 0;
 	buffer->end = 0;
 }
@@ -33,7 +34,6 @@ void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
 		buffer->end = 0;
 	}
 
-restart:
 	// enough space for data -> write in buffer
     if (buffer->end + len < buffer->alloc)
     {
@@ -46,14 +46,14 @@ restart:
     // Increase the size of buffer and 
     // retry the append operation
    
-    buffer->alloc += len;
+	buffer->alloc += len;
     char *new_point = realloc(buffer->buf , buffer->alloc);
 
     if(!new_point) 
         fatal("xrealloc: out of memory (new_size %d bytes)", (int) buffer->alloc);
-    
+
     buffer->buf  = new_point;
-    goto restart;
+	buffer_append_str(buffer, data, len);
     
 }
 

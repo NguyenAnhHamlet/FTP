@@ -46,6 +46,7 @@ int public_key_authentication(control_channel* channel, int evolution)
         rsa_pub_encrypt(private_key, &challenge, &sig);
 
         int len = BN_num_bytes(sig);
+        LOG(SERVER_LOG, "LEN OF NUMBER: %d\n", len);
 
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&sig, channel );
@@ -93,14 +94,12 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         channel_recv_public_key(channel, pub_key);
 
-        LOG(SERVER_LOG, "R 2\n");
+        LOG(SERVER_LOG, "offset : %d\n", channel->data_in->buf->offset);
+        LOG(SERVER_LOG, "offset : %d\n", channel->data_in->p_header->data_len);
         
         control_channel_append_ftp_type(FTP_ACK, channel);
         control_channel_send(channel);
-
-        LOG(SERVER_LOG, "R 3\n");
-
-        buffer_init(channel->data_in->buf);
+        buffer_init(channel->data_in->buf); 
 
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
@@ -168,11 +167,7 @@ int channel_recv_public_key(control_channel* channel, RSA* pub_key)
         return -1;
     }
 
-    LOG(SERVER_LOG, "HERE1 \n");
-
     RSA_set0_key(pub_key ,pub_key_n, pub_key_e, NULL);
-
-    LOG(SERVER_LOG, "HERE3 \n");
 
     return 1;
 }

@@ -30,6 +30,11 @@ int max(int a, int b)
     return a > b ? a : b;                               
 }
 
+int min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
 void upper_case_str(char* str, unsigned int str_len)
 {
     for(int i=0; i < str_len; ++i)
