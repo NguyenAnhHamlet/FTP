@@ -53,8 +53,6 @@ void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
         fatal("xrealloc: out of memory (new_size %d bytes)", (int) buffer->alloc);
 
     buffer->buf  = new_point;
-	buffer_append_str(buffer, data, len);
-    
 }
 
 void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)
@@ -66,7 +64,7 @@ void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)
 
 unsigned int buffer_len(Buffer * buffer)
 {
-    return buffer->end - buffer->offset;
+    return (buffer->end - buffer->offset);
 }
 
 void buffer_get(Buffer * buffer, char *buf, unsigned int len)
@@ -104,6 +102,8 @@ buffer_put_bignum(Buffer *buffer, BIGNUM **value)
 	/* Store the binary data. */
 	buffer_append_str(buffer, buf, oi);
 
+	LOG(SERVER_LOG, "NUM SIZE%d\n", oi);	
+
 	memset(buf, 0, bin_size);
 	free(buf);
 }
@@ -131,12 +131,12 @@ buffer_get_bignum(Buffer *buffer, BIGNUM **value)
 	memset(bin, '\0', BUF_LEN);
 	buffer_get(buffer, bin, bytes);
 
-	LOG(SERVER_LOG, "LEN OF BUF: %d\n", bits);
-
 	if(!BN_bin2bn((const unsigned char*) bin, bytes, *value))
 	{
 		perror("failed convert BIGNUM\n");
 	}
+
+	LOG(SERVER_LOG, "NUM SIZE 2: %d\n", bytes);	
 
 	return 2 + bytes;
 }
@@ -164,8 +164,5 @@ unsigned char* buffer_get_ptr(Buffer* buffer)
 
 void buffer_consume(Buffer* buffer, unsigned int len)
 {
-	if(len > (buffer->end - buffer->offset))
-		buffer->offset += (buffer->end - buffer->offset); 
-	else 
-		buffer->offset += len;
+	buffer->offset += len;
 }

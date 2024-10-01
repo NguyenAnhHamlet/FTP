@@ -71,8 +71,6 @@ void packet_send(Packet* packet)
             else
                 fatal("Write failed: %.100s", strerror(errno));
         }
-
-        buffer_consume(packet->buf, len);
     }
 }
 
@@ -113,10 +111,8 @@ int packet_read(Packet* packet)
     while(  len < packet->p_header->data_len && 
             (curr_len = read(packet->in_port, buf, min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
     {
-        LOG(SERVER_LOG, "len of buffer 2: %d\n", curr_len );
         buffer_append_str(packet->buf, buf, curr_len);
-        for (int i =0; i < 10 ; i++) LOG(SERVER_LOG, "DATA: %02x\n", buf[i]);
-        
+        LOG(SERVER_LOG, "len of buffer 2: %d %d %d\n", curr_len, packet->buf->offset, packet->buf->end );
         len += curr_len;
     }
 
@@ -198,9 +194,11 @@ int packet_send_wait(Packet* packet)
 
     while(buffer_len(packet->buf) > 0)
     {
+        LOG(SERVER_LOG, "LEN: %d %d %d\n", buffer_len(packet->buf), packet->buf->end, packet->buf->offset);
+
 		FD_ZERO(&write_set);
 		FD_SET(packet->out_port, &write_set);
-		retval = select(packet->out_port + 1, NULL, &write_set, NULL, NULL);
+		retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
 
         if(retval <= 0)
         {

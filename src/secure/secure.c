@@ -25,23 +25,11 @@ int public_key_authentication(control_channel* channel, int evolution)
         decrypt_challenge = BN_new();
         recv_challenge = BN_new();
 
-        if (!BN_rand(challenge, KEY_SIZE - RSA_PKCS1_PADDING_SIZE , 0, 0)) 
-        {
-            LOG(SERVER_LOG, "Error generating random number\n");
-            return 0;
-        }
-
         // Send the RSA public key to endpoint
         control_channel_append_ftp_type(FTP_PUB_KEY_SEND, channel);
         channel_send_public_key(channel, public_RSAkey_file);
 
-        if(control_channel_read_expect(channel, FTP_ACK) != 1)
-        {
-            LOG(SERVER_LOG, "Server fails to receive RSA pub_key");
-            return 0;
-        }
-        
-
+        // buffer_init(channel->data_in->buf);
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
             LOG(SERVER_LOG, "Failed receive challenge\n");
@@ -50,19 +38,17 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         control_channel_get_bignum(&recv_challenge, channel);
         load_private_rsa_key(&private_key, private_RSAkey_file);
-        rsa_pub_decrypt(private_key, &challenge, &decrypt_challenge);
+        rsa_pub_decrypt(private_key, &recv_challenge, &decrypt_challenge);
+        
+        control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
+        control_channel_append_bignum(&decrypt_challenge, channel);
+        control_channel_send_wait(channel);
 
-        if(!BN_cmp(recv_challenge, challenge))
+        if(control_channel_read_expect(channel, FTP_PASS_AUTHEN) <= 0)
         {
-            control_channel_append_ftp_type(FTP_FAIL_AUTHEN, channel);
-            control_channel_send_wait(channel);
-            LOG(SERVER_LOG, "%s", "Pub_key authentication failed\n");
-
+            LOG(SERVER_LOG, "Pub key authentication failed\n");
             return 0;
         }
-
-        control_channel_append_ftp_type(FTP_PASS_AUTHEN, channel);
-        control_channel_send_wait(channel);
 
         BN_clear(challenge);
         BN_clear(recv_challenge);
@@ -75,10 +61,18 @@ int public_key_authentication(control_channel* channel, int evolution)
     case 1 :
     {
         RSA *pub_key = RSA_new();
-        BIGNUM* challenge, *decrypt_challenge, *sig;
+        BIGNUM* challenge, *decrypt_challenge, *sig, *recv_challenge;
 
         challenge = BN_new();
         decrypt_challenge = BN_new();
+        recv_challenge = BN_new();
+        sig = BN_new();
+
+        if (!BN_rand(challenge, KEY_SIZE - RSA_PKCS1_PADDING_SIZE , 0, 0)) 
+        {
+            LOG(SERVER_LOG, "Error generating random number\n");
+            return 0;
+        }
 
         if(control_channel_read_expect(channel, FTP_PUB_KEY_SEND) <= 0)
         {
@@ -89,23 +83,35 @@ int public_key_authentication(control_channel* channel, int evolution)
         LOG(SERVER_LOG, "Received RSA public key\n");
 
         channel_recv_public_key(channel, pub_key);
-        
-        control_channel_append_ftp_type(FTP_ACK, channel);
-        control_channel_send(channel);
 
         // encrypt data
         rsa_pub_encrypt(pub_key, &challenge, &sig);
 
+        // buffer_init(channel->data_in->buf);
         // send the challenge to endpoint
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&sig, channel );
         control_channel_send_wait(channel);
 
-        if(control_channel_read_expect(channel, FTP_PASS_AUTHEN) <= 0)
+        if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
             LOG(SERVER_LOG, "Pub key authentication failed\n");
             return 0;
         }
+
+        control_channel_get_bignum(&recv_challenge, channel);
+
+        if(!BN_cmp(recv_challenge, challenge))
+        {
+            control_channel_append_ftp_type(FTP_FAIL_AUTHEN, channel);
+            control_channel_send_wait(channel);
+            LOG(SERVER_LOG, "%s", "Pub_key authentication failed\n");
+
+            return 0;
+        }
+
+        control_channel_append_ftp_type(FTP_PASS_AUTHEN, channel);
+        control_channel_send_wait(channel);
 
         BN_clear(challenge);
         BN_clear(decrypt_challenge);
