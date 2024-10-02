@@ -21,6 +21,16 @@ void control_channel_init(  control_channel* channel,
     channel->data_out->in_port = 0;
 }
 
+int control_channel_get_data_len_out(control_channel* c_channel)
+{
+    return packet_get_data_len(c_channel->data_out);
+}
+
+int control_channel_get_data_len_in(control_channel* c_channel)
+{
+    return packet_get_data_len(c_channel->data_in); 
+}
+
 void control_channel_init_socket_ftp(control_channel* channel,
                                     socket_ftp* out_socket, 
                                     socket_ftp* in_socket,
@@ -306,4 +316,14 @@ void data_channel_set_time_out(data_channel* channel,
 {
     packet_set_timeout(channel->data_in, tmout);
     packet_set_timeout(channel->data_out, tmout);
+}
+
+int data_channel_get_data_len_out(data_channel* d_channel)
+{
+    return packet_get_data_len(d_channel->data_out);
+}
+
+int data_channel_get_data_len_in(data_channel* d_channel)
+{
+    return packet_get_data_len(d_channel->data_in); 
 }

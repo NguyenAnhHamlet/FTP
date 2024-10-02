@@ -64,17 +64,28 @@ int server_data_append(control_channel* c_channel, data_channel* d_channel,
                        n_len, remote_file_name, rn_len);
 }
 
-int pass_authen_server(int sockfd)
+int pass_authen_server(control_channel* c_channel)
 {
-    Packet* name_packet;
-    Packet* pass_packet;
     struct passwd* pw;
-    char* user_name;
-    char* user_pass;
+    char data[BUF_LEN];
+    char user_name[BUF_LEN];
+    char user_pass[BUF_LEN];
     int len;
 
-    packet_read_expect(name_packet, FTP_PASS_AUTHEN);
-    packet_get_str(name_packet, user_name, &len);
+    if(control_channel_read_expect(c_channel, FTP_PASS_AUTHEN) <= 0)
+    {
+        LOG(SERVER_LOG, "Failed receive infos name & pass\n");
+        return 0;
+    }
+
+    len = control_channel_get_data_len_in(c_channel);
+
+    control_channel_get_str(c_channel, data, &len);
+
+    unsigned int index = find_index(data, len, '\n');
+    LOG(SERVER_LOG, "LEN TOKEN: %d\n", index  );
+    strncpy(user_name, data, index );
+    strcpy(user_pass, data + index + 1);
 
     pw = getpwnam(user_name);
 
@@ -85,11 +96,7 @@ int pass_authen_server(int sockfd)
     }
 
     start_pam(pw); 
-    packet_read_expect(pass_packet, FTP_PASS_AUTHEN);
-    packet_get_str(pass_packet, user_pass, &len);
-
     return auth_pam_password(pw, user_pass);
-  
 }
 
 int server_data_put(control_channel* c_channel, data_channel* d_channel,
@@ -271,7 +278,7 @@ int main()
         exit(1);
     }
 
-    if(!pass_authen_server(clientfd))
+    if(!pass_authen_server(&c_channel))
         exit(1);
 
         // Trying to create a shared secret key

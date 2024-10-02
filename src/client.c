@@ -21,8 +21,8 @@
 #define IPADDR_SIZE  32
 #define OPTION_SIZE  8
 
-char* name;
-char* pass;
+char name[BUF_LEN];
+char pass[BUF_LEN];
 bool ftp_running;
 control_channel c_channel;
 data_channel d_channel;
@@ -216,14 +216,12 @@ void callBackTimer(timer* timer)
     fatal("Time out\n");
 }
 
-int password_authen_client(socket_ftp* c_socket)
+int password_authen_client(control_channel* c_channel)
 {
-    if(!c_socket) return -1;
+    if(!c_channel) return -1;
 
-    Packet* packet_name;
-    Packet* packet_pass;
-    Packet* receive;
-    Packet* packet;
+    memset(name, '\0', BUF_LEN);
+    memset(pass, '\0', BUF_LEN);
 
     // prompt for name
     printf("Name: ");
@@ -233,17 +231,19 @@ int password_authen_client(socket_ftp* c_socket)
     // prompt for pass 
     printf("Pass: ");
     if(!fgets(pass, BUF_SIZE, stdin))
-      fatal("Error reading name\n");
+      fatal("Error reading pass\n");
 
-    packet_init(packet, c_socket->sockfd, FTP_PASS_AUTHEN, c_socket->sockfd);
 
-    packet_append_str(name, packet_name, BUF_LEN);
-    packet_append_str(pass, packet_pass, BUF_LEN);
+    control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
+    LOG(SERVER_LOG, "LEN 1: %d\n",strlen(name));
+    LOG(SERVER_LOG, "LEN 2: %d\n",strlen(pass));
 
-    packet_send_wait(packet_name);
-    packet_send_wait(packet_pass);
+    control_channel_append_str(name, c_channel, strlen(name));
+    control_channel_append_str(pass, c_channel, strlen(pass));
 
-    if(packet_read_expect(receive, FTP_ACK) < 1)
+    control_channel_send_wait(c_channel);
+
+    if(control_channel_read_expect(c_channel, FTP_ACK) < 1)
     {
       printf("Pass authenticate failed\n");
       return 0; 
@@ -289,7 +289,8 @@ int main(int argc, char* argvs[])
         fatal("Public key authentication failed\n");
 
     // perform password authentication
-    password_authen_client(c_socket);
+    password_authen_client(&c_channel);
+    LOG(SERVER_LOG, "PASS\n");
 
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, &ctx))

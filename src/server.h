@@ -4,7 +4,7 @@
 #include "common/cmd.h"
 #include "common/channel.h"
 
-int pass_authen_server(int sockfd);
+int pass_authen_server(control_channel* c_channel);
 
 int server_data_conn(control_channel* c_channel, data_channel* d_channel,
                     socket_ftp* c_socket, socket_ftp* d_socket, 

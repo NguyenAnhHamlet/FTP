@@ -9,7 +9,7 @@
 
 int handle_option(socket_ftp* s_ftp, unsigned int op);
 
-int password_authen_client(socket_ftp* c_socket);
+int password_authen_client(control_channel* c_channel);
 
 void ipv4_op_set(socket_ftp* s_ftp);
 

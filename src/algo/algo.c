@@ -64,3 +64,14 @@ bool is_older(struct tm* datetime_1, struct tm* datetime_2)
 
     return time_1 > time_2;
 }
+
+unsigned int find_index(char* str, unsigned int str_len, char c)
+{
+    for(int i=0; i< str_len; i++)
+    {
+        if(str[i] == c) 
+            return i;
+    }
+
+    return 0;
+}

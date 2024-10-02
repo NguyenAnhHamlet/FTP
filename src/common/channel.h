@@ -95,6 +95,8 @@ void control_channel_append_header(control_channel* channel,
                                    int tt_len, int fragment_offset,
                                    int packet_type, int compression_mode,
                                    int data_len);
+int control_channel_get_data_len_out(control_channel* c_channel);
+int control_channel_get_data_len_in(control_channel* c_channel);
 
 // 
 // data channel
@@ -151,5 +153,7 @@ void data_channel_append_header(data_channel* channel,
                                 int tt_len, int fragment_offset,
                                 int packet_type, int compression_mode,
                                 int data_len);
+int data_channel_get_data_len_out(data_channel* d_channel);
+int data_channel_get_data_len_in(data_channel* d_channel);
 
 #endif
