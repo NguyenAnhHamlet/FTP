@@ -172,6 +172,10 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
 {
     DH* dh = dh_creation();
     BIGNUM* pub;
+    BIGNUM* bn;
+
+    pub = BN_new();
+    bn = BN_new();
 
     if(!generate_pub_keys(dh))
     {
@@ -182,7 +186,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     // Sending the public key over to the endpoint
     control_channel_append_header(channel, 0, sizeof(Packet), 0, 
                                   FTP_PUB_KEX_SEND, 0, 0);
-    const BIGNUM* bn = DH_get0_pub_key(dh);
+    bn = DH_get0_pub_key(dh);
     control_channel_append_bignum(&bn, channel);
     control_channel_send(channel);
     // Get the public key from endpoint

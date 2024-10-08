@@ -89,14 +89,28 @@ int pass_authen_server(control_channel* c_channel)
 
     pw = getpwnam(user_name);
 
+    LOG(SERVER_LOG, "PASS: %s \n", user_pass);
+
     if (!pw )
     {
       LOG(SERVER_LOG, "Athentication failed for user %s", pw->pw_name);
       return 0;
     }
 
-    start_pam(pw); 
-    return auth_pam_password(pw, user_pass);
+    start_pam(pw);
+
+    LOG(SERVER_LOG, "RUNNNING HERE 2 \n");
+
+    if( auth_pam_password(pw, user_pass))
+    {
+        control_channel_append_ftp_type(FTP_ACK, c_channel);
+    }
+    else 
+    {
+        control_channel_append_ftp_type(FTP_UNACK, c_channel);
+    }
+
+    control_channel_send_wait(c_channel);
 }
 
 int server_data_put(control_channel* c_channel, data_channel* d_channel,

@@ -30,9 +30,10 @@ static int pamconv(int num_msg, const struct pam_message **msg,
 	char *p;
 
 	/* PAM will free this later */
-	reply = malloc(num_msg * sizeof(*reply));
+	reply = malloc(num_msg * sizeof(*reply));	
 	if (reply == NULL)
 		return PAM_CONV_ERR; 
+
 
 	for(count = 0; count < num_msg; count++) {
 		switch (msg[count]->msg_style) {
@@ -43,17 +44,6 @@ static int pamconv(int num_msg, const struct pam_message **msg,
 				}
 				reply[count].resp_retcode = PAM_SUCCESS;
 				reply[count].resp = pampasswd;
-				break;
-
-			case PAM_TEXT_INFO:
-				reply[count].resp_retcode = PAM_SUCCESS;
-				reply[count].resp = "";
-
-                // TODO
-                // Allocate memory for pamconv_msg 
-                // Add message into pamconv_msg 
-                // seperate by \n\0
-
 				break;
 
 			case PAM_PROMPT_ECHO_ON:
@@ -79,7 +69,8 @@ int auth_pam_password(struct passwd *pw, char *password)
 	
     pampasswd = password;
 
-    pam_retval = pam_authenticate((pam_handle_t *)pamh, 0);
+	LOG(SERVER_LOG, "RUNNNING HERE 3 %s\n", pampasswd);
+    pam_retval = ((pam_handle_t *)pamh, 0);
 
     if (pam_retval == PAM_SUCCESS) 
     {
@@ -100,9 +91,9 @@ void start_pam(struct passwd *pw)
 
 	LOG(SERVER_LOG, "Starting up PAM with username \"%.200s\"", pw->pw_name);
 
-	pam_retval = pam_start("ftp", pw->pw_name, &conv, (pam_handle_t**)&pamh);
+	pam_retval = pam_start("sftp", pw->pw_name, &conv, (pam_handle_t**)&pamh);
 	if (pam_retval != PAM_SUCCESS)
-		fatal("PAM initialisation failed: %.200s", pam_strerror((pam_handle_t *)pamh, pam_retval));
+		LOG(SERVER_LOG, "PAM initialisation failed: %.200s", pam_strerror((pam_handle_t *)pamh, pam_retval));
 
 	pam_cleanup_proc(NULL);
 }
