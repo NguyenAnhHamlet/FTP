@@ -87,14 +87,19 @@ int generate_pub_keys(DH *dh)
     return 1;
 }
 
-int generate_secret_key(DH* dh, BIGNUM* shared_key, BIGNUM* pub_value)
+int generate_secret_key(DH* dh, BIGNUM** shared_key, BIGNUM** pub_value)
 {
+    int key_len;
     unsigned char* key;
 
-    if(!DH_compute_key(key, pub_value, dh))
+    key_len = DH_size(dh);
+
+    key = (unsigned char*) malloc(key_len);
+
+    if(!DH_compute_key(key, *pub_value, dh))
         return 0;
     
-    if(!BN_bin2bn(key, sizeof(key), shared_key))
+    if(!BN_bin2bn(key, key_len, *shared_key))
         return 0;
     
     return 1;

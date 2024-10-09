@@ -310,7 +310,7 @@ int main(int argc, char* argvs[])
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
         take_cmd(buffer, request_str, arg);
-        request_int = get_cmd(request_str);
+        request_int = ge    t_cmd(request_str);
         int operation_sucess = 1;
         
         switch (request_int)

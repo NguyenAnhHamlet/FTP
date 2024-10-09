@@ -6,11 +6,18 @@
 
 int aes_cipher_init(cipher_context* cipher_ctx)
 {
-    if(!cipher_ctx->evp && !cipher_ctx->evptype )
+    if(!cipher_ctx)
+    {
+        cipher_ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
+    }
+
+    if(!cipher_ctx->evp || !cipher_ctx->evptype )
     {
         cipher_ctx->evp = EVP_CIPHER_CTX_new();
         cipher_ctx->evptype = EVP_aes_128_cbc();
     }
+
+    cipher_ctx->key = BN_new();
 
     return 1;
 }

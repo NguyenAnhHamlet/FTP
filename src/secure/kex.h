@@ -30,6 +30,6 @@ int generate_pub_keys(DH *dh);
 // It should be noticed that both party receive the public shared 
 // value sended by the other party that they try to form a shared 
 // secret key
-int generate_secret_key(DH* dh, BIGNUM* shared_key, BIGNUM* pub_value);
+int generate_secret_key(DH* dh, BIGNUM** shared_key, BIGNUM** pub_value);
 
 #endif

@@ -198,7 +198,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
 
     control_channel_get_bignum(&pub, channel);
 
-    if(!generate_secret_key(dh, ctx->key, pub))
+    if(!generate_secret_key(dh, &ctx->key, &pub))
     {
         LOG(CLIENT_LOG, "Failed to compute shared secret key\n");
         return 0;

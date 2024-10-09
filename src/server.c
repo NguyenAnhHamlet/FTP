@@ -99,8 +99,6 @@ int pass_authen_server(control_channel* c_channel)
 
     start_pam(pw);
 
-    LOG(SERVER_LOG, "RUNNNING HERE 2 \n");
-
     if( auth_pam_password(pw, user_pass))
     {
         control_channel_append_ftp_type(FTP_ACK, c_channel);
@@ -111,6 +109,8 @@ int pass_authen_server(control_channel* c_channel)
     }
 
     control_channel_send_wait(c_channel);
+
+    return 1;
 }
 
 int server_data_put(control_channel* c_channel, data_channel* d_channel,
