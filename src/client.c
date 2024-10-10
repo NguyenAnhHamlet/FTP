@@ -15,7 +15,6 @@
 #include "control.h"
 #include "common/cmd.h"
 #include "log/ftplog.h"
-#include "client.h"
 #include "algo/algo.h"
 
 #define IPADDR_SIZE  32
