@@ -160,3 +160,19 @@ void date_time(char* res)
     timeinfo = localtime(&rawtime);
     strftime(res, 64, "%Y-%m-%d %H:%M:%S", timeinfo); 
 }
+
+void disable_echo()
+{
+    struct termios oldt;
+    tcgetattr(STDIN_FILENO, &oldt); 
+    oldt.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt); 
+}
+
+void enable_echo()
+{
+    struct termios oldt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    oldt.c_lflag |= ECHO;   
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+}

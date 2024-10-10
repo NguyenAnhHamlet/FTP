@@ -31,12 +31,20 @@ char ipaddr[IPADDR_SIZE];
 char option[OPTION_SIZE];
 unsigned int iptype;
 
+void client_terminate_connection(control_channel* c_channel);
+
 void handle_init_command(int argc, char* argvs[])
 {
     strncpy(ipaddr, argvs[1], IPADDR_SIZE);
     argc > 2 ? strncpy(option, argvs[2], OPTION_SIZE) : memset(option, '\0', OPTION_SIZE); 
     printf("%s\n", ipaddr);
     printf("%s\n", option);
+}
+
+int quit() 
+{
+    ftp_running = 0;
+    client_terminate_connection(&c_channel);
 }
 
 void time_out_alarm(int sig)
@@ -165,12 +173,6 @@ void client_terminate_connection(control_channel* c_channel)
     control_channel_send(c_channel);
 }
 
-int quit() 
-{
-    ftp_running = 0;
-    client_terminate_connection(&c_channel);
-}
-
 void ipv4_op_set(socket_ftp* s_ftp)
 {
     s_ftp->endpoint_addr->sin_family = AF_INET;
@@ -212,11 +214,13 @@ int password_authen_client(control_channel* c_channel)
     if(!fgets(name, BUF_SIZE, stdin))
       fatal("Error reading name\n");
 
+    
     // prompt for pass 
+    disable_echo();
     printf("Pass: ");
     if(!fgets(pass, BUF_SIZE, stdin))
       fatal("Error reading pass\n");
-
+    enable_echo();
 
     control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
     LOG(SERVER_LOG, "LEN 1: %d\n",strlen(name));
@@ -269,8 +273,8 @@ int main(int argc, char* argvs[])
     control_channel_set_time_out(&c_channel, DEFAULT_CHANNEL_TMOUT);
 
     // set alarm for 30 
-    //  signal(SIGALRM, time_out_alarm);
-	//    alarm(30);
+     signal(SIGALRM, time_out_alarm);
+	   alarm(30);
 
     if( !public_key_authentication(&c_channel, 0) || 
         !public_key_authentication(&c_channel, 1))
@@ -287,7 +291,7 @@ int main(int argc, char* argvs[])
     // cipher context init for dec/enc of data channel
     aes_cipher_init(d_channel.cipher_ctx);
 
-    // Cancel alarm as all initial steps are done without issue
+    // Cancel alarm as all initial steps have been done without any issue
     alarm(0);
 
     ftp_running = true;

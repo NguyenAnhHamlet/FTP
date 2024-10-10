@@ -11,6 +11,7 @@
 #include "common/putnum.h"
 #include <openssl/bn.h>
 #include <time.h>
+#include <termios.h>
 
 // choose port 50000 as default port 
 // for sending and receiving data
@@ -76,5 +77,7 @@ int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
 int listen_endpoint(unsigned int _socket_fd, unsigned int num);
 int available_socket_fd(Stack* available);
 void date_time(char* res);
+void disable_echo();
+void enable_echo();
 
 #endif
