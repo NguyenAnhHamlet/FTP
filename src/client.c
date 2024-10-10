@@ -51,21 +51,6 @@ void signal_handler(int sig)
     quit();
 }
 
-void take_cmd(char* buffer, char* cmd, char* arg)
-{
-    char* split_ptr;
-
-    if(!split_ptr) 
-        return;
-    arg = split_ptr;
-    
-    while(split_ptr = strchr(buffer, ' '))
-    {
-        *split_ptr = '\0';
-        split_ptr++;
-    }
-}
-
 int client_data_put(control_channel* c_channel, data_channel* d_channel,
                     socket_ftp* c_socket, socket_ftp* d_socket, 
                     char* file_name, int n_len, endpoint_type type)
@@ -257,10 +242,14 @@ int password_authen_client(control_channel* c_channel)
 int main(int argc, char* argvs[])
 {
     char buffer[BUF_LEN];
-    unsigned char* request_str; 
-    unsigned int request_int;
+    unsigned char* request_str;
+    unsigned int request_int; 
+    unsigned char* cmd;
     unsigned char* arg;
     cipher_context ctx;
+
+    // init
+    request_str = (char*) malloc(BUF_LEN);
 
     // signal and handle
     signal(SIGINT, signal_handler);
@@ -309,9 +298,8 @@ int main(int argc, char* argvs[])
     {
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
-        take_cmd(buffer, request_str, arg);
-        request_int = get_cmd(request_str);
         int operation_sucess = 1;
+        request_int = get_cmd_contents(buffer, &cmd, &arg);
         
         switch (request_int)
         {
@@ -339,7 +327,8 @@ int main(int argc, char* argvs[])
         }
         case APPEND:
         {
-            char* ptr = strchr(arg, '\0');
+            char* ptr = strchr(arg, ' ');
+            *ptr = '\0';
             ptr++;
             operation_sucess = client_data_append(&c_channel, &d_channel, CLIENT, 
                                                   arg, strlen(arg), ptr, strlen(ptr));
@@ -416,7 +405,8 @@ int main(int argc, char* argvs[])
         }
         case RENAME:
         {
-            char* ptr = strchr(arg, '\0');
+            char* ptr = strchr(arg, ' ');
+            *ptr = '\0';
             ptr++;
             operation_sucess = client_remote_change_name(&c_channel, arg, strlen(arg), 
                                                          ptr, strlen(ptr));
