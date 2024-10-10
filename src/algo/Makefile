@@ -13,8 +13,8 @@ all: ${ALGO_OBJS}
 obj/%.o: %.c 
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} ${INC_ALGO_FLAGS} -c $< -o $@ 
 
-# clean: 
-# 	rm -rf obj/*
+clean: 
+	rm -rf obj/*
 
 -include $(ALGO_DEPS)
 

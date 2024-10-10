@@ -14,12 +14,9 @@ all: ${COMMON_OBJS}
 obj/%.o: %.c 
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} ${INC_COMMON_FLAGS} -c $< -o $@ ${LDFLAGS} 
 
-# clean: 
-# 	rm -rf obj/*
+clean: 
+	rm -rf obj/*
 
 -include $(COMMON_DEPS)
 
 .PHONY:clean
-
-
-

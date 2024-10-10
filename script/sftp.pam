@@ -1,0 +1,10 @@
+# PAM configuration file
+
+# 1. Authentication using /etc/passwd or /etc/shadow
+auth	required	pam_unix.so	
+
+# 2. Logging for debugging
+auth	required	pam_debug.so
+
+# 3. Account management (e.g., expiration, restrictions)
+account	required	pam_unix.so	

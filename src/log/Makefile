@@ -13,8 +13,8 @@ all: ${LOG_OBJS}
 obj/%.o: %.c 
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} ${INC_LOG_FLAGS} -c $< -o $@ 
 
-# clean: 
-# 	rm -rf obj/*
+clean: 
+	rm -rf obj/*
 
 -include $(LOG_DEPS)
 

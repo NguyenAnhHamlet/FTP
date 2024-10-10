@@ -3,7 +3,7 @@
 
 #include <openssl/evp.h>
 
-#define AES_BLOCK_SIZE 16
+#define AES_BLOCK_SIZE 16 
 
 typedef struct 
 {

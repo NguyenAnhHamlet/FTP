@@ -158,5 +158,5 @@ void date_time(char* res)
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(res, 64, "%Y-%m-%d %H:%M:%S", timeinfo);
+    strftime(res, 64, "%Y-%m-%d %H:%M:%S", timeinfo); 
 }

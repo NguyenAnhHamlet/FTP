@@ -25,16 +25,18 @@ define make_subdirs
 endef
 
 obj/%.o:%.c
-	@$(call make_subdirs)
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $< -o $@ ${LDFLAGS}
 
 ftpclient: $(OBJS_CURRENT)
+	@$(call make_subdirs)
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o ${LDFLAGS}
 
 ftpserver: $(OBJS_CURRENT)
+	@$(call make_subdirs)
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o ${LDFLAGS}
 
 ftpkeygen: $(OBJS_CURRENT)
+	@$(call make_subdirs)
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/keygen.o ${LDFLAGS}
 
 cleanall: 
@@ -43,7 +45,8 @@ cleanall:
 
 install:
 	chmod 755 bin/* && sudo mv bin/* /usr/bin/
-	chmod 755 ../script/* && sudo cp ../script/* /usr/bin
+	chmod 755 ../script/* && sudo cp ../script/ftp* /usr/bin;
+	chmod 644 ../script/sftp.pam && sudo cp ../script/sftp.pam /etc/pam.d
 
 -include $(DEPS)
 
