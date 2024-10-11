@@ -233,7 +233,7 @@ int password_authen_client(control_channel* c_channel)
 
     if(control_channel_read_expect(c_channel, FTP_ACK) < 1)
     {
-      printf("Pass authenticate failed\n");
+      fatal("Pass authenticate failed\n");
       return 0; 
     }
 
@@ -280,16 +280,17 @@ int main(int argc, char* argvs[])
         !public_key_authentication(&c_channel, 1))
         fatal("Public key authentication failed\n");
 
+    // Trying to create a shared secret key
+    aes_cipher_init(c_channel.cipher_ctx);
+    if(!channel_generate_shared_key(&c_channel, c_channel.cipher_ctx))
+        fatal("Failed to create a shared secret key\n");
+    
     // perform password authentication
     password_authen_client(&c_channel);
-    LOG(SERVER_LOG, "PASS\n");
 
-    // Trying to create a shared secret key
-    if(!channel_generate_shared_key(&c_channel, &ctx))
-        fatal("Failed to create a shared secret key\n");
-
-    // cipher context init for dec/enc of data channel
+    // password authentication successed, set context for data channel 
     aes_cipher_init(d_channel.cipher_ctx);
+    BN_copy(d_channel.cipher_ctx->key, c_channel.cipher_ctx->key); 
 
     // Cancel alarm as all initial steps have been done without any issue
     alarm(0);
