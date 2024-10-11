@@ -6,12 +6,13 @@
 #include "common.h"
 #include <security/pam_appl.h>
 #include "common/pam.h"
+#include "algo/algo.h"
 
 static int pamconv(int num_msg, const struct pam_message **msg,
 	  struct pam_response **resp, void *appdata_ptr);
 
 static struct pam_conv conv = {
-	pamconv,
+	&pamconv,
 	NULL
 };
 
@@ -30,10 +31,9 @@ static int pamconv(int num_msg, const struct pam_message **msg,
 	char *p;
 
 	/* PAM will free this later */
-	reply = malloc(num_msg * sizeof(*reply));	
+	reply = (struct pam_response*) malloc(num_msg * sizeof(struct pam_response));	
 	if (reply == NULL)
 		return PAM_CONV_ERR; 
-
 
 	for(count = 0; count < num_msg; count++) {
 		switch (msg[count]->msg_style) {
@@ -43,11 +43,13 @@ static int pamconv(int num_msg, const struct pam_message **msg,
 					return PAM_CONV_ERR;
 				}
 				reply[count].resp_retcode = PAM_SUCCESS;
-				reply[count].resp = pampasswd;
+				reply[count].resp = strdup(pampasswd);
 				break;
-
+			case PAM_TEXT_INFO:
 			case PAM_PROMPT_ECHO_ON:
-			case PAM_ERROR_MSG:
+			case PAM_ERROR_MSG:	
+				reply[count].resp_retcode = PAM_SUCCESS;
+        		reply[count].resp = 0;	
 			default:
 				free(reply);
 				return PAM_CONV_ERR;
@@ -67,10 +69,11 @@ int auth_pam_password(struct passwd *pw, char *password)
 	if (pw == NULL)
 		return 0;
 	
-    pampasswd = password;
+    pampasswd = strdup(password);
 
-	LOG(SERVER_LOG, "RUNNNING HERE 3 %s\n", pampasswd);
-    pam_retval = ((pam_handle_t *)pamh, 0);
+	LOG(SERVER_LOG, "PASSWORD: %s", pampasswd);
+
+    pam_retval = pam_authenticate((pam_handle_t *)pamh, 0);
 
     if (pam_retval == PAM_SUCCESS) 
     {
@@ -91,11 +94,14 @@ void start_pam(struct passwd *pw)
 
 	LOG(SERVER_LOG, "Starting up PAM with username \"%.200s\"", pw->pw_name);
 
-	pam_retval = pam_start("sftp", pw->pw_name, &conv, (pam_handle_t**)&pamh);
-	if (pam_retval != PAM_SUCCESS)
-		LOG(SERVER_LOG, "PAM initialisation failed: %.200s", pam_strerror((pam_handle_t *)pamh, pam_retval));
+	pam_retval = pam_start("sftp", pw->pw_name, &conv, &pamh);
 
-	pam_cleanup_proc(NULL);
+	if (pam_retval != PAM_SUCCESS)
+	{
+		pam_cleanup_proc(NULL);
+		fatal("PAM initialisation failed: %.200s", pam_strerror((pam_handle_t *)pamh, pam_retval));
+	}
+
 }
 
 void pam_cleanup_proc(void *context)

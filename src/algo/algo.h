@@ -20,5 +20,6 @@ bool is_older(struct tm* datetime_1, struct tm* datetime_2);
 void upper_case_str(char* str, unsigned int str_len);
 void lower_case_tr(char* str, unsigned int str_len);
 unsigned int find_index(char* str, unsigned int str_len, char c);
+// char* strdup(char* str);
 
 #endif

@@ -214,7 +214,6 @@ int password_authen_client(control_channel* c_channel)
     if(!fgets(name, BUF_SIZE, stdin))
       fatal("Error reading name\n");
 
-    
     // prompt for pass 
     disable_echo();
     printf("Pass: ");
@@ -222,10 +221,11 @@ int password_authen_client(control_channel* c_channel)
       fatal("Error reading pass\n");
     enable_echo();
 
-    control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
-    LOG(SERVER_LOG, "LEN 1: %d\n",strlen(name));
-    LOG(SERVER_LOG, "LEN 2: %d\n",strlen(pass));
+    // remove newline char
+    int len;
+    len = strlen(pass); pass[len-1] = '\0';
 
+    control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
     control_channel_append_str(name, c_channel, strlen(name));
     control_channel_append_str(pass, c_channel, strlen(pass));
 
@@ -237,7 +237,7 @@ int password_authen_client(control_channel* c_channel)
       return 0; 
     }
 
-    printf("Pass authenticate successed\n");
+    printf("Pass authenticate succeed\n");
     return 1;
 
 }
