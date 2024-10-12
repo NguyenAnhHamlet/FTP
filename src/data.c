@@ -10,7 +10,7 @@
 #include "common/file.h"
 #include "log/ftplog.h"
 
-int data_conn(control_channel* c_channel, data_channel* d_channel,
+int  data_conn(control_channel* c_channel, data_channel* d_channel,
               socket_ftp* c_socket, socket_ftp* d_socket, 
               endpoint_type type )
 {

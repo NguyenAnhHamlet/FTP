@@ -14,6 +14,7 @@ unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd,
     // get the command 
     *cmd = buffer;
     *contents = strchr(buffer, ' ');
+    if( *contents == NULL) return 0;
     **contents = '\0';
     *contents++;
 
@@ -148,5 +149,7 @@ unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd,
 
     if (strcmp(*cmd, DEBUG_ENB_STR) == 0)
         return DEBUG_ENB;
+    
+    return 0;
     
 }

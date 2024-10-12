@@ -165,6 +165,14 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
                                   -1, ftp_type, 0, 0);
 }
 
+void control_channel_set_ctx(control_channel* c_channel, cipher_context* ctx)
+{   
+    c_channel->cipher_ctx = ctx;
+}
+
+
+// DATA
+
 void data_channel_init( data_channel* channel,
                         unsigned int out_port, 
                         unsigned int in_port,
@@ -326,4 +334,9 @@ int data_channel_get_data_len_out(data_channel* d_channel)
 int data_channel_get_data_len_in(data_channel* d_channel)
 {
     return packet_get_data_len(d_channel->data_in); 
+}
+
+void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx)
+{   
+    d_channel->cipher_ctx = ctx;
 }

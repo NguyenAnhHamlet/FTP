@@ -6,11 +6,6 @@
 
 int aes_cipher_init(cipher_context* cipher_ctx)
 {
-    if(!cipher_ctx)
-    {
-        cipher_ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
-    }
-
     if(!cipher_ctx->evp || !cipher_ctx->evptype )
     {
         cipher_ctx->evp = EVP_CIPHER_CTX_new();
@@ -64,15 +59,15 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
     if (!EVP_CipherInit_ex2(cipher_ctx->evp, cipher_ctx->evptype, (const char *) convert_key, 
                             NULL, DECRYPT, NULL))
     { 
-        LOG(SERVER_LOG, "Could not perform encryption\n");
-        LOG(CLIENT_LOG, "Could not perform encryption\n");
+        LOG(SERVER_LOG, "Could not perform decryption\n");
+        LOG(CLIENT_LOG, "Could not perform decryption\n");
         return 0;
     }
 
     if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, &outlen, inbuf, inlen))
     {
-        LOG(SERVER_LOG, "Could not perform encryption\n");
-        LOG(CLIENT_LOG, "Could not perform encryption\n");
+        LOG(SERVER_LOG, "Could not perform decryption\n");
+        LOG(CLIENT_LOG, "Could not perform decryption\n");
         return 0;
     }
 

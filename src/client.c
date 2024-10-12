@@ -249,10 +249,12 @@ int main(int argc, char* argvs[])
     unsigned int request_int; 
     unsigned char* cmd;
     unsigned char* arg;
-    cipher_context ctx;
+    cipher_context* ctx;
 
     // init
     request_str = (char*) malloc(BUF_LEN);
+    ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
+    aes_cipher_init(ctx);
 
     // signal and handle
     signal(SIGINT, signal_handler);
@@ -279,18 +281,16 @@ int main(int argc, char* argvs[])
     if( !public_key_authentication(&c_channel, 0) || 
         !public_key_authentication(&c_channel, 1))
         fatal("Public key authentication failed\n");
-
-    // Trying to create a shared secret key
-    aes_cipher_init(c_channel.cipher_ctx);
-    if(!channel_generate_shared_key(&c_channel, c_channel.cipher_ctx))
-        fatal("Failed to create a shared secret key\n");
     
     // perform password authentication
     password_authen_client(&c_channel);
 
+    // Trying to create a shared secret key
+    if(!channel_generate_shared_key(&c_channel, ctx))
+        fatal("Failed to create a shared secret key\n");
+
     // password authentication successed, set context for data channel 
-    aes_cipher_init(d_channel.cipher_ctx);
-    BN_copy(d_channel.cipher_ctx->key, c_channel.cipher_ctx->key); 
+    data_channel_set_ctx(&d_channel, ctx);
 
     // Cancel alarm as all initial steps have been done without any issue
     alarm(0);
@@ -302,6 +302,7 @@ int main(int argc, char* argvs[])
     {
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
+        if(strlen(buffer) == 1) continue; 
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);
         
@@ -423,12 +424,12 @@ int main(int argc, char* argvs[])
         }
         
         default:
-            printf("Unknown operation\n Abort\n");
+            printf("Unknown operation, Abort\n");
             break;
         }
 
         if(!operation_sucess)
-            printf("Operation failed\n Retry\n");
+            printf("Operation failed, Retry\n");
     } 
 
     control_channel_destroy(&c_channel);

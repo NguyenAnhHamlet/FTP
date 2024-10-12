@@ -97,6 +97,7 @@ void control_channel_append_header(control_channel* channel,
                                    int data_len);
 int control_channel_get_data_len_out(control_channel* c_channel);
 int control_channel_get_data_len_in(control_channel* c_channel);
+void control_channel_set_ctx(control_channel* c_channel, cipher_context* ctx);
 
 // 
 // data channel
@@ -155,5 +156,6 @@ void data_channel_append_header(data_channel* channel,
                                 int data_len);
 int data_channel_get_data_len_out(data_channel* d_channel);
 int data_channel_get_data_len_in(data_channel* d_channel);
+void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx);
 
 #endif
