@@ -21,5 +21,6 @@
 #define TERMINATE                   17
 #define FTP_PUB_KEX_SEND            18
 #define FTP_FAIL_AUTHEN             19
+#define FTP_CONN                    20
 
 #endif

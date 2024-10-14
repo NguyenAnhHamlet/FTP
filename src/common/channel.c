@@ -1,13 +1,25 @@
 #include "common/channel.h"
 #include "common/packet.h"
 
+void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
+                     data_channel* d_channel, control_channel* c_channel, 
+                     socket_ftp* c_socket, socket_ftp* d_socket, 
+                     endpoint_type type )
+{
+    channel_ctx->cipher_ctx = cipher_ctx;
+    channel_ctx->d_channel = d_channel;
+    channel_ctx->c_channel = c_channel;
+    channel_ctx->c_socket = c_socket;
+    channel_ctx->d_socket = d_socket;
+    channel_ctx->type = type;
+}
+
 void control_channel_init(  control_channel* channel,
                             unsigned int out_port, unsigned int in_port,
                             endpoint_type conn,
                             cipher_context* cipher_ctx)
 {
     channel->conn = conn;
-    channel->cipher_ctx = cipher_ctx;
 
     channel->data_in = (Packet*) malloc(sizeof(Packet));
     channel->data_out = (Packet*) malloc(sizeof(Packet));
@@ -163,11 +175,6 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
 {
     control_channel_append_header(channel, -1, 0, 
                                   -1, ftp_type, 0, 0);
-}
-
-void control_channel_set_ctx(control_channel* c_channel, cipher_context* ctx)
-{   
-    c_channel->cipher_ctx = ctx;
 }
 
 
@@ -339,4 +346,10 @@ int data_channel_get_data_len_in(data_channel* d_channel)
 void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx)
 {   
     d_channel->cipher_ctx = ctx;
+}
+
+void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type)
+{
+    data_channel_append_header(d_channel, -1, 0, 
+                                  -1, ftp_type, 0, 0);
 }

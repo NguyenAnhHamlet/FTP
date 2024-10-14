@@ -20,6 +20,7 @@
 #define IPADDR_SIZE  32
 #define OPTION_SIZE  8
 
+channel_context channel_ctx;
 char name[BUF_LEN];
 char pass[BUF_LEN];
 bool ftp_running;
@@ -58,32 +59,25 @@ void signal_handler(int sig)
     quit();
 }
 
-int client_data_put(control_channel* c_channel, data_channel* d_channel,
-                    socket_ftp* c_socket, socket_ftp* d_socket, 
-                    char* file_name, int n_len, endpoint_type type)
+int client_data_put(channel_context* channel_ctx, 
+                    char* file_name, int n_len)
 {
-    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) & 
-              put(c_channel, d_channel, file_name, n_len, CLIENT);
+    int res = put(channel_ctx, file_name, n_len);
     
     return res;
 }
 
-int client_data_get(control_channel* c_channel, data_channel* d_channel, 
-                    socket_ftp* c_socket, socket_ftp* d_socket,
-                    char* file_name, int n_len, endpoint_type type)
+int client_data_get(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) &  
-              get(c_channel, d_channel, file_name, &n_len, CLIENT);
+    int res = get(channel_ctx, file_name, &n_len);
     
     return res;
 }
 
-int client_data_append(control_channel* c_channel, data_channel* d_channel,
-                       endpoint_type type, char* file_name, unsigned int n_len,
+int client_data_append(channel_context* channel_ctx, char* file_name, unsigned int n_len,
                        char* remote_file_name, unsigned int rn_len)
 {
-    int res = data_conn(c_channel, d_channel, c_socket, d_socket, type) &  
-              data_append(c_channel, d_channel, CLIENT, file_name, 
+    int res = data_append(channel_ctx, file_name, 
                           n_len, remote_file_name, rn_len);
     
     return res;
@@ -133,20 +127,14 @@ int client_remote_mode_time(control_channel* c_channel, char* file_name,
     return remote_modtime(c_channel, CLIENT, file_name, n_len, modetime, m_len);
 }
 
-int client_data_newer(control_channel* c_channel, data_channel* d_channel,
-                      socket_ftp* c_socket, socket_ftp* d_socket,
-                      char* file_name, int n_len)
+int client_data_newer(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    return data_newer(c_channel, d_channel, c_socket, d_socket, 
-                      file_name, n_len, CLIENT);
+    return data_newer(channel_ctx, file_name, n_len);
 }
 
-int client_data_reget(control_channel* c_channel, data_channel* d_channel,
-                      socket_ftp* c_socket, socket_ftp* d_socket,
-                      char* file_name, int n_len)
+int client_data_reget(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    return data_reget(c_channel, d_channel, c_socket, 
-                      d_socket, file_name, n_len, CLIENT );
+    return data_reget(channel_ctx, file_name, n_len);
 }
 
 int client_remote_change_name(control_channel* c_channel, char* file_name, 
@@ -289,8 +277,9 @@ int main(int argc, char* argvs[])
     if(!channel_generate_shared_key(&c_channel, ctx))
         fatal("Failed to create a shared secret key\n");
 
-    // password authentication successed, set context for data channel 
-    data_channel_set_ctx(&d_channel, ctx);
+    // password authentication successed, init channel_ctx
+    channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
+                         c_socket, d_socket, CLIENT);
 
     // Cancel alarm as all initial steps have been done without any issue
     alarm(0);
@@ -320,14 +309,12 @@ int main(int argc, char* argvs[])
         }
         case GET:
         {
-            operation_sucess = client_data_get(&c_channel, &d_channel, c_socket, 
-                                               d_socket, arg, strlen(arg), CLIENT);
+            operation_sucess = client_data_get(&channel_ctx, arg, strlen(arg));
             break;
         }
         case PUT:
         {
-            operation_sucess = client_data_put(&c_channel, &d_channel, c_socket, 
-                                               d_socket, arg, strlen(arg), CLIENT);
+            operation_sucess = client_data_put(&channel_ctx, arg, strlen(arg));
             break;
         }
         case APPEND:
@@ -335,20 +322,18 @@ int main(int argc, char* argvs[])
             char* ptr = strchr(arg, ' ');
             *ptr = '\0';
             ptr++;
-            operation_sucess = client_data_append(&c_channel, &d_channel, CLIENT, 
-                                                  arg, strlen(arg), ptr, strlen(ptr));
+            operation_sucess = client_data_append(&channel_ctx, arg, strlen(arg), 
+                                                  ptr, strlen(ptr));
             break;
         }
         case NEWER:
         {
-            operation_sucess = client_data_newer(&c_channel, &d_channel, c_socket, 
-                                                 d_socket, arg, strlen(arg));
+            operation_sucess = client_data_newer(&channel_ctx, arg, strlen(arg));
             break;
         }
         case REGET:
         {
-            operation_sucess = client_data_reget(&c_channel, &d_channel, c_socket, 
-                                                 d_socket, arg, strlen(arg));
+            operation_sucess = client_data_reget(&channel_ctx, arg, strlen(arg));
             break;
         }
         case CD:

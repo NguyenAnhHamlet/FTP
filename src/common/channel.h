@@ -17,8 +17,7 @@
 
 typedef struct
 {
-    endpoint_type conn;             //client or server
-    cipher_context* cipher_ctx;       
+    endpoint_type conn;   
 
     RSA* rsa_public_key;
     RSA* rsa_private_key;
@@ -36,11 +35,30 @@ typedef struct
 typedef struct 
 {
     cipher_context* cipher_ctx; 
-
     Packet* data_in;
     Packet* data_out;
 
 } data_channel;
+
+
+// 
+// channel context
+// 
+typedef struct 
+{   
+    cipher_context* cipher_ctx; 
+    data_channel* d_channel;
+    control_channel* c_channel;
+    socket_ftp* c_socket;
+    socket_ftp* d_socket;
+    endpoint_type type;
+
+} channel_context;
+
+void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
+                     data_channel* d_channel, control_channel* c_channel, 
+                     socket_ftp* c_socket, socket_ftp* d_socket, 
+                     endpoint_type type);
 
 // 
 // Control channel
@@ -60,8 +78,6 @@ void control_channel_init_socket_ftp(control_channel* channel,
 void control_channel_set_time_out(control_channel* channel, unsigned int tmout);
 void control_channel_set_port(control_channel* channel, unsigned int in_port, 
                               unsigned int out_port);
-void control_channel_set_cipher(control_channel* channel, 
-                                unsigned int cypher_type);
 void control_channel_set_nonblocking(control_channel* channel);
 void set_control_channel_compress(control_channel* channel);
 void unset_control_channel_compress(control_channel* channel);
@@ -157,5 +173,6 @@ void data_channel_append_header(data_channel* channel,
 int data_channel_get_data_len_out(data_channel* d_channel);
 int data_channel_get_data_len_in(data_channel* d_channel);
 void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx);
+void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type);
 
 #endif

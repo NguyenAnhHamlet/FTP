@@ -42,25 +42,23 @@ void time_out_alarm(int sig)
     exit(1);
 }
 
-int server_data_conn(control_channel* c_channel, data_channel* d_channel,
-                    socket_ftp* c_socket, socket_ftp* d_socket, 
-                    endpoint_type type)
+int server_data_conn(channel_context* channel_ctx)
 {
-    return data_conn(c_channel, d_channel, c_socket, d_socket, type);
+    return data_conn(channel_ctx);
 }
 
-int server_data_get(control_channel* c_channel, data_channel* d_channel,
-                    char* file_name, int* n_len, endpoint_type type)
+int server_data_get(channel_context* channel_ctx, char* file_name, 
+                    int* n_len)
 {
-    return get(c_channel, d_channel, file_name, n_len, SERVER);
+    return get(channel_ctx, file_name, n_len);
 }
 
-int server_data_append(control_channel* c_channel, data_channel* d_channel,
-                       endpoint_type type, char* file_name, unsigned int n_len,
-                       char* remote_file_name, unsigned int rn_len)
+int server_data_append(channel_context* channel_ctx, char* file_name, 
+                       unsigned int n_len, char* remote_file_name, 
+                       unsigned int rn_len)
 {
-    return data_append(c_channel, d_channel, SERVER, file_name, 
-                       n_len, remote_file_name, rn_len);
+    return data_append(channel_ctx, file_name, n_len, remote_file_name, 
+                       rn_len);
 }
 
 int pass_authen_server(control_channel* c_channel)
@@ -112,10 +110,10 @@ int pass_authen_server(control_channel* c_channel)
     return 1;
 }
 
-int server_data_put(control_channel* c_channel, data_channel* d_channel,
+int server_data_put(channel_context* channel_ctx, 
                     char* file_name, int n_len)
 {
-    put(c_channel, d_channel, file_name, n_len, SERVER);
+    put(channel_ctx, file_name, n_len);
 }
 
 int server_change_dir(control_channel* c_channel, char* dir, int d_len)
@@ -157,20 +155,14 @@ int server_remote_mode_time(control_channel* c_channel, char* file_name,
     return remote_modtime(c_channel, SERVER, file_name, n_len, modetime, m_len);
 }
 
-int server_data_newer(control_channel* c_channel, data_channel* d_channel,
-                      socket_ftp* c_socket, socket_ftp* d_socket,
-                      char* file_name, int n_len)
+int server_data_newer(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    return data_newer(c_channel, d_channel, c_socket, d_socket, 
-                      file_name, n_len, SERVER);
+    return data_newer(channel_ctx, file_name, n_len);
 }
 
-int server_data_reget(control_channel* c_channel, data_channel* d_channel,
-                      socket_ftp* c_socket, socket_ftp* d_socket,
-                      char* file_name, int n_len)
+int server_data_reget(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    return data_reget(c_channel, d_channel, c_socket, 
-                      d_socket, file_name, n_len, SERVER );
+    return data_reget(channel_ctx, file_name, n_len);
 }
 
 int server_remote_change_name(control_channel* c_channel, char* file_name, 
@@ -267,13 +259,14 @@ int main()
     // Client process handle
     control_channel c_channel; 
     data_channel d_channel;
-    cipher_context ctx;
+    cipher_context* ctx;
     int time_out = 30 * 60;
     int conn_remain = 1;
     unsigned request_int;
     bool operation_sucess = 1;
     socket_ftp* d_socket;
     socket_ftp* c_socket = socket_ftp_raw_cre();
+    channel_context channel_ctx;
 
     ftp_socket_cp(c_socket, socket_server);
 
@@ -295,11 +288,15 @@ int main()
         exit(1);
 
         // Trying to create a shared secret key
-    if(!channel_generate_shared_key(&c_channel, &ctx))
+    if(!channel_generate_shared_key(&c_channel, ctx))
         fatal("Failed to create a shared secret key\n");
 
     // cipher context init for dec/enc of data channel
-    aes_cipher_init(d_channel.cipher_ctx);
+    aes_cipher_init(ctx);
+
+    // init channel_ctx
+    channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
+                         c_socket, d_socket, SERVER);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);
@@ -322,20 +319,19 @@ int main()
             char* f_name;
             unsigned int n_len;
             control_channel_get_str(&c_channel, f_name, &n_len );
-            operation_sucess = server_data_put(&c_channel, &d_channel, f_name, n_len);
+            operation_sucess = server_data_put(&channel_ctx, f_name, n_len);
             break;
         }
         case PUT:
         {
             char* f_name;
             unsigned int n_len;
-            operation_sucess = server_data_get(&c_channel, &d_channel, 
-                                               f_name, &n_len, SERVER );
+            operation_sucess = server_data_get(&channel_ctx, f_name, &n_len);
             break;
         }
         case APPEND:
         {
-            operation_sucess = server_data_append(&c_channel, &d_channel, CLIENT, 
+            operation_sucess = server_data_append(&channel_ctx,
                                                   NULL, 0, NULL, 0);
             break;
         }
@@ -344,8 +340,7 @@ int main()
             char* f_name;
             unsigned int n_len;
             control_channel_get_str(&c_channel, f_name, &n_len );            
-            operation_sucess = server_data_newer(&c_channel, &d_channel, c_socket, 
-                                                 d_socket, f_name, n_len);
+            operation_sucess = server_data_newer(&channel_ctx, f_name, n_len);
             break;
         }
         case REGET:
@@ -353,8 +348,7 @@ int main()
             char* f_name;
             unsigned int n_len;
             control_channel_get_str(&c_channel, f_name, &n_len ); 
-            operation_sucess = server_data_reget(&c_channel, &d_channel, c_socket, 
-                                                 d_socket, f_name, n_len);
+            operation_sucess = server_data_reget(&channel_ctx, f_name, n_len);
             break;
         }
         case CD:
