@@ -62,9 +62,7 @@ void signal_handler(int sig)
 int client_data_put(channel_context* channel_ctx, 
                     char* file_name, int n_len)
 {
-    int res = put(channel_ctx, file_name, n_len);
-    
-    return res;
+    return put(channel_ctx, file_name, n_len);
 }
 
 int client_data_get(channel_context* channel_ctx, char* file_name, int n_len)
@@ -291,6 +289,7 @@ int main(int argc, char* argvs[])
     {
         printf("ftp> ");
         fgets(buffer, sizeof(buffer), stdin);
+        remove_endline(buffer);
         if(strlen(buffer) == 1) continue; 
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);

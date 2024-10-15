@@ -76,12 +76,9 @@ unsigned int find_index(char* str, unsigned int str_len, char c)
     return 0;
 }
 
-// char* strdup(char* str)
-// {
-//     int len = strlen(str);
-
-//     char* dupstr = (char*) malloc(len);
-//     memcpy(dupstr, str, len);
-
-//     return dupstr;
-// }
+void remove_endline(char* str)
+{
+    unsigned int len = strlen(str);
+    if(str[len-1] == '\n') 
+        str[len-1] = '\0'; 
+}

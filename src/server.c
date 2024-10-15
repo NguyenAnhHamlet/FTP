@@ -113,7 +113,7 @@ int pass_authen_server(control_channel* c_channel)
 int server_data_put(channel_context* channel_ctx, 
                     char* file_name, int n_len)
 {
-    put(channel_ctx, file_name, n_len);
+    return put(channel_ctx, file_name, n_len);
 }
 
 int server_change_dir(control_channel* c_channel, char* dir, int d_len)
@@ -259,7 +259,7 @@ int main()
     // Client process handle
     control_channel c_channel; 
     data_channel d_channel;
-    cipher_context* ctx;
+    cipher_context* ctx = NULL;
     int time_out = 30 * 60;
     int conn_remain = 1;
     unsigned request_int;
@@ -267,6 +267,9 @@ int main()
     socket_ftp* d_socket;
     socket_ftp* c_socket = socket_ftp_raw_cre();
     channel_context channel_ctx;
+
+    // init
+    ctx = (cipher_context*) malloc(sizeof(cipher_context));
 
     ftp_socket_cp(c_socket, socket_server);
 
@@ -287,12 +290,13 @@ int main()
     if(!pass_authen_server(&c_channel))
         exit(1);
 
+    // cipher context init for dec/enc of data channel
+    aes_cipher_init(ctx);
+
         // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx))
         fatal("Failed to create a shared secret key\n");
 
-    // cipher context init for dec/enc of data channel
-    aes_cipher_init(ctx);
 
     // init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
@@ -300,7 +304,6 @@ int main()
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);
-
 
     while(conn_remain)
     {
@@ -310,7 +313,9 @@ int main()
             exit(1);
         }
 
-        request_int = control_channel_get_int(&c_channel);
+        request_int = control_channel_get_ftp_type_in(&c_channel);
+
+        LOG(SERVER_LOG, "DATA TYPE RECEIVED SERVER SIDE: %d", request_int);
 
         switch (request_int)
         {
@@ -318,7 +323,6 @@ int main()
         {
             char* f_name;
             unsigned int n_len;
-            control_channel_get_str(&c_channel, f_name, &n_len );
             operation_sucess = server_data_put(&channel_ctx, f_name, n_len);
             break;
         }

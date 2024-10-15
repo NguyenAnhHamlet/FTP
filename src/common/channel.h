@@ -113,7 +113,8 @@ void control_channel_append_header(control_channel* channel,
                                    int data_len);
 int control_channel_get_data_len_out(control_channel* c_channel);
 int control_channel_get_data_len_in(control_channel* c_channel);
-void control_channel_set_ctx(control_channel* c_channel, cipher_context* ctx);
+int control_channel_get_ftp_type_in(control_channel* c_channel);
+int control_channel_get_ftp_type_out(control_channel* c_channel);
 
 // 
 // data channel
@@ -174,5 +175,7 @@ int data_channel_get_data_len_out(data_channel* d_channel);
 int data_channel_get_data_len_in(data_channel* d_channel);
 void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx);
 void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type);
+int data_channel_get_ftp_type_in(data_channel* d_channel);
+int data_channel_get_ftp_type_out(data_channel* d_channel);
 
 #endif

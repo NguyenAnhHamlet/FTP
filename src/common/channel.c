@@ -177,6 +177,15 @@ int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
                                   -1, ftp_type, 0, 0);
 }
 
+int control_channel_get_ftp_type_in(control_channel* c_channel)
+{
+    return c_channel->data_in->p_header->packet_type;
+}
+
+int control_channel_get_ftp_type_out(control_channel* c_channel)
+{
+    return c_channel->data_out->p_header->packet_type;
+}
 
 // DATA
 
@@ -352,4 +361,14 @@ void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type
 {
     data_channel_append_header(d_channel, -1, 0, 
                                   -1, ftp_type, 0, 0);
+}
+
+int data_channel_get_ftp_type_in(data_channel* d_channel)
+{
+    return d_channel->data_in->p_header->packet_type;
+}
+
+int data_channel_get_ftp_type_out(data_channel* d_channel)
+{
+    d_channel->data_out->p_header->packet_type;
 }

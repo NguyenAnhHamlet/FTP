@@ -62,8 +62,6 @@ void packet_send(Packet* packet)
         buffer_get(packet->buf, buf, min(BUF_LEN, curr_l));
         len = send(packet->out_port, buf, min(BUF_LEN, curr_l), 0); 
 
-        LOG(SERVER_LOG, "len of buffer: %d\n",len );
-
         if(len <= 0)
         {
             if (errno == EAGAIN)
@@ -112,7 +110,6 @@ int packet_read(Packet* packet)
             (curr_len = read(packet->in_port, buf, min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
     {
         buffer_append_str(packet->buf, buf, curr_len);
-        LOG(SERVER_LOG, "len of buffer 2: %d %d %d\n", curr_len, packet->buf->offset, packet->buf->end );
         len += curr_len;
     }
 

@@ -37,8 +37,8 @@ int data_conn( channel_context* channel_ctx )
         data_channel_set_time_out(channel_ctx->d_channel, DEFAULT_CHANNEL_TMOUT);
 
         // Done, send FTP_ACK
-        data_channel_append_ftp_type(channel_ctx->d_channel, FTP_ACK);
-        data_channel_send_wait(channel_ctx->d_channel);
+        control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
+        control_channel_send_wait(channel_ctx->c_channel);
 
         LOG(CLIENT_LOG, "Established data connection\n");
 
@@ -68,12 +68,14 @@ int data_conn( channel_context* channel_ctx )
         // established successfully
         if(!control_channel_read_expect(channel_ctx->c_channel, FTP_ACK))
         { 
-            LOG(CLIENT_LOG, "Failed to receive ACK from client\n");
+            LOG(SERVER_LOG, "Failed to receive ACK from client\n");
             operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
         LOG(SERVER_LOG, "Established data connection\n");
+
+        break;
     }
     
     default:
@@ -107,13 +109,17 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
         // send file's name over to server 
         control_channel_append_ftp_type(FTP_FILE_NAME, channel_ctx->c_channel);
-        control_channel_append_str(file_name, channel_ctx->c_channel, *n_len);
+        control_channel_append_str(file_name, channel_ctx->c_channel, strlen(file_name));
+
+        LOG(CLIENT_LOG, "FILE NAME 2: %d\n", strlen(file_name));
+
+        control_channel_send(channel_ctx->c_channel);
 
         // check the file's existence on remote server
-        if(!control_channel_send(channel_ctx->c_channel) || 
-        !control_channel_read_expect(channel_ctx->c_channel, FILE_EXIST))
+        if( !control_channel_read_expect(channel_ctx->c_channel, FILE_EXIST))
         {
-            LOG(CLIENT_LOG, "GET operation failed\n");
+            LOG(CLIENT_LOG, "File does not exit on remote side\n");
+            LOG(SERVER_LOG, "File %d: \n", control_channel_get_ftp_type_in(channel_ctx->c_channel));
             operation_abort(channel_ctx->c_channel);
             
             return 0;
@@ -209,8 +215,13 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
             return 0;
         }
 
+        file_name = (char*) malloc(BUF_LEN);
+        // init 
+        memset(file_name, '\0', BUF_LEN);
+
         // get file's name
         control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);        
+        LOG(CLIENT_LOG, "DATA LEN 2: %d\n", n_len);
         break;
     }
     
@@ -222,14 +233,31 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     }
 
+    LOG(SERVER_LOG, "RUN HERE 3\n");
+    LOG(CLIENT_LOG, "FILE NAME: %d\n", strlen(file_name));
+    char* file_name_tmp = "/home/nguyenanh/tmp";
     file = fopen(file_name, "rb");
 
+    // file does not exist or there is error in I/O operation
     if (file == NULL)
     {
         LOG(SERVER_LOG, "Error opening file\n");
+        LOG(SERVER_LOG, strerror(errno));
+        control_channel_append_ftp_type(FILE_NOT_EXIST, channel_ctx->c_channel);
+        control_channel_send_wait(channel_ctx->c_channel);
+        free(file_name);
         return 0;
     } 
 
+    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name);
+
+    // File does exist, send code to confirm operation
+    control_channel_append_ftp_type(FILE_EXIST, channel_ctx->c_channel);
+    control_channel_send_wait(channel_ctx->c_channel);
+
+    LOG(SERVER_LOG, "RUN HERE 4: %s\n", file_name);
+
+    // read and send file over to client side
     while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
     {
         data_channel_append_header( channel_ctx->d_channel, ident++, 0, 
@@ -239,17 +267,21 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         data_channel_send(channel_ctx->d_channel);
     }
 
+    // error, abort
     if(byte < 0)
     {
         LOG(SERVER_LOG, "Error sending file\n");
         control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
-
+        free(file_name);
         return 0;
     }
 
+    // send code to server, notify send file successfully
     control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
     control_channel_send(channel_ctx->c_channel);  
+
+    free(file_name);
 
     return 1;
 }
