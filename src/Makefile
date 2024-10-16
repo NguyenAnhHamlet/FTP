@@ -27,6 +27,10 @@ endef
 obj/%.o:%.c
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $< -o $@ ${LDFLAGS}
 
+.PHONY: all
+
+all: ftpclient ftpserver ftpkeygen
+
 ftpclient: $(OBJS_CURRENT)
 	@$(call make_subdirs)
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o ${LDFLAGS}

@@ -1,5 +1,6 @@
 #include "common/channel.h"
 #include "common/packet.h"
+#include "log/ftplog.h"
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
                      data_channel* d_channel, control_channel* c_channel, 
@@ -200,6 +201,9 @@ void data_channel_init( data_channel* channel,
     packet_init(channel->data_in, out_port, 0, in_port);
     packet_init(channel->data_out, out_port, 0, in_port);
 
+    LOG(SERVER_LOG, "IN PORT: %d\n", in_port);
+    LOG(SERVER_LOG, "OUT PORT: %d\n", out_port);
+
     channel->data_in->in_port = in_port;
     channel->data_in->out_port = 0;
     channel->data_out->out_port = out_port;
@@ -225,8 +229,8 @@ void data_channel_init_socket_ftp(data_channel* channel,
                                   endpoint_type conn,
                                   cipher_context* cipher_ctx)
 {
-    data_channel_init(channel, out_socket->PORT_, 
-                      in_socket->PORT_, cipher_ctx);
+    data_channel_init(channel, out_socket->sockfd, 
+                      in_socket->sockfd, cipher_ctx);
 }
 
 void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len)

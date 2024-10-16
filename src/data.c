@@ -29,8 +29,10 @@ int data_conn( channel_context* channel_ctx )
 
         // the data channel has been established by server, connect now
         channel_ctx->d_socket = create_ftp_socket(channel_ctx->c_socket->ip_addr, 
-                                                    channel_ctx->c_socket->endpoint_addr->sin_family, 
-                                                    CLIENT, PORT_DATA, DATA, cre_socket());
+                                                  channel_ctx->c_socket->endpoint_addr->sin_family, 
+                                                  CLIENT, PORT_DATA, DATA, cre_socket());
+
+        LOG(SERVER_LOG, "IP ADDRESS: %s\n", channel_ctx->c_socket->ip_addr);
                                      
         data_channel_init_socket_ftp(channel_ctx->d_channel, channel_ctx->d_socket, channel_ctx->d_socket, 
                                      CLIENT, channel_ctx->cipher_ctx);
@@ -91,7 +93,6 @@ int data_conn( channel_context* channel_ctx )
 
 int get(channel_context* channel_ctx, char* file_name, int* n_len)
 {
-    bool last_fragment = 0;
     char* buf;
     int b_len;
 
@@ -155,14 +156,16 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     }
 
-    while(!last_fragment)
+    // read data and append into file
+    if(!data_channel_read_expect(channel_ctx->d_channel, SEND))
     {
-        data_channel_read(channel_ctx->d_channel);
-        data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
-        
-        append_file(file_name, buf);
-        last_fragment = channel_ctx->d_channel->data_in->p_header->fragment_offset;
+        LOG(CLIENT_LOG, "Did not receive READ code\n");
+        return 0;
     }
+
+    data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
+    append_file(file_name, buf);
+    
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
@@ -255,20 +258,17 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     control_channel_append_ftp_type(FILE_EXIST, channel_ctx->c_channel);
     control_channel_send_wait(channel_ctx->c_channel);
 
-    LOG(SERVER_LOG, "RUN HERE 4: %s\n", file_name);
-
     // read and send file over to client side
-    while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
+    while((byte = fread(buf, 1, BUF_LEN, file)) > 0)
     {
-        data_channel_append_header( channel_ctx->d_channel, ident++, 0, 
-                                    byte == BUF_LEN, SEND, 
-                                    1, 0);
+        data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
         data_channel_append_str(buf, channel_ctx->d_channel, byte);
-        data_channel_send(channel_ctx->d_channel);
+        LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
+        data_channel_send_wait(channel_ctx->d_channel);
     }
 
     // error, abort
-    if(byte < 0)
+    if (ferror(file))
     {
         LOG(SERVER_LOG, "Error sending file\n");
         control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
@@ -277,7 +277,9 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         return 0;
     }
 
-    // send code to server, notify send file successfully
+    LOG(SERVER_LOG, "RUN HERE 4: %s\n", file_name);
+
+    // send code to endpoint, notify send file successfully
     control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
     control_channel_send(channel_ctx->c_channel);  
 
@@ -323,12 +325,12 @@ int data_append(channel_context* channel_ctx, char* file_name,
             return 0;
         } 
 
-        while(byte = fread(buf, sizeof(buf), BUF_LEN, file) > 0)
+        while(byte = fread(buf, 1, sizeof(buf), file) > 0)
         {
-            data_channel_append_header(channel_ctx->d_channel, ident++, 0,
-                                       1, APPEND, 1, 0);
+            data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
             data_channel_append_str(buf, channel_ctx->d_channel, byte);
             data_channel_send(channel_ctx->d_channel);
+            LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
         }
 
         if(byte < 0)
@@ -346,7 +348,6 @@ int data_append(channel_context* channel_ctx, char* file_name,
     }
     case SERVER:
     {
-        bool last_fragment = 0;
         char* file_name;
         int n_len;
         char* buf;
@@ -359,17 +360,16 @@ int data_append(channel_context* channel_ctx, char* file_name,
         // get file's name
         control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);
 
-        while(!last_fragment)
-        {
-            data_channel_read(channel_ctx->d_channel);
-            data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
+       
+        // read data and append into file
+        data_channel_read(channel_ctx->d_channel);
+        data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
 
-            if(!not_exist(file_name)) 
-                delete_file(file_name);
-                
-            append_file(file_name, buf);
-            last_fragment = channel_ctx->d_channel->data_in->p_header->fragment_offset;
-        }
+        if(!not_exist(file_name)) 
+            delete_file(file_name);
+            
+        append_file(file_name, buf);
+        
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
         {

@@ -111,6 +111,9 @@ int packet_read(Packet* packet)
     {
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
+
+        // decrement the fragment_offset
+        packet->p_header->fragment_offset--;
     }
 
     return len;
@@ -191,8 +194,6 @@ int packet_send_wait(Packet* packet)
 
     while(buffer_len(packet->buf) > 0)
     {
-        LOG(SERVER_LOG, "LEN: %d %d %d\n", buffer_len(packet->buf), packet->buf->end, packet->buf->offset);
-
 		FD_ZERO(&write_set);
 		FD_SET(packet->out_port, &write_set);
 		retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
@@ -305,7 +306,7 @@ void packet_set_header( Packet*packet, int identification,
     packet->p_header->tt_len = tt_len;
     packet->p_header->data_len = data_len;
     packet->p_header->packet_type = packet_type;
-    packet->p_header->fragment_offset = fragment_offset;
+    packet->p_header->fragment_offset =  (data_len + BUF_LEN - 1) / BUF_LEN;
 }
 
 void packet_clear_data(Packet* packet)
@@ -368,11 +369,18 @@ void packet_send_header(Packet* packet)
 
     memset(buf, '\0', BUF_LEN);
 
-    retval = select(packet->out_port + 1, NULL, &write_set, NULL, NULL);
+    retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
 
     if(retval <= 0)
     {
-        perror("Select failure\n");
+        char *error_message = strerror(errno);
+        LOG(SERVER_LOG, "Select failure : %s %d\n", error_message, packet->out_port);
+        int flags = fcntl(packet->out_port, F_GETFL);
+        if (flags & O_NONBLOCK) {
+            LOG(SERVER_LOG, "Socket is in non-blocking mode.\n");
+        } else {
+            LOG(SERVER_LOG, "Socket is in blocking mode.\n");
+        }
     }
 
     packet_convert_header(packet);

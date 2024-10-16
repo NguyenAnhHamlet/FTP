@@ -100,9 +100,7 @@ buffer_put_bignum(Buffer *buffer, BIGNUM **value)
 	buffer_append_str(buffer, msg, 2);
 
 	/* Store the binary data. */
-	buffer_append_str(buffer, buf, oi);
-
-	LOG(SERVER_LOG, "NUM SIZE%d\n", oi);	
+	buffer_append_str(buffer, buf, oi);	
 
 	memset(buf, 0, bin_size);
 	free(buf);
@@ -135,8 +133,6 @@ buffer_get_bignum(Buffer *buffer, BIGNUM **value)
 	{
 		perror("failed convert BIGNUM\n");
 	}
-
-	LOG(SERVER_LOG, "NUM SIZE 2: %d\n", bytes);	
 
 	return 2 + bytes;
 }
