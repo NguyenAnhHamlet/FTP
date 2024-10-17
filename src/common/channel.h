@@ -51,6 +51,7 @@ typedef struct
     control_channel* c_channel;
     socket_ftp* c_socket;
     socket_ftp* d_socket;
+    socket_ftp* d_socket_listening;
     endpoint_type type;
 
 } channel_context;

@@ -336,7 +336,7 @@ void data_channel_destroy(data_channel* d_channel)
     packet_destroy(d_channel->data_in);
     packet_destroy(d_channel->data_out);
 
-    free(d_channel);
+    // free(d_channel);
 }
 
 void data_channel_set_time_out(data_channel* channel, 

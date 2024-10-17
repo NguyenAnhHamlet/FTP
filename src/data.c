@@ -54,14 +54,12 @@ int data_conn( channel_context* channel_ctx )
         }
 
         // Open litening and waiting for connection from client
-        socket_ftp* listening_sock = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
+        channel_ctx->d_socket_listening = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
         // Send FTP_ACK to notify client
         control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
 
-        unsigned int d_socket = accept_new_connection_ftp(listening_sock);
-
-        // LOG(SERVER_LOG, "IP ADDRESS: %s\n", channel_ctx->c_socket->ip_addr);
+        unsigned int d_socket = accept_new_connection_ftp(channel_ctx->d_socket_listening);
 
         // see if peer is correct, in case there is incorrect peer trying to connect, 
         // cease the operation
@@ -69,12 +67,17 @@ int data_conn( channel_context* channel_ctx )
         {
             LOG(SERVER_LOG, "SOCKFD: %d %d\n", channel_ctx->c_socket->sockfd, channel_ctx->c_channel->data_in->in_port);
             LOG(SERVER_LOG, "Received the connection from incorrect ip address");
-            destroy_ftp_socket(listening_sock);
+            destroy_ftp_socket(channel_ctx->d_socket_listening);
+            close(channel_ctx->d_socket_listening->sockfd);
             close(d_socket);
             control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
             control_channel_send_wait(channel_ctx->c_channel);
             return 0;
         }
+
+        // Don't listen to new connection, this door is shut down
+        destroy_ftp_socket(channel_ctx->d_socket_listening);
+        close(channel_ctx->d_socket_listening->sockfd);
         
         data_channel_init(channel_ctx->d_channel, d_socket, d_socket, channel_ctx->cipher_ctx);
         data_channel_set_time_out(channel_ctx->d_channel, DEFAULT_CHANNEL_TMOUT);
@@ -106,7 +109,7 @@ int data_conn( channel_context* channel_ctx )
 
 int get(channel_context* channel_ctx, char* file_name, int* n_len)
 {
-    char* buf;
+    char buf[BUF_LEN];
     int b_len;
 
     switch (channel_ctx->type)
@@ -192,6 +195,11 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     }
 
     LOG(SERVER_LOG, "Error when getting file3\n");
+
+    // destroy data channel and socket
+    close(channel_ctx->d_channel->data_in->in_port);
+    destroy_ftp_socket(channel_ctx->d_socket);
+    data_channel_destroy(channel_ctx->d_channel);
 
     return 1;
 }
@@ -302,6 +310,11 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     control_channel_send(channel_ctx->c_channel);  
 
     free(file_name);
+
+    // destroy data channel and socket
+    close(channel_ctx->d_channel->data_in->in_port);
+    data_channel_destroy(channel_ctx->d_channel);
+    destroy_ftp_socket(channel_ctx->d_socket_listening);
 
     return 1;
 }

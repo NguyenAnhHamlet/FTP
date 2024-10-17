@@ -67,9 +67,7 @@ int client_data_put(channel_context* channel_ctx,
 
 int client_data_get(channel_context* channel_ctx, char* file_name, int n_len)
 {
-    int res = get(channel_ctx, file_name, &n_len);
-    
-    return res;
+    return get(channel_ctx, file_name, &n_len);
 }
 
 int client_data_append(channel_context* channel_ctx, char* file_name, unsigned int n_len,
@@ -294,6 +292,7 @@ int main(int argc, char* argvs[])
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);
         
+        // LOG(SERVER_LOG, "RUNNING\n");
         switch (request_int)
         {
         case IPV4_OP:
