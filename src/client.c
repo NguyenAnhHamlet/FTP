@@ -292,7 +292,6 @@ int main(int argc, char* argvs[])
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);
         
-        // LOG(SERVER_LOG, "RUNNING\n");
         switch (request_int)
         {
         case IPV4_OP:
@@ -307,6 +306,7 @@ int main(int argc, char* argvs[])
         }
         case GET:
         {
+            LOG(SERVER_LOG, "RUNNING CLIENT\n");
             operation_sucess = client_data_get(&channel_ctx, arg, strlen(arg));
             break;
         }

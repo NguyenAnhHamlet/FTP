@@ -315,6 +315,8 @@ int main()
 
         request_int = control_channel_get_ftp_type_in(&c_channel);
 
+        LOG(SERVER_LOG, "RUNNING\n");
+
         switch (request_int)
         {
         case GET:

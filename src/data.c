@@ -194,8 +194,6 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         return 0;
     }
 
-    LOG(SERVER_LOG, "Error when getting file3\n");
-
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
     destroy_ftp_socket(channel_ctx->d_socket);
@@ -309,12 +307,17 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
     control_channel_send(channel_ctx->c_channel);  
 
+    LOG(SERVER_LOG, "Error when getting file5\n");
+
     free(file_name);
+
+    LOG(SERVER_LOG, "Error when getting file4\n");
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
     data_channel_destroy(channel_ctx->d_channel);
-    destroy_ftp_socket(channel_ctx->d_socket_listening);
+
+    LOG(SERVER_LOG, "Error when getting file3\n");
 
     return 1;
 }
