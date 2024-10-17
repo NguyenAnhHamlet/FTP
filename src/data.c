@@ -31,8 +31,6 @@ int data_conn( channel_context* channel_ctx )
         channel_ctx->d_socket = create_ftp_socket(channel_ctx->c_socket->ip_addr, 
                                                   channel_ctx->c_socket->endpoint_addr->sin_family, 
                                                   CLIENT, PORT_DATA, DATA, cre_socket());
-
-        LOG(SERVER_LOG, "IP ADDRESS: %s\n", channel_ctx->c_socket->ip_addr);
                                      
         data_channel_init_socket_ftp(channel_ctx->d_channel, channel_ctx->d_socket, channel_ctx->d_socket, 
                                      CLIENT, channel_ctx->cipher_ctx);
@@ -55,16 +53,31 @@ int data_conn( channel_context* channel_ctx )
             return 0;
         }
 
-        // Accept connection from client
-        // form the data channel
-        channel_ctx->d_socket = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
-        data_channel_init_socket_ftp(channel_ctx->d_channel, channel_ctx->d_socket, channel_ctx->d_socket, SERVER, 
-                                    channel_ctx->cipher_ctx);
-        data_channel_set_time_out(channel_ctx->d_channel, DEFAULT_CHANNEL_TMOUT);
-
-        // Connection established without any issue, send the ack
+        // Open litening and waiting for connection from client
+        socket_ftp* listening_sock = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
+        // Send FTP_ACK to notify client
         control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
+
+        unsigned int d_socket = accept_new_connection_ftp(listening_sock);
+
+        // LOG(SERVER_LOG, "IP ADDRESS: %s\n", channel_ctx->c_socket->ip_addr);
+
+        // see if peer is correct, in case there is incorrect peer trying to connect, 
+        // cease the operation
+        if (!is_peer_correct(d_socket, channel_ctx->c_channel->data_in->in_port))
+        {
+            LOG(SERVER_LOG, "SOCKFD: %d %d\n", channel_ctx->c_socket->sockfd, channel_ctx->c_channel->data_in->in_port);
+            LOG(SERVER_LOG, "Received the connection from incorrect ip address");
+            destroy_ftp_socket(listening_sock);
+            close(d_socket);
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send_wait(channel_ctx->c_channel);
+            return 0;
+        }
+        
+        data_channel_init(channel_ctx->d_channel, d_socket, d_socket, channel_ctx->cipher_ctx);
+        data_channel_set_time_out(channel_ctx->d_channel, DEFAULT_CHANNEL_TMOUT);
 
         // wait for FTP_ACK from client to signify the connection has been 
         // established successfully
@@ -163,9 +176,12 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         return 0;
     }
 
+    LOG(SERVER_LOG, "Error when getting file1\n");
+
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
     append_file(file_name, buf);
-    
+
+    LOG(SERVER_LOG, "Error when getting file2\n");
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
@@ -174,6 +190,8 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         operation_abort(channel_ctx->c_channel);
         return 0;
     }
+
+    LOG(SERVER_LOG, "Error when getting file3\n");
 
     return 1;
 }

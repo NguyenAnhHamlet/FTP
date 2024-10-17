@@ -172,6 +172,7 @@ socket_ftp* socket_ftp_raw_cre()
 
 void destroy_ftp_socket(socket_ftp* socket)
 {
+    close(socket->sockfd);
     free(socket->endpoint_addr);
     free(socket);
 }

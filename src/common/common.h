@@ -79,5 +79,6 @@ int available_socket_fd(Stack* available);
 void date_time(char* res);
 void disable_echo();
 void enable_echo();
+int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2);
 
 #endif

@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <errno.h>
+#include "log/ftplog.h"
 
 #define R_O_ALL 0444
 
@@ -175,4 +176,27 @@ void enable_echo()
     tcgetattr(STDIN_FILENO, &oldt);
     oldt.c_lflag |= ECHO;   
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+}
+
+int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2)
+{
+    struct sockaddr_in addr1, addr2;
+    socklen_t addr_len = sizeof(addr1);
+
+    if(getpeername(sockfd1, (struct sockaddr*)&addr1, &addr_len) < 0 || 
+       getpeername(sockfd2, (struct sockaddr*)&addr2, &addr_len) < 0)
+    {
+        perror("Get peer name \n");
+        return 0;
+    }
+
+    char ip_addr1[INET_ADDRSTRLEN];
+    char ip_addr2[INET_ADDRSTRLEN];
+
+    inet_ntop(AF_INET, &addr1.sin_addr, ip_addr1, sizeof(ip_addr1));
+    inet_ntop(AF_INET, &addr2.sin_addr, ip_addr2, sizeof(ip_addr2));
+
+    LOG(SERVER_LOG, "IP ADDRESS: %s %s\n", ip_addr1, ip_addr2);
+    
+    return strcmp(ip_addr1, ip_addr2) ? 0 : 1;
 }
