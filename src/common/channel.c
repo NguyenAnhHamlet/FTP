@@ -201,8 +201,8 @@ void data_channel_init( data_channel* channel,
     packet_init(channel->data_in, out_port, 0, in_port);
     packet_init(channel->data_out, out_port, 0, in_port);
 
-    LOG(SERVER_LOG, "IN PORT: %d\n", in_port);
-    LOG(SERVER_LOG, "OUT PORT: %d\n", out_port);
+    set_packet_compress(channel->data_in);
+    set_packet_compress(channel->data_out);
 
     channel->data_in->in_port = in_port;
     channel->data_in->out_port = 0;

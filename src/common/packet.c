@@ -244,24 +244,18 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
 int packet_append_str(char* str, Packet* packet, unsigned int len)
 {
     buffer_append_str(packet->buf, str, len);
-    packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
 int packet_append_bignum(BIGNUM** bignum, Packet* packet)
 {
     buffer_put_bignum(packet->buf, bignum);
-    packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet); 
     return 1;
 }
 
 int packet_append_int(int num, Packet* packet)
 {
-    buffer_put_int(packet->buf, num);
-    packet->p_header->data_len = packet_get_data_len(packet);
-    packet->p_header->tt_len = packet_get_tt_len(packet);  
+    buffer_put_int(packet->buf, num); 
 
     return 1;
 }
@@ -363,8 +357,11 @@ void packet_send_header(Packet* packet)
     timeout.tv_usec = 1000000 ;
     FD_ZERO(&write_set);
     FD_SET(packet->out_port, &write_set);
-
     memset(buf, '\0', BUF_LEN);
+
+    // set data len and total len of packet
+    packet->p_header->data_len = packet_get_data_len(packet);
+    packet->p_header->tt_len = packet_get_tt_len(packet); 
 
     retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
 

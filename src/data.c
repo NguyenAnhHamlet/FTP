@@ -67,8 +67,8 @@ int data_conn( channel_context* channel_ctx )
         {
             LOG(SERVER_LOG, "SOCKFD: %d %d\n", channel_ctx->c_socket->sockfd, channel_ctx->c_channel->data_in->in_port);
             LOG(SERVER_LOG, "Received the connection from incorrect ip address");
-            destroy_ftp_socket(channel_ctx->d_socket_listening);
             close(channel_ctx->d_socket_listening->sockfd);
+            destroy_ftp_socket(channel_ctx->d_socket_listening);
             close(d_socket);
             control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
             control_channel_send_wait(channel_ctx->c_channel);
@@ -76,8 +76,8 @@ int data_conn( channel_context* channel_ctx )
         }
 
         // Don't listen to new connection, this door is shut down
-        destroy_ftp_socket(channel_ctx->d_socket_listening);
         close(channel_ctx->d_socket_listening->sockfd);
+        destroy_ftp_socket(channel_ctx->d_socket_listening);
         
         data_channel_init(channel_ctx->d_channel, d_socket, d_socket, channel_ctx->cipher_ctx);
         data_channel_set_time_out(channel_ctx->d_channel, DEFAULT_CHANNEL_TMOUT);
@@ -262,7 +262,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     LOG(SERVER_LOG, "RUN HERE 3\n");
     LOG(CLIENT_LOG, "FILE NAME: %d\n", strlen(file_name));
-    char* file_name_tmp = "/home/nguyenanh/tmp";
     file = fopen(file_name, "rb");
 
     // file does not exist or there is error in I/O operation
@@ -283,7 +282,7 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     control_channel_send_wait(channel_ctx->c_channel);
 
     // read and send file over to client side
-    while((byte = fread(buf, 1, BUF_LEN, file)) > 0)
+    while((byte = fread(buf, sizeof(char), BUF_LEN, file)) > 0)
     {
         data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
         data_channel_append_str(buf, channel_ctx->d_channel, byte);
