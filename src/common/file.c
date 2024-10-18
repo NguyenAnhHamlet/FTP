@@ -50,16 +50,20 @@ void delete_file(char path[])
 }
 
 
-void append_file(char path[], char data[])
+void append_file(char path[], char data[], int data_size)
 {
     FILE* fp = fopen(path, "a");
 
     if(!fp) fatal("Could not create file descriptor\n");
 
-    fprintf(fp, "%s", data);
+    int bytes_written = fwrite(data, sizeof(char), data_size, fp);
 
     fclose(fp);
 
+    if(bytes_written != data_size)
+    {
+        perror("Write operation failed\n");
+    }
 }
 
 bool is_empty(char path[], FILE* fp)

@@ -182,7 +182,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     LOG(SERVER_LOG, "Error when getting file1\n");
 
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
-    append_file(file_name, buf);
+    append_file(file_name, buf, b_len);
 
     LOG(SERVER_LOG, "Error when getting file2\n");
 
@@ -402,7 +402,7 @@ int data_append(channel_context* channel_ctx, char* file_name,
         if(!not_exist(file_name)) 
             delete_file(file_name);
             
-        append_file(file_name, buf);
+        append_file(file_name, buf, b_len);
         
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))

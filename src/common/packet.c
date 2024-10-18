@@ -51,9 +51,9 @@ void packet_destroy(Packet* packet)
     free(packet);
 }
 
-void packet_send(Packet* packet)
+int packet_send(Packet* packet)
 {
-    int len;
+    int len = 0;
     int curr_l = BUF_LEN;
     char buf[BUF_LEN];
 
@@ -61,15 +61,9 @@ void packet_send(Packet* packet)
     {
         buffer_get(packet->buf, buf, min(BUF_LEN, curr_l));
         len = send(packet->out_port, buf, min(BUF_LEN, curr_l), 0); 
-
-        if(len <= 0)
-        {
-            if (errno == EAGAIN)
-				return;
-            else
-                fatal("Write failed: %.100s", strerror(errno));
-        }
     }
+
+    return len;
 }
 
 void set_packet_compress(Packet* packet)
@@ -111,9 +105,6 @@ int packet_read(Packet* packet)
     {
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
-
-        // decrement the fragment_offset
-        packet->p_header->fragment_offset--;
     }
 
     return len;
@@ -203,7 +194,13 @@ int packet_send_wait(Packet* packet)
             perror("Select failure\n");
         }
 
-        packet_send(packet);
+        if(packet_send(packet) <= 0)
+        { 
+            if (errno == EAGAIN)
+                continue;
+            else
+                fatal("Write failed: %.100s", strerror(errno));
+        }
     }
 }
 
@@ -306,7 +303,7 @@ void packet_set_header( Packet*packet, int identification,
     packet->p_header->tt_len = tt_len;
     packet->p_header->data_len = data_len;
     packet->p_header->packet_type = packet_type;
-    packet->p_header->fragment_offset =  (data_len + BUF_LEN - 1) / BUF_LEN;
+    packet->p_header->fragment_offset =  fragment_offset;
 }
 
 void packet_clear_data(Packet* packet)
@@ -385,12 +382,14 @@ void packet_send_header(Packet* packet)
 
     packet_convert_header(packet);
     buffer_get_data(packet->p_header->header_buf, buf, &len);
+
+restart:
     len = send(packet->out_port, buf, 6 * sizeof(int), 0); 
 
     if(len <= 0)
     {
         if (errno == EAGAIN)
-            return;
+            goto restart;
         else
             fatal("Write failed: %.100s", strerror(errno));
     }

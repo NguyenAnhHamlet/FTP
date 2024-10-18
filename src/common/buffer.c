@@ -34,6 +34,7 @@ void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
 		buffer->end = 0;
 	}
 
+restart: 
 	// enough space for data -> write in buffer
     if (buffer->end + len < buffer->alloc)
     {
@@ -53,6 +54,8 @@ void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
         fatal("xrealloc: out of memory (new_size %d bytes)", (int) buffer->alloc);
 
     buffer->buf  = new_point;
+
+	goto restart;
 }
 
 void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)

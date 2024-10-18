@@ -41,7 +41,7 @@ int packet_read(Packet* packet);
 int packet_read_header(Packet* packet);
 int packet_wait(Packet* packet);
 int packet_read_expect(Packet* packet, unsigned int expect_value);
-void packet_send(Packet* packet);
+int packet_send(Packet* packet);
 int packet_send_wait(Packet* packet);
 
 int packet_append_str(char* str, Packet* packet, unsigned int len);
