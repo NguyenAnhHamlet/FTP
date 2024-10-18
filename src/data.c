@@ -109,7 +109,7 @@ int data_conn( channel_context* channel_ctx )
 
 int get(channel_context* channel_ctx, char* file_name, int* n_len)
 {
-    char buf[BUF_LEN];
+    char* buf;
     int b_len;
 
     switch (channel_ctx->type)
@@ -181,6 +181,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     LOG(SERVER_LOG, "Error when getting file1\n");
 
+    buf = (char*) malloc(channel_ctx->d_channel->data_in->p_header->data_len);
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
     append_file(file_name, buf, b_len);
 
@@ -191,6 +192,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         remove(file_name);
         LOG(SERVER_LOG, "Error when getting file\n");
         operation_abort(channel_ctx->c_channel);
+        free(buf);
         return 0;
     }
 
@@ -198,6 +200,9 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     close(channel_ctx->d_channel->data_in->in_port);
     destroy_ftp_socket(channel_ctx->d_socket);
     data_channel_destroy(channel_ctx->d_channel);
+
+    
+    free(buf);
 
     return 1;
 }
@@ -282,13 +287,14 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     control_channel_send_wait(channel_ctx->c_channel);
 
     // read and send file over to client side
+    data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
     while((byte = fread(buf, sizeof(char), BUF_LEN, file)) > 0)
     {
-        data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
         data_channel_append_str(buf, channel_ctx->d_channel, byte);
-        LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
-        data_channel_send_wait(channel_ctx->d_channel);
     }
+        
+    data_channel_send_wait(channel_ctx->d_channel);
+    LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
 
     // error, abort
     if (ferror(file))
@@ -363,7 +369,6 @@ int data_append(channel_context* channel_ctx, char* file_name,
             data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
             data_channel_append_str(buf, channel_ctx->d_channel, byte);
             data_channel_send(channel_ctx->d_channel);
-            LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
         }
 
         if(byte < 0)

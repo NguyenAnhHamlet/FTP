@@ -5,7 +5,7 @@
 void buffer_compress(Buffer* inbuf, Buffer* outbuf)
 {
     z_stream outgoing_stream;
-    char buf[4096];
+    char buf[inbuf->alloc];
     int status;
 
     outgoing_stream.next_in = buffer_get_ptr(inbuf);

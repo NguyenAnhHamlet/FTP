@@ -165,12 +165,14 @@ int packet_send_wait(Packet* packet)
 {
     if(packet->p_header->compression_mode == 1)
     {
+        LOG(SERVER_LOG, "RUNNING IN COMPRESSION\n");
         Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
         buffer_init(outbuf);
         buffer_compress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
+
 
     int curr_len = 0;
     fd_set write_set;

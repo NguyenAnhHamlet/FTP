@@ -14,10 +14,7 @@ int cre_socket()
         printf("\n Socket creation error \n");
         return -1;
     }
-
-
-    printf("Created socket fd\n");
-
+    
     return fd;
 }
 
