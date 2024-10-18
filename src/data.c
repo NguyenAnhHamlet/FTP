@@ -181,7 +181,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     LOG(SERVER_LOG, "Error when getting file1\n");
 
-    buf = (char*) malloc(channel_ctx->d_channel->data_in->p_header->data_len);
+    buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
     append_file(file_name, buf, b_len);
 
@@ -201,7 +201,6 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     destroy_ftp_socket(channel_ctx->d_socket);
     data_channel_destroy(channel_ctx->d_channel);
 
-    
     free(buf);
 
     return 1;
@@ -294,7 +293,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     }
         
     data_channel_send_wait(channel_ctx->d_channel);
-    LOG(SERVER_LOG, "RUNNING IN LOOP %d\n", byte);
 
     // error, abort
     if (ferror(file))

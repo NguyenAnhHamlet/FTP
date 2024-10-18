@@ -1,5 +1,5 @@
 #include "compress.h"
-#include "zlib.h"
+#include <zlib.h>
 #include "common/common.h"
 
 void buffer_compress(Buffer* inbuf, Buffer* outbuf)
@@ -7,6 +7,9 @@ void buffer_compress(Buffer* inbuf, Buffer* outbuf)
     z_stream outgoing_stream;
     char buf[inbuf->alloc];
     int status;
+
+	memset(&outgoing_stream, 0, sizeof(outgoing_stream));
+	status = deflateInit(&outgoing_stream, Z_DEFAULT_COMPRESSION);
 
     outgoing_stream.next_in = buffer_get_ptr(inbuf);
     outgoing_stream.avail_in = buffer_len(inbuf);
@@ -39,21 +42,28 @@ void buffer_compress(Buffer* inbuf, Buffer* outbuf)
 			
         }
     }
+
+	deflateEnd(&outgoing_stream);
 }
 
 void buffer_uncompress(Buffer* inbuf, Buffer* outbuf)
 {
     z_stream incoming_stream;
-    char buf[4096];
+    char buf[inbuf->alloc];
 	int status;
 
-	incoming_stream.next_in = buffer_get_ptr(inbuf);
+	memset(&incoming_stream, 0, sizeof(incoming_stream));
+	status = inflateInit(&incoming_stream);
+
 	incoming_stream.avail_in = buffer_len(inbuf);
+	incoming_stream.next_in = buffer_get_ptr(inbuf);
 
 	incoming_stream.next_out = buf;
 	incoming_stream.avail_out = sizeof(buf);
 
-    for (;;) {
+    for (;;) 
+	{
+
 		status = inflate(&incoming_stream, Z_PARTIAL_FLUSH);
 		switch (status) {
 		case Z_OK:
@@ -81,4 +91,6 @@ void buffer_uncompress(Buffer* inbuf, Buffer* outbuf)
 			fatal("buffer_uncompress: inflate returned %d", status);
 		}
 	}
+
+	inflateEnd(&incoming_stream);
 }

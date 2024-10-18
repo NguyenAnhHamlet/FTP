@@ -364,7 +364,7 @@ void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx)
 void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type)
 {
     data_channel_append_header(d_channel, -1, 0, 
-                                  -1, ftp_type, 0, 0);
+                                  -1, ftp_type, 1, 0);
 }
 
 int data_channel_get_ftp_type_in(data_channel* d_channel)

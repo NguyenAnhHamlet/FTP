@@ -86,14 +86,6 @@ int packet_read(Packet* packet)
     memset(buf, '\0', BUF_LEN);
     packet_read_header(packet);
 
-    if(packet->p_header->compression_mode)
-    {
-        Buffer* outbuf;
-        buffer_uncompress(packet->buf, outbuf );
-        buffer_clear(packet->buf);
-        buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
-    }
-
     // In case this package only has header but no data, continue
     if(packet->p_header->data_len <= 0)
         return 1;
@@ -105,6 +97,16 @@ int packet_read(Packet* packet)
     {
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
+    }
+
+    if(packet->p_header->compression_mode)
+    {
+        Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
+        buffer_init(outbuf);
+        LOG(SERVER_LOG, "LENGTH : %d", packet->buf->alloc);
+        buffer_uncompress(packet->buf, outbuf );
+        buffer_clear(packet->buf);
+        buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
 
     return len;
@@ -165,13 +167,14 @@ int packet_send_wait(Packet* packet)
 {
     if(packet->p_header->compression_mode == 1)
     {
-        LOG(SERVER_LOG, "RUNNING IN COMPRESSION\n");
         Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
         buffer_init(outbuf);
         buffer_compress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
+
+    // LOG("RUNNING IN COMPRESSION %d\n", )
 
 
     int curr_len = 0;
