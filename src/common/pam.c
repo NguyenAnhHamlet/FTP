@@ -71,8 +71,6 @@ int auth_pam_password(struct passwd *pw, char *password)
 	
     pampasswd = strdup(password);
 
-	LOG(SERVER_LOG, "PASSWORD: %s", pampasswd);
-
     pam_retval = pam_authenticate((pam_handle_t *)pamh, 0);
 
     if (pam_retval == PAM_SUCCESS) 
@@ -92,7 +90,7 @@ void start_pam(struct passwd *pw)
 {
 	int pam_retval;
 
-	LOG(SERVER_LOG, "Starting up PAM with username \"%.200s\"", pw->pw_name);
+	LOG(SERVER_LOG, "Starting up PAM with username \"%.200s\"\n", pw->pw_name);
 
 	pam_retval = pam_start("sftp", pw->pw_name, &conv, &pamh);
 

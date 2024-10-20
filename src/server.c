@@ -80,13 +80,10 @@ int pass_authen_server(control_channel* c_channel)
     control_channel_get_str(c_channel, data, &len);
 
     unsigned int index = find_index(data, len, '\n');
-    LOG(SERVER_LOG, "LEN TOKEN: %d\n", index  );
     strncpy(user_name, data, index );
     strcpy(user_pass, data + index + 1);
 
     pw = getpwnam(user_name);
-
-    LOG(SERVER_LOG, "PASS: %s \n", user_pass);
 
     if (!pw )
     {
@@ -249,7 +246,7 @@ int main()
             if ((pid = fork()) == 0) 
             {
                 clientfd = newsock ;
-                LOG(SERVER_LOG, "New connection from client %d\n", clientfd);
+                LOG(SERVER_LOG, "New connection from client with fd: %d\n", clientfd);
                 break;
             } 
         }

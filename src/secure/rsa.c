@@ -115,9 +115,6 @@ int rsa_pub_decrypt(RSA * priv, BIGNUM** in, BIGNUM** out)
 
     BN_bn2bin(*in, inbuf);
 
-    LOG(SERVER_LOG, "SIZE 2: %d\n", ilen);
-    LOG(SERVER_LOG, "SIZE 2: %d\n", olen);
-
 	if ((len = RSA_private_decrypt(ilen, inbuf, outbuf, priv,
 				       RSA_PKCS1_PADDING)) <= 0)
 	{

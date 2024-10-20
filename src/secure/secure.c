@@ -35,8 +35,16 @@ int public_key_authentication(control_channel* channel, int evolution)
             return 0;
         }
 
+        control_channel_get_bignum(&recv_challenge, channel);
         load_private_rsa_key(&private_key, private_RSAkey_file);
         rsa_pub_decrypt(private_key, &recv_challenge, &decrypt_challenge);
+
+        // check if the decryption working
+        if (!BN_cmp(recv_challenge, decrypt_challenge))
+        {
+            LOG(SERVER_LOG, "Failed decryption\n");
+            return 0;
+        }
         
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&decrypt_challenge, channel);
@@ -78,12 +86,17 @@ int public_key_authentication(control_channel* channel, int evolution)
             return 0;
         }
 
-        LOG(SERVER_LOG, "Received RSA public key\n");
-
         channel_recv_public_key(channel, pub_key);
 
         // encrypt data
         rsa_pub_encrypt(pub_key, &challenge, &sig);
+
+        // check if the encryption working
+        if (!BN_cmp(challenge, sig))
+        {
+            LOG(SERVER_LOG, "Failed encryption\n");
+            return 0;
+        }
 
         // send the challenge to endpoint
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
