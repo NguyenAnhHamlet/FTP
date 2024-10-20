@@ -109,7 +109,7 @@ int data_conn( channel_context* channel_ctx )
 
 int get(channel_context* channel_ctx, char* file_name, int* n_len)
 {
-    char* buf;
+    char* buf, *base_file_name;
     int b_len;
 
     switch (channel_ctx->type)
@@ -183,14 +183,23 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
-    append_file(file_name, buf, b_len);
+    basename(file_name, &base_file_name);
 
-    LOG(SERVER_LOG, "Error when getting file2\n");
+    if (!not_exist(base_file_name))
+    {
+        // Remove old file
+        remove(base_file_name);
+    }
+
+    LOG(SERVER_LOG, "BASE: %s\n", base_file_name);
+
+    create_file(base_file_name);
+    append_file(base_file_name, buf, b_len);
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
         remove(file_name);
-        LOG(SERVER_LOG, "Error when getting file\n");
+        LOG(SERVER_LOG, "Error when getting file %s from remote server\n", file_name);
         operation_abort(channel_ctx->c_channel);
         free(buf);
         return 0;

@@ -37,9 +37,9 @@ mode_t permission(char path[])
     return permissions;
 }   
 
-void create_file(char path[], FILE* fp)
+void create_file(char path[])
 {
-    fp = fopen(path, "w");
+    FILE* fp = fopen(path, "w");
     fclose(fp);
 }
 
@@ -111,4 +111,17 @@ int list_dir(char* dir, char* res, unsigned int* r_len)
     perror ("Couldn't open the directory");
     return -1;
 
+}
+
+void basename(char* path, char** ret)
+{
+    *ret = strrchr(path, '/');
+
+    if (!ret)
+    {
+        *ret = path;
+        return;
+    }
+
+    (*ret)++; 
 }
