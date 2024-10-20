@@ -99,6 +99,11 @@ int packet_read(Packet* packet)
         len += curr_len;
     }
 
+    if(curr_len <= 0)
+    {
+        fatal("Connection closed by the peer\n");
+    }
+
     if(packet->p_header->compression_mode)
     {
         Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
@@ -129,8 +134,10 @@ int packet_read_header(Packet* packet)
 
     for(int i=0; i < 6; i++)
     {
-        if(read(packet->in_port, interger, 4) < 0)
-            return 0;
+        if(read(packet->in_port, interger, 4) <= 0)
+        {
+            fatal("Connection closed by the peer");
+        }
         
         switch (i)
         {

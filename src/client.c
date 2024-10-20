@@ -286,7 +286,20 @@ int main(int argc, char* argvs[])
     while(ftp_running)
     {
         printf("ftp> ");
-        fgets(buffer, sizeof(buffer), stdin);
+        if(!fgets(buffer, sizeof(buffer), stdin))
+        {
+            if(feof(stdin))
+            {
+                printf("EOF signal detected, terminate the program\n");
+                return 1;
+            }
+            else 
+            {
+                perror("Error reading input");
+                continue;
+            }
+        }
+
         remove_endline(buffer);
         if(strlen(buffer) == 1) continue; 
         int operation_sucess = 1;
