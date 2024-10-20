@@ -29,14 +29,12 @@ int public_key_authentication(control_channel* channel, int evolution)
         control_channel_append_ftp_type(FTP_PUB_KEY_SEND, channel);
         channel_send_public_key(channel, public_RSAkey_file);
 
-        // buffer_init(channel->data_in->buf);
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
             LOG(SERVER_LOG, "Failed receive challenge\n");
             return 0;
         }
 
-        control_channel_get_bignum(&recv_challenge, channel);
         load_private_rsa_key(&private_key, private_RSAkey_file);
         rsa_pub_decrypt(private_key, &recv_challenge, &decrypt_challenge);
         
@@ -87,7 +85,6 @@ int public_key_authentication(control_channel* channel, int evolution)
         // encrypt data
         rsa_pub_encrypt(pub_key, &challenge, &sig);
 
-        // buffer_init(channel->data_in->buf);
         // send the challenge to endpoint
         control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
         control_channel_append_bignum(&sig, channel );
@@ -101,7 +98,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         control_channel_get_bignum(&recv_challenge, channel);
 
-        if(!BN_cmp(recv_challenge, challenge))
+        if(BN_cmp(recv_challenge, challenge) != 0)
         {
             control_channel_append_ftp_type(FTP_FAIL_AUTHEN, channel);
             control_channel_send_wait(channel);

@@ -306,7 +306,6 @@ int main(int argc, char* argvs[])
         }
         case GET:
         {
-            LOG(SERVER_LOG, "RUNNING CLIENT\n");
             operation_sucess = client_data_get(&channel_ctx, arg, strlen(arg));
             break;
         }

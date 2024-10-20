@@ -76,7 +76,7 @@ int rsa_pub_encrypt(RSA * pub, BIGNUM** in, BIGNUM** out)
     memset(outbuf, 0, olen);
 	memset(inbuf, 0, ilen);
 
-    BN_bin2bn(inbuf, ilen, *in);
+    BN_bn2bin(*in, inbuf);
 
     if ((len = RSA_public_encrypt(ilen, inbuf, outbuf, pub,
 				      RSA_PKCS1_PADDING)) <= 0)
@@ -93,6 +93,8 @@ int rsa_pub_encrypt(RSA * pub, BIGNUM** in, BIGNUM** out)
 	memset(inbuf, 0, ilen);
 	free(outbuf);
 	free(inbuf);
+
+    return len;
 }
 
 int rsa_pub_decrypt(RSA * priv, BIGNUM** in, BIGNUM** out)
@@ -111,7 +113,7 @@ int rsa_pub_decrypt(RSA * priv, BIGNUM** in, BIGNUM** out)
     memset(outbuf, 0, olen);
 	memset(inbuf, 0, ilen);
 
-    BN_bin2bn(inbuf, ilen, *in);
+    BN_bn2bin(*in, inbuf);
 
     LOG(SERVER_LOG, "SIZE 2: %d\n", ilen);
     LOG(SERVER_LOG, "SIZE 2: %d\n", olen);
