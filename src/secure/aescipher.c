@@ -26,7 +26,7 @@ int aes_cipher_reinit(cipher_context* ctx)
 }
 
 int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
-                        int inlen, char* outbuf, int outlen )
+                        int inlen, char* outbuf, int* outlen )
 {
     unsigned char *convert_key;
     BN_bn2bin(cipher_ctx->key, convert_key);
@@ -39,7 +39,7 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
         return 0;
     }
 
-    if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, &outlen, inbuf, inlen))
+    if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, outlen, inbuf, inlen))
     {
         LOG(SERVER_LOG, "Could not perform encryption\n");
         LOG(CLIENT_LOG, "Could not perform encryption\n");
@@ -50,7 +50,7 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
 }
 
 int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
-                        int inlen, char* outbuf, int outlen )
+                        int inlen, char* outbuf, int* outlen )
 {
 
     unsigned char *convert_key;

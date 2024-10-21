@@ -15,13 +15,13 @@ void buffer_init(Buffer * buffer)
 
 void buffer_free(Buffer * buffer)
 {
-    memset(buffer->buf, 0, buffer->alloc);
+    memset(buffer->buf, '\0', buffer->alloc);
 	free(buffer->buf);
 }
 
 void buffer_clear(Buffer * buffer)
 {
-	memset(buffer->buf, 0, buffer->alloc);
+	memset(buffer->buf, '\0', buffer->alloc);
 	buffer->offset = 0;
 	buffer->end = 0;
 }

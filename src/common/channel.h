@@ -132,13 +132,11 @@ void data_channel_init_socket_ftp(data_channel* channel,
                                   endpoint_type conn,
                                   cipher_context* cipher_ctx);
                         
-void data_channel_decrypt(data_channel* channel, char* outbuf, 
-                          unsigned int out_len);
-void data_channel_encrypt(data_channel* channel, char* outbuf, 
-                          unsigned int out_len);
+void data_channel_decrypt(data_channel* channel);
+void data_channel_encrypt(data_channel* channel);
 void set_data_channel_compress(data_channel* channel);
 void unset_data_channel_compress(data_channel* channel);
-
+void data_channel_clean_dataout(data_channel* channel);
 int data_channel_read(data_channel* channel);
 int data_channel_read_header(data_channel* channel);
 int data_channel_read_expect(data_channel* channel, 
@@ -163,7 +161,7 @@ int data_channel_get_int(data_channel* channel);
 int data_channel_get_str(data_channel* channel, char* str, 
                          unsigned int* len);
 int data_channel_get_bignum(BIGNUM** bignum, data_channel* channel);
-void data_channel_clean_datain_clear(data_channel* channel);
+void data_channel_clean_datain(data_channel* channel);
 void data_channel_destroy(data_channel* d_channel);
 void data_channel_set_time_out(data_channel* channel, 
                                unsigned int tmout);

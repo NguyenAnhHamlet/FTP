@@ -28,8 +28,8 @@ typedef enum
 int aes_cipher_init(cipher_context* cipher_ctx);
 int aes_cipher_reinit(cipher_context* ctx);
 int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
-                        int inlen, char* outbuf, int outlen );
+                        int inlen, char* outbuf, int* outlen );
 int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf, 
-                        int inlen, char* outbuf, int outlen);
+                        int inlen, char* outbuf, int* outlen);
 
 #endif

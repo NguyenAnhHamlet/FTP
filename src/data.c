@@ -462,7 +462,8 @@ int data_newer(channel_context* channel_ctx, char* file_name,
 
         if(is_older(rm_datetime, lc_datetime))
         {
-            LOG(CLIENT_LOG, "Server file is older than local file\nAbort the operation\n");
+            LOG(CLIENT_LOG, "Server file is older than local file\n" 
+                            "Abort the operation\n");
             
             return 0;
         }

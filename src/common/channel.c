@@ -233,18 +233,43 @@ void data_channel_init_socket_ftp(data_channel* channel,
                       in_socket->sockfd, cipher_ctx);
 }
 
-void data_channel_decrypt(data_channel* channel, char* outbuf, unsigned int out_len)
+void data_channel_decrypt(data_channel* channel)
 {
-    aes_cypher_decrypt( channel->cipher_ctx, channel->data_in->buf->buf , 
-                        buffer_len(channel->data_in->buf), outbuf, out_len);
+    if(channel->data_in->p_header->data_len <= 0) return;
+
+    char* buf, *outbuf;
+    int b_len, out_len;
+
+    // init
+    outbuf = (char*) malloc(buffer_len(channel->data_in->buf));
+    buf = (char*) malloc(buffer_len(channel->data_in->buf));
+
+    memset(outbuf, 0, buffer_len(channel->data_in->buf));
+    memset(buf, 0, buffer_len(channel->data_in->buf));
+
+    packet_get_data(channel->data_out, buf, &b_len);
+    aes_cypher_decrypt( channel->cipher_ctx, buf, 
+                        b_len, outbuf, &out_len);
+    data_channel_clean_datain(channel);
+    packet_append_str(outbuf, channel->data_in, out_len);
 }
 
-void data_channel_encrypt(data_channel* channel, char* outbuf, unsigned int out_len)
+void data_channel_encrypt(data_channel* channel)
 {
-    char* buf;
-    int b_len;
+    char* buf, *outbuf;
+    int b_len, out_len;
+
+    // init
+    outbuf = (char*) malloc(buffer_len(channel->data_out->buf));
+    buf = (char*) malloc(buffer_len(channel->data_out->buf));
+
+    memset(outbuf, 0, buffer_len(channel->data_out->buf));
+    memset(buf, 0, buffer_len(channel->data_out->buf));
+
     data_channel_get_str(channel, buf, &b_len);
-    aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, out_len);
+    aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, &out_len);
+    data_channel_clean_dataout(channel);
+    data_channel_append_str(outbuf, channel, out_len);
 }
 
 void set_data_channel_compress(data_channel* channel)
@@ -259,7 +284,10 @@ void unset_data_channel_compress(data_channel* channel)
 
 int data_channel_read(data_channel* channel)
 {
-    return packet_read(channel->data_in);
+    if(!packet_read(channel->data_in)) return 0;
+    data_channel_decrypt(channel);
+
+    return 1;
 }
 
 int data_channel_read_header(data_channel* channel)
@@ -269,11 +297,15 @@ int data_channel_read_header(data_channel* channel)
 
 int data_channel_read_expect(data_channel* channel, unsigned int expect_value)
 {
-    return packet_read_expect(channel->data_in, expect_value);
+    if(!packet_read_expect(channel->data_in, expect_value)) return 0;
+    data_channel_decrypt(channel);
+
+    return 1;
 }
 
 int data_channel_send(data_channel* channel)
 {
+    data_channel_encrypt(channel);
     return packet_send_wait(channel->data_out);
 }
 
@@ -326,17 +358,20 @@ int data_channel_set_header(data_channel* channel,
                       compression_mode, data_len);
 }
 
-void data_channel_clean_datain_clear(data_channel* channel)
+void data_channel_clean_datain(data_channel* channel)
 {
     packet_clear_data(channel->data_in);
+}
+
+void data_channel_clean_dataout(data_channel* channel)
+{
+    packet_clear_data(channel->data_out);
 }
 
 void data_channel_destroy(data_channel* d_channel)
 {
     packet_destroy(d_channel->data_in);
     packet_destroy(d_channel->data_out);
-
-    // free(d_channel);
 }
 
 void data_channel_set_time_out(data_channel* channel, 

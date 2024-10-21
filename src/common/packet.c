@@ -181,9 +181,6 @@ int packet_send_wait(Packet* packet)
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
     }
 
-    // LOG("RUNNING IN COMPRESSION %d\n", )
-
-
     int curr_len = 0;
     fd_set write_set;
     struct timeval timeout;
@@ -280,7 +277,6 @@ unsigned int packet_get_int(Packet* packet)
 int packet_get_str(Packet* packet, char* str, unsigned int* len)
 {
     buffer_get_data(packet->buf, str, len);
-
     return 1;
 }
 
