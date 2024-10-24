@@ -189,7 +189,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
 
     if(!generate_pub_keys(dh))
     {
-        LOG(CLIENT_LOG, "Failed to generate public keys\n");
+        LOG(SERVER_LOG, "Failed to generate public keys\n");
         return 0;
     }
 
@@ -202,7 +202,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     // Get the public key from endpoint
     if(!control_channel_read_expect(channel, FTP_PUB_KEX_SEND))
     {
-        LOG(CLIENT_LOG, "Failed receive public key from endpoint\n");
+        LOG(SERVER_LOG, "Failed receive public key from endpoint\n");
         return 0;
     }
 
@@ -210,9 +210,12 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
 
     if(!generate_secret_key(dh, &ctx->key, &pub))
     {
-        LOG(CLIENT_LOG, "Failed to compute shared secret key\n");
+        LOG(SERVER_LOG, "Failed to compute shared secret key\n");
         return 0;
     }
+
+    char *dec_str = BN_bn2dec(ctx->key);
+    printf("BIGNUM in decimal: %s\n", dec_str);
 
     return 1;
 }

@@ -107,7 +107,8 @@
     "keygen.h": "c",
     "stdio.h": "c",
     "fcntl.h": "c",
-    "unistd.h": "c"
+    "unistd.h": "c",
+    "compare": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

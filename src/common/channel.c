@@ -240,16 +240,17 @@ void data_channel_decrypt(data_channel* channel)
     char* buf, *outbuf;
     int b_len, out_len;
 
-    // init
-    outbuf = (char*) malloc(buffer_len(channel->data_in->buf));
-    buf = (char*) malloc(buffer_len(channel->data_in->buf));
+    outbuf = (char*) malloc(buffer_len(channel->data_in->buf) + EVP_MAX_BLOCK_LENGTH);
+    buf = (char*) malloc(buffer_len(channel->data_in->buf) );
 
-    memset(outbuf, 0, buffer_len(channel->data_in->buf));
+    memset(outbuf, 0, buffer_len(channel->data_in->buf) + EVP_MAX_BLOCK_LENGTH);
     memset(buf, 0, buffer_len(channel->data_in->buf));
 
-    packet_get_data(channel->data_out, buf, &b_len);
+    packet_get_str(channel->data_in, buf, &b_len);
+    LOG(SERVER_LOG, "DATA CLIENT1: %s\n", buf);
     aes_cypher_decrypt( channel->cipher_ctx, buf, 
                         b_len, outbuf, &out_len);
+    LOG(SERVER_LOG, "DATA CLIENT2: %s\n", outbuf);
     data_channel_clean_datain(channel);
     packet_append_str(outbuf, channel->data_in, out_len);
 }
@@ -257,17 +258,19 @@ void data_channel_decrypt(data_channel* channel)
 void data_channel_encrypt(data_channel* channel)
 {
     char* buf, *outbuf;
-    int b_len, out_len;
+    int b_len, out_len, block_size;
 
-    // init
-    outbuf = (char*) malloc(buffer_len(channel->data_out->buf));
-    buf = (char*) malloc(buffer_len(channel->data_out->buf));
+    outbuf = (char*) malloc(buffer_len(channel->data_in->buf) + EVP_MAX_BLOCK_LENGTH);
+    buf = (char*) malloc(buffer_len(channel->data_in->buf) );
 
     memset(outbuf, 0, buffer_len(channel->data_out->buf));
     memset(buf, 0, buffer_len(channel->data_out->buf));
 
-    data_channel_get_str(channel, buf, &b_len);
+    LOG(SERVER_LOG, "DATA SERVER0: %s\n", channel->data_out->buf->buf + channel->data_out->buf->offset  );
+    packet_get_str(channel->data_out, buf, &b_len);
+    LOG(SERVER_LOG, "DATA SERVER1: %s\n", buf);
     aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, &out_len);
+    LOG(SERVER_LOG, "DATA SERVER2: %s\n", outbuf);
     data_channel_clean_dataout(channel);
     data_channel_append_str(outbuf, channel, out_len);
 }
@@ -311,6 +314,7 @@ int data_channel_send(data_channel* channel)
 
 int data_channel_send_wait(data_channel* channel)
 {
+    data_channel_encrypt(channel);
     return packet_send_wait(channel->data_out);
 }
 
