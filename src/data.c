@@ -191,8 +191,6 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         remove(base_file_name);
     }
 
-    LOG(SERVER_LOG, "BASE: %s\n", base_file_name);
-
     create_file(base_file_name);
     append_file(base_file_name, buf, b_len);
 
@@ -261,7 +259,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
         // get file's name
         control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);        
-        LOG(CLIENT_LOG, "DATA LEN 2: %d\n", n_len);
         break;
     }
     
@@ -313,23 +310,15 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         return 0;
     }
 
-    LOG(SERVER_LOG, "RUN HERE 4: %s\n", file_name);
-
     // send code to endpoint, notify send file successfully
     control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
     control_channel_send(channel_ctx->c_channel);  
 
-    LOG(SERVER_LOG, "Error when getting file5\n");
-
     free(file_name);
-
-    LOG(SERVER_LOG, "Error when getting file4\n");
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
     data_channel_destroy(channel_ctx->d_channel);
-
-    LOG(SERVER_LOG, "Error when getting file3\n");
 
     return 1;
 }
