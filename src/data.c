@@ -199,7 +199,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
         LOG(SERVER_LOG, "CODE: %d\n", channel_ctx->c_channel->data_in->p_header->packet_type);
-        remove(file_name);
+        remove(base_file_name);
         LOG(SERVER_LOG, "Error when getting file %s from remote server\n", file_name);
         operation_abort(channel_ctx->c_channel);
         free(buf);
@@ -286,7 +286,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         LOG(SERVER_LOG, strerror(errno));
         control_channel_append_ftp_type(FILE_NOT_EXIST, channel_ctx->c_channel);
         control_channel_send_wait(channel_ctx->c_channel);
-        free(file_name);
         return 0;
     } 
 
