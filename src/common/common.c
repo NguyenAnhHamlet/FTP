@@ -196,7 +196,7 @@ int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2)
     inet_ntop(AF_INET, &addr1.sin_addr, ip_addr1, sizeof(ip_addr1));
     inet_ntop(AF_INET, &addr2.sin_addr, ip_addr2, sizeof(ip_addr2));
 
-    LOG(SERVER_LOG, "IP ADDRESS: %s %s\n", ip_addr1, ip_addr2);
+    LOG(SERVER_LOG, "IP ADDRESS: %s\n", ip_addr1);
     
     return strcmp(ip_addr1, ip_addr2) ? 0 : 1;
 }

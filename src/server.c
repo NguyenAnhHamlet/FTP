@@ -312,6 +312,8 @@ int main()
 
         request_int = control_channel_get_ftp_type_in(&c_channel);
 
+        printf("CODE: %d\n", request_int);
+
         switch (request_int)
         {
         case GET:
