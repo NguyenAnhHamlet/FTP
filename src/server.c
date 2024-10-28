@@ -323,8 +323,9 @@ int main()
         }
         case PUT:
         {
-            char* f_name;
+            char f_name[BUF_LEN];
             unsigned int n_len;
+            memset(f_name, 0, BUF_LEN);
             operation_sucess = server_data_get(&channel_ctx, f_name, &n_len);
             break;
         }

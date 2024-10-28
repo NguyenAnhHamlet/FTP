@@ -266,11 +266,8 @@ void data_channel_encrypt(data_channel* channel)
     memset(outbuf, 0, buffer_len(channel->data_out->buf));
     memset(buf, 0, buffer_len(channel->data_out->buf));
 
-    LOG(SERVER_LOG, "DATA SERVER0: %s\n", channel->data_out->buf->buf + channel->data_out->buf->offset  );
     packet_get_str(channel->data_out, buf, &b_len);
-    LOG(SERVER_LOG, "DATA SERVER1: %s\n", buf);
     aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, &out_len);
-    LOG(SERVER_LOG, "DATA SERVER2: %s\n", outbuf);
     data_channel_clean_dataout(channel);
     data_channel_append_str(outbuf, channel, out_len);
 }

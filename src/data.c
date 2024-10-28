@@ -159,6 +159,8 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
             return 0;
         }
 
+
+        LOG(SERVER_LOG, "Error when getting file0\n");
         control_channel_get_str(channel_ctx->c_channel, file_name, n_len);
         
         break;
@@ -196,12 +198,15 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
+        LOG(SERVER_LOG, "CODE: %d\n", channel_ctx->c_channel->data_in->p_header->packet_type);
         remove(file_name);
         LOG(SERVER_LOG, "Error when getting file %s from remote server\n", file_name);
         operation_abort(channel_ctx->c_channel);
         free(buf);
         return 0;
     }
+
+    LOG(SERVER_LOG, "RUNNING HERE3\n");
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
@@ -253,8 +258,8 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
             return 0;
         }
 
-        file_name = (char*) malloc(BUF_LEN);
-        // init 
+         // init 
+        file_name[BUF_LEN];
         memset(file_name, '\0', BUF_LEN);
 
         // get file's name
@@ -270,9 +275,9 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     }
 
-    LOG(SERVER_LOG, "RUN HERE 3\n");
-    LOG(CLIENT_LOG, "FILE NAME: %d\n", strlen(file_name));
     file = fopen(file_name, "rb");
+
+    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name);
 
     // file does not exist or there is error in I/O operation
     if (file == NULL)
@@ -287,11 +292,14 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     LOG(SERVER_LOG, "FILE NAME: %s\n", file_name);
 
-    // File does exist, send code to confirm operation
-    control_channel_append_ftp_type(FILE_EXIST, channel_ctx->c_channel);
-    control_channel_send_wait(channel_ctx->c_channel);
+    if(channel_ctx->type == SERVER)
+    {
+        // File does exist, send code to confirm operation - server side only
+        control_channel_append_ftp_type(FILE_EXIST, channel_ctx->c_channel);
+        control_channel_send_wait(channel_ctx->c_channel);
+    }
 
-    // read and send file over to client side
+    // read and send file over to other endpoint
     data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
     while((byte = fread(buf, sizeof(char), BUF_LEN, file)) > 0)
     {
@@ -306,15 +314,12 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         LOG(SERVER_LOG, "Error sending file\n");
         control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
-        free(file_name);
         return 0;
     }
 
     // send code to endpoint, notify send file successfully
     control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
     control_channel_send(channel_ctx->c_channel);  
-
-    free(file_name);
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);

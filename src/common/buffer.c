@@ -26,8 +26,6 @@ void buffer_free(Buffer * buffer)
 		LOG(SERVER_LOG, "BUFFER NULL 1\n");
 		return;
 	} 
-
-	LOG(SERVER_LOG, "LEN TOTAL: %d\n", buffer->alloc);
 		
     memset(buffer->buf, '\0', buffer->alloc);
 	free(buffer->buf);
