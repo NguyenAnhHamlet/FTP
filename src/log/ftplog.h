@@ -3,11 +3,13 @@
 
 #include<string.h>
 
-#define FTP_CLIENT_LOG_FILE "/var/log/ftp.log"
+#define FTP_CLIENT_LOG_FILE "/var/log/ftpclient.log"
 #define FTP_SERVER_LOG_FILE "/var/log/ftpserver.log"
+#define FTP_COMOMON_LOG_FILE "/var/log/ftp.log"
 
 typedef enum 
 {
+    COMMON_LOG,
     CLIENT_LOG,
     SERVER_LOG
 }

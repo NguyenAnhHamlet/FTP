@@ -20,6 +20,9 @@ void LOG(ftplog_type type, const char* format, ...)
     case SERVER_LOG:
         logfile = fopen(FTP_SERVER_LOG_FILE, "a");
     
+    case COMMON_LOG:
+        logfile = fopen(FTP_COMOMON_LOG_FILE, "a");
+    
     default:
         break;
     }

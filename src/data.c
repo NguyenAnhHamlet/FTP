@@ -432,9 +432,6 @@ int data_newer(channel_context* channel_ctx, char* file_name,
     {
     case CLIENT:
     {
-        control_channel_append_ftp_type(NEWER, channel_ctx->c_channel);
-        control_channel_send(channel_ctx->c_channel);
-
         if(!remote_modtime(channel_ctx->c_channel, channel_ctx->type, file_name, 
                            &n_len, rm_modtime, &rm_len ))
         {
