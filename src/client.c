@@ -348,8 +348,8 @@ int main(int argc, char* argvs[])
         case NEWER:
         {
             // send NEWER code to server
-            control_channel_append_ftp_type(NEWER, channel_ctx->c_channel);
-            control_channel_send(channel_ctx->c_channel);
+            control_channel_append_ftp_type(NEWER, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_data_newer(&channel_ctx, arg, strlen(arg));
             break;
         }

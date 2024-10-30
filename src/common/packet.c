@@ -90,7 +90,14 @@ int packet_read(Packet* packet)
     if(packet->p_header->data_len <= 0)
         return 1;
 
-    packet_wait(packet);
+    int res = packet_wait(packet);
+
+    if(res <= -1) perror("Error in select function");
+    if(res == 0) 
+    {
+        LOG(COMMON_LOG, "Timeout in select");
+        return 0;
+    } 
 
     while(  len < packet->p_header->data_len && 
             (curr_len = read(packet->in_port, buf, min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
@@ -108,7 +115,6 @@ int packet_read(Packet* packet)
     {
         Buffer* outbuf = (Buffer*) malloc(sizeof(Buffer)) ;
         buffer_init(outbuf);
-        LOG(SERVER_LOG, "LENGTH : %d", packet->buf->alloc);
         buffer_uncompress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
@@ -118,7 +124,7 @@ int packet_read(Packet* packet)
 }
 
 // Ought to read the header in this primitive manner
-// The total len of the packet needed to be got first 
+// The total len of the packet needs to be filled first 
 // to make sure the receiving endpoint get enough 
 // data from the sending endpoint
 int packet_read_header(Packet* packet)
@@ -186,8 +192,8 @@ int packet_send_wait(Packet* packet)
     struct timeval timeout;
     int retval;
 
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 1000000 ;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
 
     // send the header first
     packet_send_header(packet);
@@ -216,11 +222,14 @@ int packet_send_wait(Packet* packet)
 int packet_wait(Packet* packet)
 {
     fd_set read_set;
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0; 
 
     FD_ZERO(&read_set);
 	FD_SET(packet->in_port, &read_set);
 
-    int res = select(packet->in_port + 1, &read_set, NULL, NULL, NULL);
+    int res = select(packet->in_port + 1, &read_set, NULL, NULL, &timeout);
 
     return res;
 }
@@ -244,7 +253,7 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
         return -1;
     }
 
-    packet_read(packet);
+    if(!packet_read(packet)) return 0;
     packet_type = packet->p_header->packet_type;
 
     return packet_type == expect_value ? 1 : 0;      
