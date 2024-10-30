@@ -49,7 +49,8 @@ int data_conn( channel_context* channel_ctx )
     {
         if(!control_channel_read_expect(channel_ctx->c_channel, FTP_CONN))
         {
-            LOG(SERVER_LOG, "Did not receive the connection code\n");
+            LOG(SERVER_LOG, "Did not receive the connection code, code: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
             return 0;
         }
 
@@ -116,10 +117,6 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     {
     case CLIENT:
     {
-        // send GET code to server
-        control_channel_append_ftp_type(GET, channel_ctx->c_channel);
-        control_channel_send_wait(channel_ctx->c_channel);
-
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
@@ -198,15 +195,12 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
-        LOG(SERVER_LOG, "CODE: %d\n", channel_ctx->c_channel->data_in->p_header->packet_type);
         remove(base_file_name);
         LOG(SERVER_LOG, "Error when getting file %s from remote server\n", file_name);
         operation_abort(channel_ctx->c_channel);
         free(buf);
         return 0;
     }
-
-    LOG(SERVER_LOG, "RUNNING HERE3\n");
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
@@ -229,10 +223,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     {
     case CLIENT:
     {
-        // send PUT code to server
-        control_channel_append_ftp_type(PUT, channel_ctx->c_channel);
-        control_channel_send_wait(channel_ctx->c_channel);
-
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
@@ -335,10 +325,6 @@ int data_append(channel_context* channel_ctx, char* file_name,
     {
     case CLIENT:
     {
-        // send APPEND code to server
-        control_channel_append_ftp_type(APPEND, channel_ctx->c_channel);
-        control_channel_send(channel_ctx->c_channel);
-
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
@@ -438,40 +424,43 @@ int data_append(channel_context* channel_ctx, char* file_name,
 int data_newer(channel_context* channel_ctx, char* file_name, 
                int n_len)
 {
-    char* rm_modtime, *lc_modtime;
-    struct tm* rm_datetime, *lc_datetime;
-    unsigned int *rm_len, *lc_len;
+    char rm_modtime[BUF_LEN], lc_modtime[BUF_LEN], *local_file_name;
+    struct tm rm_datetime, lc_datetime;
+    unsigned int rm_len, lc_len;
 
     switch (channel_ctx->type)
     {
     case CLIENT:
     {
+        control_channel_append_ftp_type(NEWER, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
         if(!remote_modtime(channel_ctx->c_channel, channel_ctx->type, file_name, 
-                           &n_len, rm_modtime, rm_len ))
+                           &n_len, rm_modtime, &rm_len ))
         {
             LOG(CLIENT_LOG, "Fail to get mod time\n");
-
             return 0;
         }
 
-        local_modtime(file_name, &n_len, lc_modtime, lc_len);
+        basename(file_name, &local_file_name);
+        local_modtime(local_file_name, &n_len, lc_modtime, &lc_len);
 
-        convert_to_datetime(rm_modtime, rm_datetime);
-        convert_to_datetime(lc_modtime, lc_datetime);
+        convert_to_datetime(rm_modtime, &rm_datetime);
+        convert_to_datetime(lc_modtime, &lc_datetime);
 
-        if(is_older(rm_datetime, lc_datetime))
+        if(is_older(&rm_datetime, &lc_datetime))
         {
-            LOG(CLIENT_LOG, "Server file is older than local file\n" 
+            LOG(CLIENT_LOG, "Server file is older than local file " 
                             "Abort the operation\n");
-            
+
+            // notify server about this to prevent further unneccesary operation
+            // in server side
+            operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
-        if(!data_conn(channel_ctx))
-        {
-            LOG(CLIENT_LOG, "Fail to open data connection\n");
-            return 0;
-        }
+        control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
 
         get(channel_ctx, file_name, &n_len);
 
@@ -480,12 +469,18 @@ int data_newer(channel_context* channel_ctx, char* file_name,
     case SERVER:
     {
         if(!remote_modtime(channel_ctx->c_channel, channel_ctx->type, file_name, 
-                           &n_len, rm_modtime, rm_len ) ||
-           !put(channel_ctx, file_name, n_len))
+                           &n_len, rm_modtime, &rm_len ))
         {
             LOG(SERVER_LOG, "Fail to send modtime\n");
             operation_abort(channel_ctx->c_channel);
 
+            return 0;
+        }
+
+        // check if the operation should be continued or not
+        if(!control_channel_read_expect(channel_ctx->c_channel, FTP_ACK))
+        {
+            LOG(SERVER_LOG, "Abort operation by client side\n");
             return 0;
         }
 

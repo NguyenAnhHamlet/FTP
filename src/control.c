@@ -418,14 +418,13 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
     {
     case CLIENT :
     {
-        control_channel_append_header( c_channel, 0, sizeof(Packet), 
-                                       0, MODTIME, 0, 0);
+        control_channel_append_ftp_type(MODTIME, c_channel);
         control_channel_append_str(file_name, c_channel, *n_len);
+        control_channel_send_wait(c_channel);
         
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, MODTIME))
+        if(!control_channel_read_expect(c_channel, MODTIME))
         {
-            LOG(CLIENT_LOG, "Could not get mod time of remote file\n");
+            LOG(CLIENT_LOG, "Could not get mod time of remote file\n"); 
             operation_abort(c_channel);
 
             return 0;
@@ -439,10 +438,16 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
     case SERVER:
     {
         struct stat attrib;
+        char file_name[BUF_LEN];
+        char modetime[BUF_LEN];
+
+        // init
+        memset(file_name, 0, BUF_LEN);
+        memset(modetime, 0, BUF_LEN);
 
         if(!control_channel_read_expect(c_channel, MODTIME))
         {
-            LOG(SERVER_LOG, "Unknown option\n");
+            LOG(SERVER_LOG, "Unknown CODE from client side\n");
             operation_abort(c_channel);
 
             return 0;
@@ -453,17 +458,9 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
         strftime(modetime, 50, "%Y-%m-%d %H:%M:%S", 
                  localtime(&attrib.st_mtime));
 
-        control_channel_append_header( c_channel, 0, sizeof(Packet), 
-                                       0, MODTIME, 0, 0);
+        control_channel_append_ftp_type(MODTIME, c_channel);
         control_channel_append_str(modetime, c_channel, strlen(modetime));
-
-        if(!control_channel_send(c_channel))
-        {
-            LOG(SERVER_LOG, "Send modtime failed\n");
-            operation_abort(c_channel);
-            
-            return 0;
-        }
+        control_channel_send(c_channel);
 
         break;
     }
@@ -512,7 +509,6 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
         if(!control_channel_send(c_channel) ||
            !control_channel_read_expect(c_channel, SIZE))
         {
-            LOG(CLIENT_LOG, "Could not get mod time of remote file\n");
             operation_abort(c_channel);
 
             return 0;

@@ -339,9 +339,8 @@ int main()
         }
         case NEWER:
         {
-            char* f_name;
-            unsigned int n_len;
-            control_channel_get_str(&c_channel, f_name, &n_len );            
+            char f_name[BUF_LEN];
+            unsigned int n_len;            
             operation_sucess = server_data_newer(&channel_ctx, f_name, n_len);
             break;
         }

@@ -215,7 +215,6 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     }
 
     char *dec_str = BN_bn2dec(ctx->key);
-    printf("BIGNUM in decimal: %s\n", dec_str);
 
     return 1;
 }

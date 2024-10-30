@@ -50,6 +50,7 @@ void lower_case_tr(char* str, unsigned int str_len)
         str[i] = tolower(str[i]);
     }
 }
+
 int convert_to_datetime(char* org, struct tm* datetime)
 {
     return strptime(org, "%Y-%m-%d %H:%M:%S", datetime) != NULL;
@@ -62,7 +63,7 @@ bool is_older(struct tm* datetime_1, struct tm* datetime_2)
     time_1 = mktime(datetime_1);
     time_2 = mktime(datetime_2);
 
-    return time_1 > time_2;
+    return time_1 < time_2;
 }
 
 unsigned int find_index(char* str, unsigned int str_len, char c)

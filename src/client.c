@@ -319,11 +319,17 @@ int main(int argc, char* argvs[])
         }
         case GET:
         {
+            // send GET code to server
+            control_channel_append_ftp_type(GET, channel_ctx.c_channel);
+            control_channel_send_wait(channel_ctx.c_channel);
             operation_sucess = client_data_get(&channel_ctx, arg, strlen(arg));
             break;
         }
         case PUT:
         {
+            // send PUT code to server
+            control_channel_append_ftp_type(PUT, channel_ctx.c_channel);
+            control_channel_send_wait(channel_ctx.c_channel);
             operation_sucess = client_data_put(&channel_ctx, arg, strlen(arg));
             break;
         }
@@ -332,6 +338,9 @@ int main(int argc, char* argvs[])
             char* ptr = strchr(arg, ' ');
             *ptr = '\0';
             ptr++;
+            // send APPEND code to server
+            control_channel_append_ftp_type(APPEND, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_data_append(&channel_ctx, arg, strlen(arg), 
                                                   ptr, strlen(ptr));
             break;
@@ -424,7 +433,7 @@ int main(int argc, char* argvs[])
         }
 
         if(!operation_sucess)
-            printf("Operation failed, Retry\n");
+            printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
     } 
 
     control_channel_destroy(&c_channel);
