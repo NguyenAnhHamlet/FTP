@@ -266,8 +266,8 @@ int main(int argc, char* argvs[])
         !public_key_authentication(&c_channel, 1))
         fatal("Public key authentication failed\n");
     
-    // perform password authentication
-    password_authen_client(&c_channel);
+    // // perform password authentication
+    // password_authen_client(&c_channel);
 
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx))
@@ -360,6 +360,9 @@ int main(int argc, char* argvs[])
         }
         case CD:
         {
+            // send CD code to server
+            control_channel_append_ftp_type(CD, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_change_dir(&c_channel, arg, strlen(arg));
             break;
         }

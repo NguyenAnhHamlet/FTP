@@ -178,17 +178,17 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
         return 0;
     }
 
-    LOG(SERVER_LOG, "Error when getting file1\n");
-
     buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
     basename(file_name, &base_file_name);
+    LOG(SERVER_LOG, "NAME: %s\n", base_file_name);
 
     if (!not_exist(base_file_name))
     {
         // Remove old file
         remove(base_file_name);
     }
+
 
     create_file(base_file_name);
     append_file(base_file_name, buf, b_len);
@@ -248,10 +248,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
             return 0;
         }
 
-         // init 
-        file_name[BUF_LEN];
-        memset(file_name, '\0', BUF_LEN);
-
         // get file's name
         control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);        
         break;
@@ -265,9 +261,9 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     }
 
-    file = fopen(file_name, "rb");
+    file = fopen(file_name, "rb"); 
 
-    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name);
+    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name); 
 
     // file does not exist or there is error in I/O operation
     if (file == NULL)

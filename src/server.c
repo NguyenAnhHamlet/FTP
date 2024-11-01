@@ -264,6 +264,7 @@ int main()
     socket_ftp* d_socket;
     socket_ftp* c_socket = socket_ftp_raw_cre();
     channel_context channel_ctx;
+    fd_set read_set;
 
     // init
     ctx = (cipher_context*) malloc(sizeof(cipher_context));
@@ -284,8 +285,8 @@ int main()
         exit(1);
     }
 
-    if(!pass_authen_server(&c_channel))
-        exit(1);
+    // if(!pass_authen_server(&c_channel))
+    //     exit(1);
 
     // cipher context init for dec/enc of data channel
     aes_cipher_init(ctx);
@@ -304,6 +305,10 @@ int main()
 
     while(conn_remain)
     {
+        FD_ZERO(&read_set);
+        FD_SET(c_channel.data_in->in_port, &read_set);
+        select(c_channel.data_in->in_port + 1, &read_set, NULL, NULL, NULL);
+
         if(control_channel_read_expect(&c_channel, TERMINATE))
         {
             LOG(SERVER_LOG, "Terminate connection with client fd %d", clientfd);
@@ -318,8 +323,9 @@ int main()
         {
         case GET:
         {
-            char* f_name;
+            char f_name[BUF_LEN];
             unsigned int n_len;
+            memset(f_name, 0, BUF_LEN);
             operation_sucess = server_data_put(&channel_ctx, f_name, n_len);
             break;
         }
@@ -356,7 +362,6 @@ int main()
         {
             char* dir;
             unsigned int d_len;
-            control_channel_get_str(&c_channel, dir, &d_len ); 
             operation_sucess = server_change_dir(&c_channel, dir, d_len);
             break;
         }

@@ -200,3 +200,15 @@ int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2)
     
     return strcmp(ip_addr1, ip_addr2) ? 0 : 1;
 }
+
+void x_chdir(char* path)
+{
+    if (chdir(path) != 0) 
+        perror("chdir() error");
+}
+
+void x_getcwd(char* cwd)
+{
+    if (getcwd(cwd, BUF_LEN) == NULL) 
+        perror("getcwd() error");
+}

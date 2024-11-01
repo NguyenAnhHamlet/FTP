@@ -117,7 +117,7 @@ void basename(char* path, char** ret)
 {
     *ret = strrchr(path, '/');
 
-    if (!ret)
+    if (!*ret)
     {
         *ret = path;
         return;

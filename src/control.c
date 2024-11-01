@@ -81,32 +81,34 @@ int remote_file_exist(control_channel* c_channel, endpoint_type type,
 int change_dir(control_channel* c_channel, char* dir, int d_len,
                endpoint_type type)
 {
-    int res =1;
     switch (type)
     {
     case CLIENT:
     {
-        control_channel_append_header(c_channel, 
-                                      0, sizeof(Packet),
-                                      0, CD, 0, 0);
+        control_channel_append_ftp_type(CD, c_channel);
         control_channel_append_str(dir, c_channel, d_len);
+        control_channel_send(c_channel);
 
-        if(!control_channel_send(c_channel) || 
-        !control_channel_read_expect(c_channel, SUCCESS))
+        if(!control_channel_read_expect(c_channel, SUCCESS))
         {
             LOG(CLIENT_LOG, "Fail to change dir\n");
             operation_abort(c_channel);
             return 0;
         }
 
-        LOG(CLIENT_LOG, "Successfully changed dir\n");
+        LOG(CLIENT_LOG, "Successfully changed remote dir to %s\n", dir);
 
         break;
     }
     case SERVER:
     {
-        char* dir;
+        char dir[BUF_LEN];
+        char cur_dir[BUF_LEN];
         int d_len;
+
+        memset(dir, 0, BUF_LEN);
+        memset(cur_dir, 0, BUF_LEN);
+
         if(!control_channel_read_expect(c_channel, CD))
         {
             LOG(SERVER_LOG, "Unknown option\n");
@@ -115,14 +117,17 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
         }
 
         control_channel_get_str(c_channel, dir, &d_len);
-        if(chdir(dir))
+        x_chdir(dir);
+        x_getcwd(cur_dir);
+
+        if(strcmp(dir, cur_dir))
         {
-            LOG(SERVER_LOG, "Change dir failed\n");
+            LOG(SERVER_LOG, "Change dir failed, current dir is: %s\n", cur_dir);
             operation_abort(c_channel);
             return 0;
         }
 
-        LOG(SERVER_LOG, "Change dir done\n");
+        LOG(SERVER_LOG, "Change dir done, current dir: %s\n", cur_dir);
         control_channel_append_ftp_type(SUCCESS, c_channel);
         control_channel_send(c_channel);
 
@@ -132,12 +137,12 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
     default:
     {
         operation_abort(c_channel);
-        return -1;
+        return 0;
     }
 
     }
 
-    return res;
+    return 1;
 }
 
 int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
