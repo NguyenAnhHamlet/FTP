@@ -50,6 +50,7 @@ int quit()
 
 void time_out_alarm(int sig)
 {
+    enable_echo();
     fatal("Time out");
 }
 
@@ -202,7 +203,10 @@ int password_authen_client(control_channel* c_channel)
     disable_echo();
     printf("Pass: ");
     if(!fgets(pass, BUF_SIZE, stdin))
-      fatal("Error reading pass\n");
+    {
+        enable_echo();
+        fatal("Error reading pass\n");
+    }
     enable_echo();
 
     // remove newline char
