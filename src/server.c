@@ -130,13 +130,13 @@ int server_delete_remote_file(control_channel* c_channel, char* file_name, int n
 int server_list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
                            char* res, unsigned int r_len)
 {
-    return list_remote_dir(c_channel, dir, cmd_len, res, &r_len, SERVER);
+    return list_remote_dir(c_channel, dir, cmd_len, &res, &r_len, SERVER);
 }
 
 int server_list_current_remote_dir(control_channel* c_channel, char* res, 
                                    unsigned int* r_len)
 {
-    return list_current_dir(c_channel, res, r_len, SERVER);
+    return list_current_dir(c_channel, &res, r_len, SERVER);
 }
 
 int server_idle_set_remote(control_channel* c_channel, unsigned int* time_out)

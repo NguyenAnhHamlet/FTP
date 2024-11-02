@@ -3,6 +3,7 @@
 #include "common.h"
 #include <unistd.h>
 #include <sys/stat.h>
+#include "log/ftplog.h"
 
 void read_file(char path[], FILE* fp)
 {
@@ -89,28 +90,31 @@ bool not_exist(char path[])
 
 int list_dir(char* dir, char* res, unsigned int* r_len)
 {
-    DIR *dp;
+    DIR *d;
     struct dirent *ep;  
 
-    dp = opendir(dir);
+    d = opendir(dir);
 
-    if (dp != NULL)
+    if (d == NULL) 
     {
-        while ((ep = readdir (dp)) != NULL)
-        {
-            strcat(res, ep->d_name);
-            strcat(res, "\n");
-            *r_len += sizeof(ep->d_name);
-            *r_len++;
-        }
-
-        (void) closedir (dp);
-        return 1;
+        perror("Couldn't open the directory");
+        return 0;
     }
 
-    perror ("Couldn't open the directory");
-    return -1;
+    if (d != NULL)
+    {
+        while ((ep = readdir (d)) != NULL)
+        {
+            strncat(res, ep->d_name, sizeof(ep->d_name));
+            strncat(res, " \n", 2);
+            *r_len += sizeof(ep->d_name);
+            *r_len +=2;
+        }
+    }
 
+    (void) closedir(d);
+
+    return 1;
 }
 
 void basename(char* path, char** ret)

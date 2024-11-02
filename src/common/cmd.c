@@ -14,10 +14,11 @@ unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd,
     // get the command 
     *cmd = buffer;
     *contents = strchr(buffer, ' ');
-    if( *contents == NULL) return 0;
-    **contents = '\0';
-    (*contents)++;
-    LOG(SERVER_LOG, "Contents: %s\n", *contents);
+    if(*contents)
+    {
+        **contents = '\0';
+        (*contents)++;
+    }
 
     if (strcmp(*cmd, GET_STR) == 0)
         return GET;

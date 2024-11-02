@@ -16,8 +16,8 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
 int delete_remote_file(control_channel* c_channel, char* file_name, 
                 unsigned int n_len, endpoint_type type );
 int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
-                    char* res, unsigned int* r_len, endpoint_type type);
-int list_current_dir(control_channel* c_channel, char* res, 
+                    char** res, unsigned int* r_len, endpoint_type type);
+int list_current_dir(control_channel* c_channel, char** res, 
                      unsigned int* r_len, endpoint_type type);
 int idle_set_remote(control_channel* c_channel, unsigned int* time_out, 
                     endpoint_type type);

@@ -286,63 +286,67 @@ int delete_remote_file(control_channel* c_channel, char* file_name,
 }
 
 int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
-                    char* res, unsigned int* r_len, endpoint_type type)
+                    char** res, unsigned int* r_len, endpoint_type type)
 {
     switch (type)
     {
     case CLIENT:
     {
-        control_channel_append_header(c_channel, 0, sizeof(Packet),
-                                      0, _DIR, 0, 0);
+        control_channel_append_ftp_type(_DIR, c_channel);
         control_channel_append_str(dir, c_channel, cmd_len);
+        control_channel_send(c_channel);
 
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, _DIR))
+        LOG(SERVER_LOG, "CLIENT: dir : %s\n", dir);
+
+        if(!control_channel_read_expect(c_channel, _DIR))
         {
-            LOG(CLIENT_LOG, "Failed to list dir\n");
-            operation_abort(c_channel);
+            LOG(CLIENT_LOG, "Failed to list dir, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(c_channel));
 
             return 0;
         }
 
-        control_channel_get_str(c_channel, res, r_len);
-        control_channel_append_ftp_type(FTP_ACK, c_channel);
-        control_channel_send(c_channel);
+        int data_len = control_channel_get_data_len_in(c_channel);
+        *res = (char*) malloc(data_len);
+        control_channel_get_str(c_channel, *res, r_len);
 
         break;
     }
     case SERVER:
     {
         char* res = (char*) malloc(BUF_LEN);
-        int r_len;
+        unsigned int ret_len;
+        memset(res, 0, BUF_LEN);
+
         if(!control_channel_read_expect(c_channel, _DIR))
         {
-            LOG(SERVER_LOG, "Unknown option\n");
+            LOG(SERVER_LOG, "Failed to list dir, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
 
             return 0;
         }
 
+        int data_len = control_channel_get_data_len_in(c_channel);
+        dir = (char*) malloc(data_len);
+        memset(dir, 0, data_len);
+
         control_channel_get_str(c_channel, dir, &cmd_len);                       
-        if(!list_dir(dir, res, &r_len))
+        
+        if(!list_dir(dir, res, &ret_len))
         {
             LOG(SERVER_LOG, "List dir failed\n");
             operation_abort(c_channel);
 
             return 0;
         }
+        LOG(SERVER_LOG, "RUNNING\n");
+
+        LOG(SERVER_LOG, "Remote dir: %s\n", res);
 
         control_channel_append_ftp_type(_DIR, c_channel);
-        control_channel_append_str(res, c_channel, r_len);
-        
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, FTP_ACK))
-        {
-            LOG(SERVER_LOG, "Send result failed\n");
-            operation_abort(c_channel);
-
-            return 0;
-        }
+        control_channel_append_str(res, c_channel, ret_len);
+        control_channel_send(c_channel);
 
         break;
     }
@@ -358,10 +362,14 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
     return 1;
 }
 
-int list_current_dir(control_channel* c_channel, char* res, 
+int list_current_dir(control_channel* c_channel, char** res, 
                      unsigned int* r_len, endpoint_type type)
 {
-    return list_remote_dir(c_channel, ".", 1, res, r_len, type);
+    char dir[2];
+    memset(dir, 0 , 2);
+    strncpy(dir, ".", 1);
+    int r_dir = 2;
+    return list_remote_dir(c_channel, dir, r_dir, res, r_len, type);
 }
 
 int idle_set_remote(control_channel* c_channel, unsigned int* time_out, 

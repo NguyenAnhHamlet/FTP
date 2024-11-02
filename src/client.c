@@ -96,7 +96,7 @@ int client_delete_remote_file(control_channel* c_channel, char* file_name, int n
 }
 
 int client_list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
-                           char* res, unsigned int r_len)
+                           char** res, unsigned int r_len)
 {
     return list_remote_dir(c_channel, dir, cmd_len, res, &r_len, CLIENT);
 }
@@ -106,7 +106,7 @@ int client_local_change_dir(char* dir, int d_len)
     return chdir(dir);
 }
 
-int client_list_current_remote_dir(control_channel* c_channel, char* res, 
+int client_list_current_remote_dir(control_channel* c_channel, char** res, 
                                    unsigned int* r_len)
 {
     return list_current_dir(c_channel, res, r_len, CLIENT);
@@ -386,13 +386,20 @@ int main(int argc, char* argvs[])
         }
         case _DIR:
         {
-            char* res;
+            char* res = NULL;
             unsigned int r_len;
-            operation_sucess = client_list_remote_dir(&c_channel, arg, strlen(arg), res, r_len);
 
-            if (operation_sucess) 
-                printf("%s\n", res);
+            control_channel_append_ftp_type(_DIR, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
 
+            // check if list current dir 
+            if(!arg)
+                operation_sucess = client_list_current_remote_dir(&c_channel, &res, &r_len);
+            else 
+                operation_sucess = client_list_remote_dir(&c_channel, arg, strlen(arg), &res, r_len);
+
+            printf("REMOTE DIR:\n %s\n", res);
+            free(res);
             break;
         }
         case IDLE:
@@ -406,11 +413,7 @@ int main(int argc, char* argvs[])
             char* res;
             unsigned int r_len;
             int n_len = strlen(arg);
-
             operation_sucess = client_remote_mode_time(&c_channel, arg, &n_len, res, &r_len);
-
-            if (operation_sucess) 
-                printf("%s\n", res);
 
             break;
         }
