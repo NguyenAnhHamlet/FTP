@@ -152,18 +152,14 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
     {
     case CLIENT:
     {
-        control_channel_append_header(c_channel, 
-                                      0, sizeof(Packet),
-                                      0, CHMOD, 0, 0);
+        control_channel_append_ftp_type(CHMOD, c_channel);
         control_channel_append_str(chmod_cmd, c_channel, cmd_len);
+        control_channel_send(c_channel);
 
-
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, SUCCESS))
+        if(!control_channel_read_expect(c_channel, SUCCESS))
         {
-            LOG(CLIENT_LOG, "Failed to change mode\n");
+            LOG(CLIENT_LOG, "Failed to change mode, CODE received : %d\n", control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
-
             return 0;
         }
 
@@ -175,41 +171,38 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
     {
         char* file_name;
         char* mode;
-        char* token;
-        int no;
+        char* token = NULL;
+        int no = 0 ;
+
+        chmod_cmd = (char*) malloc(control_channel_get_data_len_in(c_channel));
+        mode = (char*) malloc(control_channel_get_data_len_in(c_channel));
+        memset(chmod_cmd, 0 , control_channel_get_data_len_in(c_channel));
+        memset(mode, 0 , control_channel_get_data_len_in(c_channel));
 
         if(!control_channel_read_expect(c_channel, CHMOD))
         {
-            LOG(SERVER_LOG, "Unknown option\n");
-            operation_abort(c_channel);
-
+            LOG(SERVER_LOG, "Did not receive CHMOD code but %d instead\n", 
+                control_channel_get_ftp_type_in(c_channel));
             return 0;
         }
 
         control_channel_get_str(c_channel, chmod_cmd, &cmd_len);
-        while(token = strtok(chmod_cmd, " "))
+        LOG(SERVER_LOG, "CHMOD CMD: %s\n", chmod_cmd);
+        mode = chmod_cmd;
+        while(token = strchr(chmod_cmd, ' '))
         {
-            switch (no)
-            {
-            case 0:
-                file_name = chmod_cmd + (token - chmod_cmd) + 1;
-                break;
-            case 1:
-                mode = chmod_cmd + (token - chmod_cmd) + 1;
-            default:
-                return 0;
-                break;
-            }
-            token = '\0';
+            file_name = chmod_cmd + (token - chmod_cmd) + 1;
+            *token = 0;
             token++;
             chmod_cmd = token;
+            LOG(SERVER_LOG, "file_name: %s\n", file_name);
+            LOG(SERVER_LOG, "mode: %s\n", mode);
         }
 
-        if(chmod(file_name, strtol(mode, 0, 8)))
+        if(chmod(file_name, strtol(mode, 0, 8)) < 0)
         {
             LOG(SERVER_LOG, "Fail to change mode\n");
             operation_abort(c_channel);
-
             return 0;
         }
 
@@ -223,7 +216,7 @@ int change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len,
     default:
     {
         operation_abort(c_channel);
-        return -1;
+        return 0;
     }
 
     }

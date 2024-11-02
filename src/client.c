@@ -367,12 +367,14 @@ int main(int argc, char* argvs[])
             // send CD code to server
             control_channel_append_ftp_type(CD, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_change_dir(&c_channel, arg, strlen(arg));
+            operation_sucess = client_change_dir(channel_ctx.c_channel, arg, strlen(arg));
             break;
         }
         case CHMOD:
         {
-            operation_sucess = client_change_mode(&c_channel, arg, strlen(arg));
+            control_channel_append_ftp_type(CHMOD, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
+            operation_sucess = client_change_mode(channel_ctx.c_channel, arg, strlen(arg));
             break;
         }
         case DELETE:

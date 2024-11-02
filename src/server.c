@@ -367,10 +367,9 @@ int main()
         }
         case CHMOD:
         {
-            char* mode;
+            char* ch_mode;
             unsigned int m_len;
-            control_channel_get_str(&c_channel, mode, &m_len ); 
-            operation_sucess = server_change_mode(&c_channel, mode, m_len);
+            operation_sucess = server_change_mode(&c_channel, ch_mode, m_len);
             break;
         }
         case DELETE:
