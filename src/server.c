@@ -13,7 +13,6 @@
 #include <pthread.h> 
 #include "secure/secure.h"
 #include "log/ftplog.h"
-#include "common/receive.h"
 #include "common/timer.h"
 #include <signal.h>
 #include <fcntl.h>

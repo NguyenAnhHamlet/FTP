@@ -231,15 +231,14 @@ int delete_remote_file(control_channel* c_channel, char* file_name,
     {
     case CLIENT:
     {
-        control_channel_append_header(c_channel, 
-                                      0, sizeof(Packet),
-                                      0, DELETE, 0, 0);
+        control_channel_append_ftp_type(DELETE, c_channel);
         control_channel_append_str(file_name, c_channel, n_len);
+        control_channel_send(c_channel);
 
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, SUCCESS))
+        if(!control_channel_read_expect(c_channel, SUCCESS))
         {
-            LOG(CLIENT_LOG, "Delete remote file failed\n");
+            LOG(CLIENT_LOG, "Delete remote file failed, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
 
             return 0;
@@ -258,12 +257,14 @@ int delete_remote_file(control_channel* c_channel, char* file_name,
             return 0;
         }
 
+        int data_len = control_channel_get_data_len_in(c_channel);
+        file_name = (char*) malloc(data_len);
         control_channel_get_str(c_channel, file_name, &n_len);
+
         if(remove(file_name))
         {
             LOG(SERVER_LOG, "Delete file %s failed\n", file_name);
             operation_abort(c_channel);
-
             return 0;
         }
 

@@ -12,8 +12,7 @@ obj/keygen.o: keygen.c secure/rsa.h common/common.h \
  /home/nguyenanh/Programming/FTP/src/common/ftp_type.h \
  /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h \
  /home/nguyenanh/Programming/FTP/src/common/common.h common/file.h \
- common/send.h common/receive.h \
- /home/nguyenanh/Programming/FTP/src/common/status.h keygen.h
+ keygen.h
 secure/rsa.h:
 common/common.h:
 /home/nguyenanh/Programming/FTP/src/algo/stack.h:
@@ -32,7 +31,4 @@ secure/rsa.h:
 /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h:
 /home/nguyenanh/Programming/FTP/src/common/common.h:
 common/file.h:
-common/send.h:
-common/receive.h:
-/home/nguyenanh/Programming/FTP/src/common/status.h:
 keygen.h:

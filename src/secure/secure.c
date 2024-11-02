@@ -4,8 +4,6 @@
 #include "secure/secure.h"
 #include "common/file.h"
 #include <string.h>
-#include "common/send.h"
-#include "common/receive.h"
 #include <time.h>
 #include <openssl/bn.h>
 #include "common/packet.h"

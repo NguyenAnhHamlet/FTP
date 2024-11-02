@@ -1,9 +1,9 @@
 #include "control.h"
-#include "common/send.h"
+// #include "common/send.h"
 #include "common/common.h"
 #include <stdbool.h>
 #include <stdlib.h>
-#include "common/send.h"
+// #include "common/send.h"
 #include "secure/secure.h"
 #include "common/timer.h"
 #include <time.h>
@@ -379,6 +379,8 @@ int main(int argc, char* argvs[])
         }
         case DELETE:
         {
+            control_channel_append_ftp_type(DELETE, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_delete_remote_file(&c_channel, arg, strlen(arg));
             break;
         }
