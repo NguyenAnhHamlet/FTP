@@ -379,7 +379,7 @@ int main()
             operation_sucess = server_delete_remote_file(&c_channel, f_name, n_len);
             break;
         }
-        case _DIR:
+        case LS:
         {
             char* dir, *res;
             unsigned int d_len, r_len;

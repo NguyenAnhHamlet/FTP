@@ -384,12 +384,12 @@ int main(int argc, char* argvs[])
             operation_sucess = client_delete_remote_file(&c_channel, arg, strlen(arg));
             break;
         }
-        case _DIR:
+        case LS:
         {
             char* res = NULL;
             unsigned int r_len;
 
-            control_channel_append_ftp_type(_DIR, channel_ctx.c_channel);
+            control_channel_append_ftp_type(LS, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
 
             // check if list current dir 
