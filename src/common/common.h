@@ -56,19 +56,6 @@ typedef enum
     SERVER_LISTENING
 } channel_type;
 
-// struct addrinfo 
-// {
-//     int              ai_flags;
-//     int              ai_family;
-//     int              ai_socktype;
-//     int              ai_protocol;
-//     socklen_t        ai_addrlen;
-//     struct sockaddr *ai_addr;
-//     char            *ai_canonname;
-//     struct addrinfo *ai_next;
-// };
-
-
 bool is_ip_addr(char* buf);
 void execute(char cmd[], char res[]);
 void take_user_name(char username[]);
@@ -85,5 +72,6 @@ void enable_echo();
 int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2);
 void x_chdir(char* path);
 void x_getcwd(char* cwd);
+void x_abs_path(char* src, char* ret);
 
 #endif

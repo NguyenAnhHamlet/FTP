@@ -209,6 +209,12 @@ void x_chdir(char* path)
 
 void x_getcwd(char* cwd)
 {
-    if (getcwd(cwd, BUF_LEN) == NULL) 
+    if (!getcwd(cwd, BUF_LEN)) 
         perror("getcwd() error");
+}
+
+void x_abs_path(char* src, char* ret)
+{
+    if (!realpath(src, ret)) 
+        perror("Error resolving path");
 }

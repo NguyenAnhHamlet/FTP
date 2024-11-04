@@ -104,6 +104,7 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
     {
         char dir[BUF_LEN];
         char cur_dir[BUF_LEN];
+        char abs_dir[BUF_LEN];
         int d_len;
 
         memset(dir, 0, BUF_LEN);
@@ -117,12 +118,13 @@ int change_dir(control_channel* c_channel, char* dir, int d_len,
         }
 
         control_channel_get_str(c_channel, dir, &d_len);
+        x_abs_path(dir, abs_dir);
         x_chdir(dir);
         x_getcwd(cur_dir);
 
-        if(strcmp(dir, cur_dir))
+        if(strcmp(abs_dir, cur_dir))
         {
-            LOG(SERVER_LOG, "Change dir failed, current dir is: %s\n", cur_dir);
+            LOG(SERVER_LOG, "Change dir failed, current dir is: %s , expected %s\n", cur_dir, abs_dir);
             operation_abort(c_channel);
             return 0;
         }
