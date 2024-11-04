@@ -45,6 +45,7 @@
 #define GLOB_DIS    541
 #define VERBOSE_ENB 542
 #define DEBUG_ENB   543
+#define CLEAR       544
 
 #define GET_STR         "get"
 #define PUT_STR         "put"  
@@ -90,6 +91,7 @@
 #define GLOB_DIS_STR    "glob_dis"
 #define VERBOSE_ENB_STR "verbose_enb"
 #define DEBUG_ENB_STR   "debug_enb"
+#define CLEAR_STR       "clear"
 
 unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd, 
                               unsigned char** contents);

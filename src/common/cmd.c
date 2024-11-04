@@ -152,6 +152,9 @@ unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd,
     if (strcmp(*cmd, DEBUG_ENB_STR) == 0)
         return DEBUG_ENB;
     
+    if(strcmp(*cmd, CLEAR_STR) == 0)
+        return CLEAR;
+    
     return 0;
     
 }

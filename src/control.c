@@ -298,8 +298,6 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
         control_channel_append_str(dir, c_channel, cmd_len);
         control_channel_send(c_channel);
 
-        LOG(SERVER_LOG, "CLIENT: dir : %s\n", dir);
-
         if(!control_channel_read_expect(c_channel, LS))
         {
             LOG(CLIENT_LOG, "Failed to list dir, received CODE: %d\n", 
@@ -342,9 +340,6 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
 
             return 0;
         }
-        LOG(SERVER_LOG, "RUNNING\n");
-
-        LOG(SERVER_LOG, "Remote dir: %s\n", res);
 
         control_channel_append_ftp_type(LS, c_channel);
         control_channel_append_str(res, c_channel, ret_len);

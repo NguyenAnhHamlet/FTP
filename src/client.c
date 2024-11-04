@@ -305,12 +305,16 @@ int main(int argc, char* argvs[])
         }
 
         remove_endline(buffer);
-        if(strlen(buffer) == 1) continue; 
+        if(strlen(buffer) == 0) continue; 
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);
         
         switch (request_int)
         {
+        case CLEAR:
+        {
+            printf("\033c");
+        }
         case IPV4_OP:
         {
             operation_sucess = handle_option(c_socket, IPV4_OP);
