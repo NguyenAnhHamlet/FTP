@@ -398,7 +398,10 @@ int main(int argc, char* argvs[])
             else 
                 operation_sucess = client_list_remote_dir(&c_channel, arg, strlen(arg), &res, r_len);
 
-            printf("REMOTE DIR:\n %s\n", res);
+            printf("REMOTE DIR:\n");
+            printf(GREEN);
+            printf("%s", res);
+            printf(RESET_COLOR);
             free(res);
             break;
         }

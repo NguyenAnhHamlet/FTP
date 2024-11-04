@@ -91,7 +91,8 @@ bool not_exist(char path[])
 int list_dir(char* dir, char* res, unsigned int* r_len)
 {
     DIR *d;
-    struct dirent *ep;  
+    struct dirent *ep; 
+    struct stat file_stat; 
 
     d = opendir(dir);
 
@@ -105,6 +106,9 @@ int list_dir(char* dir, char* res, unsigned int* r_len)
     {
         while ((ep = readdir (d)) != NULL)
         {
+            if (ep->d_name[0] == '.' && (ep->d_name[1] == '\0' || 
+                (ep->d_name[1] == '.' && ep->d_name[2] == '\0')))
+                continue;
             strncat(res, ep->d_name, sizeof(ep->d_name));
             strncat(res, " \n", 2);
             *r_len += sizeof(ep->d_name);

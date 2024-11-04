@@ -359,6 +359,8 @@ int list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
 
     }
 
+    // free(res);
+
     return 1;
 }
 

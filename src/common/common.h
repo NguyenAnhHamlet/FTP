@@ -33,6 +33,9 @@
 #define NI_NAMEREQD       4
 #define NI_NUMERICSERV    8
 
+#define GREEN "\033[1;32m"
+#define RESET_COLOR "\033[0m"
+
 typedef enum 
 {
     Faillure,
