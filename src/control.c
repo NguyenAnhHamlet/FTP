@@ -613,8 +613,6 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
         *update_name = '\0';
         update_name++;
 
-        LOG(SERVER_LOG, "RUNNING 1 %s \n", update_name);
-
         if(rename(file_name, update_name))
         {
             LOG(SERVER_LOG, "Fail to rename %s to %s \n", file_name, 
@@ -624,8 +622,6 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
             free(file_name);
             return 0;
         }
-
-        LOG(SERVER_LOG, "RUNNING 2\n");
 
         control_channel_append_ftp_type(SUCCESS, c_channel);
         control_channel_send(c_channel);
@@ -645,19 +641,12 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
     return 1;
 }
 
-int unlink_cb(const char *fpath, const struct stat *sb, int typeflag)
-{
-    int rv = remove(fpath);
-
-    if (rv)
-        perror(fpath);
-
-    return rv;
-}
-
 int remove_local_dir(char* dir )
 {
-    return ftw(dir, unlink_cb, FTW_NS);
+    char command[1024];
+    memset(command, 0, 1024);
+    snprintf(command, sizeof(command), "rm -rf \"%s\"", dir);
+    return !system(command);
 }
 
 int remove_remote_dir(control_channel* c_channel, char* dir, 
@@ -667,17 +656,18 @@ int remove_remote_dir(control_channel* c_channel, char* dir,
     {
     case CLIENT:
     {
-        control_channel_append_header(c_channel, 0, sizeof(Packet), 
-                                      0, RMDIR, 0, 0);
+        control_channel_append_ftp_type(RMDIR, c_channel);
         control_channel_append_str(dir, c_channel, d_len);
+        control_channel_send(c_channel);
 
-        if(!control_channel_send(c_channel) || 
-           !control_channel_read_expect(c_channel, SUCCESS))
+        if(!control_channel_read_expect(c_channel, SUCCESS))
         {
-            LOG(CLIENT_LOG, "Fail to remove remote dir\n");
+            LOG(CLIENT_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
+            operation_abort(c_channel);
             return 0;
         }
-
 
         break;
     }
@@ -686,17 +676,31 @@ int remove_remote_dir(control_channel* c_channel, char* dir,
     {
         if(!control_channel_read_expect(c_channel, RMDIR))
         {
+            LOG(SERVER_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
             return 0;
         }
         
+        int data_len = control_channel_get_data_len_in(c_channel);
+        dir = (char*) malloc(data_len);
+        memset(dir, 0, data_len);
+
         control_channel_get_str(c_channel, dir, &d_len);
+        memset(dir + data_len, 0, sizeof(dir) - data_len);
 
         if(!remove_local_dir(dir))
         {
+            LOG(SERVER_LOG, "Could not remove %s\n", dir);
             operation_abort(c_channel);
+            free(dir);
             return 0;
         }
+
+        control_channel_append_ftp_type(SUCCESS, c_channel);
+        control_channel_send(c_channel);
+        free(dir);
 
         break;
     }
@@ -704,7 +708,7 @@ int remove_remote_dir(control_channel* c_channel, char* dir,
     default:
     {
         operation_abort(c_channel);
-        return -1;
+        return 0;
     }
 
     }

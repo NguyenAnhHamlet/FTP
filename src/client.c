@@ -143,7 +143,7 @@ int client_remote_change_name(control_channel* c_channel, char* file_name,
 
 int client_remove_remote_dir(control_channel* c_channel, char* dir, int d_len)
 {
-    return client_remove_remote_dir(c_channel, dir, d_len);
+    return remove_remote_dir(c_channel, dir, d_len, CLIENT);
 }
 
 int client_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
@@ -457,6 +457,8 @@ int main(int argc, char* argvs[])
         }
         case RMDIR:
         {
+            control_channel_append_ftp_type(RMDIR, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_remove_remote_dir(&c_channel, arg, strlen(arg));
             break;
         }

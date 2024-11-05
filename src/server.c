@@ -176,7 +176,7 @@ int server_remote_get_size(control_channel* c_channel, char* file_name, int n_le
 
 int server_remove_remote_dir(control_channel* c_channel, char* dir, int d_len)
 {
-    return remove_remote_dir(c_channel, dir,d_len, SERVER);
+    return remove_remote_dir(c_channel, dir, d_len, SERVER);
 }
 
 
@@ -353,7 +353,6 @@ int main()
         {
             char* f_name;
             unsigned int n_len;
-            control_channel_get_str(&c_channel, f_name, &n_len ); 
             operation_sucess = server_data_reget(&channel_ctx, f_name, n_len);
             break;
         }
@@ -414,7 +413,7 @@ int main()
         }
         case RMDIR:
         {
-            char* dir;
+            char* dir = NULL;
             unsigned int d_len;
             operation_sucess = server_remove_remote_dir(&c_channel, dir, d_len);
             break;
