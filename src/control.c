@@ -453,9 +453,10 @@ int remote_modtime(control_channel* c_channel, endpoint_type type,
 
         if(!control_channel_read_expect(c_channel, MODTIME))
         {
-            LOG(SERVER_LOG, "Unknown CODE from client side\n");
+            LOG(SERVER_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
-
             return 0;
         }
 

@@ -398,9 +398,9 @@ int main(int argc, char* argvs[])
 
             // check if list current dir 
             if(!arg)
-                operation_sucess = client_list_current_remote_dir(&c_channel, &res, &r_len);
+                operation_sucess = client_list_current_remote_dir(channel_ctx.c_channel, &res, &r_len);
             else 
-                operation_sucess = client_list_remote_dir(&c_channel, arg, strlen(arg), &res, r_len);
+                operation_sucess = client_list_remote_dir(channel_ctx.c_channel, arg, strlen(arg), &res, r_len);
 
             printf("REMOTE DIR:\n");
             printf(GREEN);
@@ -409,18 +409,19 @@ int main(int argc, char* argvs[])
             free(res);
             break;
         }
-        case IDLE:
-        {
-            int tmout = str_to_int(arg, strlen(arg));
-            operation_sucess = idle_set_remote(&c_channel, &tmout, CLIENT);
-            break;
-        }
         case MODTIME:
         {
-            char* res;
+            char modtime[BUF_LEN];
             unsigned int r_len;
             int n_len = strlen(arg);
-            operation_sucess = client_remote_mode_time(&c_channel, arg, &n_len, res, &r_len);
+            memset(modtime, 0, BUF_LEN);
+            control_channel_append_ftp_type(MODTIME, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
+            operation_sucess = client_remote_mode_time(channel_ctx.c_channel, arg, &n_len, modtime, &r_len);
+
+            printf(GREEN);
+            printf("%s\n", modtime);
+            printf(RESET_COLOR);
 
             break;
         }

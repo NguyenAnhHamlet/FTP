@@ -388,17 +388,10 @@ int main()
 
             break;
         }
-        case IDLE:
-        {
-            unsigned int time_out;
-            operation_sucess = idle_set_remote(&c_channel, &time_out, SERVER);
-            break;
-        }
         case MODTIME:
         {
             char* file_name, *res;
             unsigned int r_len, n_len;
-            control_channel_get_str(&c_channel, file_name, &n_len ); 
             operation_sucess = server_remote_mode_time(&c_channel, file_name, &n_len, res, &r_len);
 
             break;
