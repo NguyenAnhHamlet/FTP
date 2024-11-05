@@ -448,6 +448,9 @@ int main(int argc, char* argvs[])
             char* ptr = strchr(arg, ' ');
             *ptr = '\0';
             ptr++;
+
+            control_channel_append_ftp_type(RENAME, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
             operation_sucess = client_remote_change_name(&c_channel, arg, strlen(arg), 
                                                          ptr, strlen(ptr));
             break;

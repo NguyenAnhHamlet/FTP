@@ -406,7 +406,7 @@ int main()
         }
         case RENAME:
         {
-            char* file_name, *update_file_name;
+            char *file_name = NULL, *update_file_name = NULL;
             unsigned int n_len, u_len;
             operation_sucess = server_remote_change_name(&c_channel, file_name, n_len, 
                                                          update_file_name, u_len);

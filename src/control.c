@@ -578,11 +578,14 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
         control_channel_append_str(file_name, c_channel, n_len);
         control_channel_append_str(" ", c_channel, 1);
         control_channel_append_str(update_name, c_channel, u_len);
+        control_channel_send(c_channel);
 
-        if(!control_channel_send(c_channel) || 
-           !control_channel_read_expect(c_channel, SUCCESS))
+        if(!control_channel_read_expect(c_channel, SUCCESS))
         {
-            LOG(CLIENT_LOG, "Fail operation change remote server file name\n");
+            LOG(CLIENT_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
+            operation_abort(c_channel);
             return 0;
         }
 
@@ -592,22 +595,41 @@ int remote_change_name(control_channel* c_channel, char* file_name, int n_len,
     case SERVER:
     {
         if(!control_channel_read_expect(c_channel, RENAME))
+        {
+            LOG(SERVER_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
+        }
+
+        int data_len = control_channel_get_data_len_in(c_channel);
+        file_name = (char*) malloc(data_len);
+        memset(file_name, 0, data_len);
         
         control_channel_get_str(c_channel, file_name, &n_len);
+        update_name = file_name;
         while (*update_name != ' ') 
             update_name++;
-        update_name = '\0';
+        *update_name = '\0';
         update_name++;
 
-        rename(file_name, update_name);
+        LOG(SERVER_LOG, "RUNNING 1 %s \n", update_name);
 
-        control_channel_append_ftp_type(SUCCESS, c_channel);
-        if(!control_channel_send(c_channel))
+        if(rename(file_name, update_name))
         {
-            operation_abort(c_channel);
+            LOG(SERVER_LOG, "Fail to rename %s to %s \n", file_name, 
+                update_name);
+            control_channel_append_ftp_type(ABORT, c_channel);
+            control_channel_send(c_channel);
+            free(file_name);
             return 0;
         }
+
+        LOG(SERVER_LOG, "RUNNING 2\n");
+
+        control_channel_append_ftp_type(SUCCESS, c_channel);
+        control_channel_send(c_channel);
+        free(file_name);
 
         break;
     }
