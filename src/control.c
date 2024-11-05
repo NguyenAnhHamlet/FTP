@@ -509,13 +509,15 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
     {
     case CLIENT :
     {
-        control_channel_append_header(c_channel, 0, sizeof(Packet),
-                                      0, SIZE, 0, 0);
+        control_channel_append_ftp_type(SIZE, c_channel);
         control_channel_append_str(file_name, c_channel, n_len);
-        
-        if(!control_channel_send(c_channel) ||
-           !control_channel_read_expect(c_channel, SIZE))
+        control_channel_send(c_channel);
+
+        if(!control_channel_read_expect(c_channel, SIZE))
         {
+            LOG(CLIENT_LOG, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
 
             return 0;
@@ -532,24 +534,24 @@ int remote_get_size(control_channel* c_channel, char* file_name, int n_len,
 
         if(!control_channel_read_expect(c_channel, SIZE))
         {
-            LOG(SERVER_LOG, "Unknown option\n");
+            LOG(SERVER_LOG, "Unknown CODE from client side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(c_channel));
             operation_abort(c_channel);
 
             return 0;
         }
+
+        int data_len = control_channel_get_data_len_in(c_channel);
+        file_name = (char*) malloc(data_len);
+        memset(file_name, 0, data_len);
 
         control_channel_get_str(c_channel, file_name, &n_len);
         stat(file_name, &attrib);
         control_channel_append_ftp_type(SIZE, c_channel);
         control_channel_append_int(attrib.st_size, c_channel);
-
-        if(!control_channel_send(c_channel))
-        {
-            LOG(SERVER_LOG, "Send modtime failed\n");
-            operation_abort(c_channel);
-            
-            return 0;
-        }
+        control_channel_send_wait(c_channel);
+        free(file_name);
 
         break;
     }

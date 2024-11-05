@@ -428,12 +428,18 @@ int main(int argc, char* argvs[])
         case SIZE:
         {
             unsigned int f_size;
+            control_channel_append_ftp_type(SIZE, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
 
-            operation_sucess = client_remote_get_size(&c_channel, arg, 
+            operation_sucess = client_remote_get_size(channel_ctx.c_channel, arg, 
                                                       strlen(arg), &f_size);
 
             if(operation_sucess)
+            {
+                printf(GREEN);
                 printf("%d\n", f_size);
+                printf(RESET_COLOR);
+            }
 
             break;
         }
