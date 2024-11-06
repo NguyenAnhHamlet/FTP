@@ -5,6 +5,14 @@
 #include "control.h"
 #include <ftw.h>
 
+typedef int (* control_func_ptr) (channel_context*); 
+typedef struct 
+{
+    char command_str[32];
+    unsigned int command_code;
+    control_func_ptr func ;
+} control_command;
+
 void operation_abort(control_channel* c_channel);
 
 int remote_file_exist(channel_context* channel_ctx);

@@ -1,9 +1,7 @@
 #include "control.h"
-// #include "common/send.h"
 #include "common/common.h"
 #include <stdbool.h>
 #include <stdlib.h>
-// #include "common/send.h"
 #include "secure/secure.h"
 #include "common/timer.h"
 #include <time.h>

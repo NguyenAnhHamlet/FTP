@@ -47,52 +47,9 @@
 #define DEBUG_ENB   543
 #define CLEAR       544
 
-#define GET_STR         "get"
-#define PUT_STR         "put"  
-#define RECV_STR        "recv"
-#define SEND_STR        "send"
-#define APPEND_STR      "append"
-#define CASE_STR        "case"
-#define CD_STR          "cd"
-#define CHMOD_STR       "chmod"
-#define DELETE_STR      "delete"
-#define DIR_STR         "dir"
-#define LCD_STR         "lcd"
-#define LS_STR          "ls"
-#define IDLE_STR        "idle"
-#define MDELETE_STR     "mdelete"
-#define MDIR_STR        "mdir"
-#define MGET_STR        "mget"
-#define MKDIR_STR       "mkdir"
-#define MLS_STR         "mls"
-#define MODTIME_STR     "modtime"
-#define MPUT_STR        "mput"
-#define NEWER_STR       "newer"
-#define NLIST_STR       "nlist"
-#define PROMPT_STR      "prompt"
-#define PWD_STR         "pwd"
-#define QC_STR          "qc"
-#define REGET_STR       "reget"
-#define RENAME_STR      "rename"
-#define RESET_STR       "reset"
-#define RESTART_STR     "restart"
-#define RHELP_STR       "rhelp"
-#define RMDIR_STR       "rmdir"
-#define RSTATUS_STR     "rstatus"
-#define SIZE_STR        "size"
-#define STATUS_STR      "status"
-#define SYSTEM_STR      "system"
-#define TICK_STR        "tick"
-#define IPV4_OP_STR     "ipv4_op"
-#define IPV6_OP_STR     "ipv6_op"
-#define PASSMODE_STR    "passmode"
-#define INT_OFF_STR     "int_off"
-#define AULOG_DIS_STR   "aulog_dis"
-#define GLOB_DIS_STR    "glob_dis"
-#define VERBOSE_ENB_STR "verbose_enb"
-#define DEBUG_ENB_STR   "debug_enb"
-#define CLEAR_STR       "clear"
-
+// Get the command and the contents of buffer pointed by cmd and contents
+// Return result will be the ftp's command code
+// Remember don't free or destroy the buffer, or else there will be coredump 
 unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd, 
                               unsigned char** contents);
 
