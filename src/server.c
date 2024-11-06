@@ -46,18 +46,14 @@ int server_data_conn(channel_context* channel_ctx)
     return data_conn(channel_ctx);
 }
 
-int server_data_get(channel_context* channel_ctx, char* file_name, 
-                    int* n_len)
+int server_data_get(channel_context* channel_ctx)
 {
-    return get(channel_ctx, file_name, n_len);
+    return get(channel_ctx);
 }
 
-int server_data_append(channel_context* channel_ctx, char* file_name, 
-                       unsigned int n_len, char* remote_file_name, 
-                       unsigned int rn_len)
+int server_data_append(channel_context* channel_ctx)
 {
-    return data_append(channel_ctx, file_name, n_len, remote_file_name, 
-                       rn_len);
+    return data_append(channel_ctx);
 }
 
 int pass_authen_server(control_channel* c_channel)
@@ -106,77 +102,69 @@ int pass_authen_server(control_channel* c_channel)
     return 1;
 }
 
-int server_data_put(channel_context* channel_ctx, 
-                    char* file_name, int n_len)
+int server_data_put(channel_context* channel_ctx)
 {
-    return put(channel_ctx, file_name, n_len);
+    return put(channel_ctx);
 }
 
-int server_change_dir(control_channel* c_channel, char* dir, int d_len)
+int server_change_dir(channel_context* channel_ctx)
 {
-    return change_dir(c_channel, dir, d_len, SERVER);
+    return change_dir(channel_ctx);
 }
 
-int server_change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len)
+int server_change_mode(channel_context* channel_ctx)
 {
-    return change_mode(c_channel, chmod_cmd, cmd_len, SERVER);
+    return change_mode(channel_ctx);
 }
 
-int server_delete_remote_file(control_channel* c_channel, char* file_name, int n_len)
+int server_delete_remote_file(channel_context* channel_ctx)
 {
-    return delete_remote_file(c_channel, file_name, n_len, SERVER);
+    return delete_remote_file(channel_ctx);
 }
 
-int server_list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
-                           char* res, unsigned int r_len)
+int server_list_remote_dir(channel_context* channel_ctx)
 {
-    return list_remote_dir(c_channel, dir, cmd_len, &res, &r_len, SERVER);
+    return list_remote_dir(channel_ctx);
 }
 
-int server_list_current_remote_dir(control_channel* c_channel, char* res, 
-                                   unsigned int* r_len)
+int server_list_current_remote_dir(channel_context* channel_ctx)
 {
-    return list_current_dir(c_channel, &res, r_len, SERVER);
+    return list_current_dir(channel_ctx);
 }
 
-int server_idle_set_remote(control_channel* c_channel, unsigned int* time_out)
+int server_idle_set_remote(channel_context* channel_ctx)
 {
-    return idle_set_remote(c_channel, time_out, SERVER);
+    return idle_set_remote(channel_ctx);
 }
 
-int server_remote_mode_time(control_channel* c_channel, char* file_name, 
-                            unsigned int* n_len, char* modetime, 
-                            unsigned int* m_len)
+int server_remote_mode_time(channel_context* channel_ctx)
 {
-    return remote_modtime(c_channel, SERVER, file_name, n_len, modetime, m_len);
+    return remote_modtime(channel_ctx);
 }
 
-int server_data_newer(channel_context* channel_ctx, char* file_name, int n_len)
+int server_data_newer(channel_context* channel_ctx)
 {
-    return data_newer(channel_ctx, file_name, n_len);
+    return data_newer(channel_ctx);
 }
 
-int server_data_reget(channel_context* channel_ctx, char* file_name, int n_len)
+int server_data_reget(channel_context* channel_ctx)
 {
-    return data_reget(channel_ctx, file_name, n_len);
+    return data_reget(channel_ctx);
 }
 
-int server_remote_change_name(control_channel* c_channel, char* file_name, 
-                              int n_len, char* update_name, int u_len)
+int server_remote_change_name(channel_context* channel_ctx)
 {
-    return remote_change_name(c_channel, file_name, n_len, 
-                              update_name, u_len, SERVER);
+    return remote_change_name(channel_ctx);
 }
 
-int server_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
-                           unsigned int* file_size)
+int server_remote_get_size(channel_context* channel_ctx)
 {
-    return remote_get_size(c_channel, file_name, n_len, file_size, SERVER);
+    return remote_get_size(channel_ctx);
 }
 
-int server_remove_remote_dir(control_channel* c_channel, char* dir, int d_len)
+int server_remove_remote_dir(channel_context* channel_ctx)
 {
-    return remove_remote_dir(c_channel, dir, d_len, SERVER);
+    return remove_remote_dir(channel_ctx);
 }
 
 
@@ -325,7 +313,9 @@ int main()
             char f_name[BUF_LEN];
             unsigned int n_len;
             memset(f_name, 0, BUF_LEN);
-            operation_sucess = server_data_put(&channel_ctx, f_name, n_len);
+            channel_ctx.source = f_name;
+            channel_ctx.source_len = sizeof(f_name);
+            operation_sucess = server_data_put(&channel_ctx);
             break;
         }
         case PUT:
@@ -333,89 +323,68 @@ int main()
             char f_name[BUF_LEN];
             unsigned int n_len;
             memset(f_name, 0, BUF_LEN);
-            operation_sucess = server_data_get(&channel_ctx, f_name, &n_len);
+            channel_ctx.source = f_name;
+            channel_ctx.source_len = sizeof(f_name);
+            operation_sucess = server_data_get(&channel_ctx);
             break;
         }
         case APPEND:
         {
-            operation_sucess = server_data_append(&channel_ctx,
-                                                  NULL, 0, NULL, 0);
+            operation_sucess = server_data_append(&channel_ctx);
             break;
         }
         case NEWER:
         {
             char f_name[BUF_LEN];
-            unsigned int n_len;            
-            operation_sucess = server_data_newer(&channel_ctx, f_name, n_len);
+            unsigned int n_len;    
+            channel_ctx.source = f_name;
+            channel_ctx.source_len = sizeof(f_name);        
+            operation_sucess = server_data_newer(&channel_ctx);
             break;
         }
         case REGET:
         {
-            char* f_name;
-            unsigned int n_len;
-            operation_sucess = server_data_reget(&channel_ctx, f_name, n_len);
+            operation_sucess = server_data_reget(&channel_ctx);
             break;
         }
         case CD:
         {
-            char* dir;
-            unsigned int d_len;
-            operation_sucess = server_change_dir(&c_channel, dir, d_len);
+            operation_sucess = server_change_dir(&channel_ctx);
             break;
         }
         case CHMOD:
         {
-            char* ch_mode;
-            unsigned int m_len;
-            operation_sucess = server_change_mode(&c_channel, ch_mode, m_len);
+            operation_sucess = server_change_mode(&channel_ctx);
             break;
         }
         case DELETE:
         {
-            char* f_name;
-            unsigned int n_len;
-            control_channel_get_str(&c_channel, f_name, &n_len ); 
-            operation_sucess = server_delete_remote_file(&c_channel, f_name, n_len);
+            operation_sucess = server_delete_remote_file(&channel_ctx);
             break;
         }
         case LS:
         {
-            char* dir, *res;
-            unsigned int d_len, r_len;
-            control_channel_get_str(&c_channel, dir, &d_len ); 
-            operation_sucess = server_list_remote_dir(&c_channel, dir, d_len, res, r_len);
-
+            operation_sucess = server_list_remote_dir(&channel_ctx);
             break;
         }
         case MODTIME:
         {
-            char* file_name, *res;
-            unsigned int r_len, n_len;
-            operation_sucess = server_remote_mode_time(&c_channel, file_name, &n_len, res, &r_len);
-
+            operation_sucess = server_remote_mode_time(&channel_ctx);
             break;
         }
         case SIZE:
         {
-            unsigned int f_size, n_len;
-            char* file_name;
-            operation_sucess = server_remote_get_size(&c_channel, file_name, n_len, &f_size);
-
+            operation_sucess = server_remote_get_size(&channel_ctx);
             break;
         }
         case RENAME:
         {
-            char *file_name = NULL, *update_file_name = NULL;
-            unsigned int n_len, u_len;
-            operation_sucess = server_remote_change_name(&c_channel, file_name, n_len, 
-                                                         update_file_name, u_len);
+            operation_sucess = server_remote_change_name(&channel_ctx);
             break;
         }
         case RMDIR:
         {
-            char* dir = NULL;
-            unsigned int d_len;
-            operation_sucess = server_remove_remote_dir(&c_channel, dir, d_len);
+            operation_sucess = server_remove_remote_dir(&channel_ctx);
             break;
         }
         

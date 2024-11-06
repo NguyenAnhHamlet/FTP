@@ -54,6 +54,19 @@ typedef struct
     socket_ftp* d_socket_listening;
     endpoint_type type;
 
+    // Data assigned by client side 
+    char *source;
+    int source_len;
+
+    // Data returned that will be read by client side 
+    char** ret;
+    unsigned int* ret_len;
+    unsigned int ret_int;
+
+    // the remote_file or some stuff as such
+    char* dest;
+    unsigned int dest_len;
+
 } channel_context;
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 

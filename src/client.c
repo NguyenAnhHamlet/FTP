@@ -60,45 +60,39 @@ void signal_handler(int sig)
     quit();
 }
 
-int client_data_put(channel_context* channel_ctx, 
-                    char* file_name, int n_len)
+int client_data_put(channel_context* channel_ctx)
 {
-    return put(channel_ctx, file_name, n_len);
+    return put(channel_ctx);
 }
 
-int client_data_get(channel_context* channel_ctx, char* file_name, int n_len)
+int client_data_get(channel_context* channel_ctx)
 {
-    return get(channel_ctx, file_name, &n_len);
+    return get(channel_ctx);
 }
 
-int client_data_append(channel_context* channel_ctx, char* file_name, unsigned int n_len,
-                       char* remote_file_name, unsigned int rn_len)
+int client_data_append(channel_context* channel_ctx)
 {
-    int res = data_append(channel_ctx, file_name, 
-                          n_len, remote_file_name, rn_len);
-    
-    return res;
+    return data_append(channel_ctx);
 }
 
-int client_change_dir(control_channel* c_channel, char* dir, int d_len)
+int client_change_dir(channel_context* channel_ctx)
 {
-    return change_dir(c_channel, dir, d_len, CLIENT);
+    return change_dir(channel_ctx);
 }
 
-int client_change_mode(control_channel* c_channel, char* chmod_cmd, int cmd_len)
+int client_change_mode(channel_context* channel_ctx)
 {
-    return change_mode(c_channel, chmod_cmd, cmd_len, CLIENT);
+    return change_mode(channel_ctx);
 }
 
-int client_delete_remote_file(control_channel* c_channel, char* file_name, int n_len)
+int client_delete_remote_file(channel_context* channel_ctx)
 {
-    return delete_remote_file(c_channel, file_name, n_len, CLIENT);
+    return delete_remote_file(channel_ctx);
 }
 
-int client_list_remote_dir(control_channel* c_channel, char* dir, int cmd_len,
-                           char** res, unsigned int r_len)
+int client_list_remote_dir(channel_context* channel_ctx)
 {
-    return list_remote_dir(c_channel, dir, cmd_len, res, &r_len, CLIENT);
+    return list_remote_dir(channel_ctx);
 }
 
 int client_local_change_dir(char* dir, int d_len)
@@ -106,50 +100,44 @@ int client_local_change_dir(char* dir, int d_len)
     return chdir(dir);
 }
 
-int client_list_current_remote_dir(control_channel* c_channel, char** res, 
-                                   unsigned int* r_len)
+int client_list_current_remote_dir(channel_context* channel_ctx)
 {
-    return list_current_dir(c_channel, res, r_len, CLIENT);
+    return list_current_dir(channel_ctx);
 }
 
-int client_idle_set_remote(control_channel* c_channel, unsigned int* time_out)
+int client_idle_set_remote(channel_context* channel_ctx)
 {
-    return idle_set_remote(c_channel, time_out, CLIENT);
+    return idle_set_remote(channel_ctx);
 }
 
-int client_remote_mode_time(control_channel* c_channel, char* file_name, 
-                            unsigned int* n_len, char* modetime, 
-                            unsigned int* m_len)
+int client_remote_mode_time(channel_context* channel_ctx)
 {
-    return remote_modtime(c_channel, CLIENT, file_name, n_len, modetime, m_len);
+    return remote_modtime(channel_ctx);
 }
 
-int client_data_newer(channel_context* channel_ctx, char* file_name, int n_len)
+int client_data_newer(channel_context* channel_ctx)
 {
-    return data_newer(channel_ctx, file_name, n_len);
+    return data_newer(channel_ctx);
 }
 
-int client_data_reget(channel_context* channel_ctx, char* file_name, int n_len)
+int client_data_reget(channel_context* channel_ctx)
 {
-    return data_reget(channel_ctx, file_name, n_len);
+    return data_reget(channel_ctx);
 }
 
-int client_remote_change_name(control_channel* c_channel, char* file_name, 
-                              int n_len, char* update_name, int u_len)
+int client_remote_change_name(channel_context* channel_ctx)
 {
-    return remote_change_name(c_channel, file_name, n_len, 
-                              update_name, u_len, CLIENT);
+    return remote_change_name(channel_ctx);
 }
 
-int client_remove_remote_dir(control_channel* c_channel, char* dir, int d_len)
+int client_remove_remote_dir(channel_context* channel_ctx)
 {
-    return remove_remote_dir(c_channel, dir, d_len, CLIENT);
+    return remove_remote_dir(channel_ctx);
 }
 
-int client_remote_get_size(control_channel* c_channel, char* file_name, int n_len, 
-                           unsigned int* file_size)
+int client_remote_get_size(channel_context* channel_ctx)
 {
-    return remote_get_size(c_channel, file_name, n_len, file_size, CLIENT);
+    return remote_get_size(channel_ctx);
 }
 
 void client_terminate_connection(control_channel* c_channel)
@@ -330,15 +318,18 @@ int main(int argc, char* argvs[])
             // send GET code to server
             control_channel_append_ftp_type(GET, channel_ctx.c_channel);
             control_channel_send_wait(channel_ctx.c_channel);
-            operation_sucess = client_data_get(&channel_ctx, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_data_get(&channel_ctx);
             break;
         }
         case PUT:
         {
             // send PUT code to server
             control_channel_append_ftp_type(PUT, channel_ctx.c_channel);
-            control_channel_send_wait(channel_ctx.c_channel);
-            operation_sucess = client_data_put(&channel_ctx, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_data_put(&channel_ctx);
             break;
         }
         case APPEND:
@@ -349,8 +340,11 @@ int main(int argc, char* argvs[])
             // send APPEND code to server
             control_channel_append_ftp_type(APPEND, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_data_append(&channel_ctx, arg, strlen(arg), 
-                                                  ptr, strlen(ptr));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            channel_ctx.source = ptr;
+            channel_ctx.source_len = strlen(ptr);
+            operation_sucess = client_data_append(&channel_ctx);
             break;
         }
         case NEWER:
@@ -358,12 +352,18 @@ int main(int argc, char* argvs[])
             // send NEWER code to server
             control_channel_append_ftp_type(NEWER, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_data_newer(&channel_ctx, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_data_newer(&channel_ctx);
             break;
         }
         case REGET:
         {
-            operation_sucess = client_data_reget(&channel_ctx, arg, strlen(arg));
+            control_channel_append_ftp_type(REGET, channel_ctx.c_channel);
+            control_channel_send(channel_ctx.c_channel);
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_data_reget(&channel_ctx);
             break;
         }
         case CD:
@@ -371,21 +371,27 @@ int main(int argc, char* argvs[])
             // send CD code to server
             control_channel_append_ftp_type(CD, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_change_dir(channel_ctx.c_channel, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_change_dir(&channel_ctx);
             break;
         }
         case CHMOD:
         {
             control_channel_append_ftp_type(CHMOD, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_change_mode(channel_ctx.c_channel, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_change_mode(&channel_ctx);
             break;
         }
         case DELETE:
         {
             control_channel_append_ftp_type(DELETE, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_delete_remote_file(&c_channel, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_delete_remote_file(&channel_ctx);
             break;
         }
         case LS:
@@ -395,12 +401,14 @@ int main(int argc, char* argvs[])
 
             control_channel_append_ftp_type(LS, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
 
             // check if list current dir 
             if(!arg)
-                operation_sucess = client_list_current_remote_dir(channel_ctx.c_channel, &res, &r_len);
+                operation_sucess = client_list_current_remote_dir(&channel_ctx);
             else 
-                operation_sucess = client_list_remote_dir(channel_ctx.c_channel, arg, strlen(arg), &res, r_len);
+                operation_sucess = client_list_remote_dir(&channel_ctx);
 
             printf("REMOTE DIR:\n");
             printf(GREEN);
@@ -415,9 +423,13 @@ int main(int argc, char* argvs[])
             unsigned int r_len;
             int n_len = strlen(arg);
             memset(modtime, 0, BUF_LEN);
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            channel_ctx.ret = &modtime;
+            channel_ctx.source_len = sizeof(modtime);
             control_channel_append_ftp_type(MODTIME, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_remote_mode_time(channel_ctx.c_channel, arg, &n_len, modtime, &r_len);
+            operation_sucess = client_remote_mode_time(&channel_ctx);
 
             printf(GREEN);
             printf("%s\n", modtime);
@@ -427,17 +439,16 @@ int main(int argc, char* argvs[])
         }
         case SIZE:
         {
-            unsigned int f_size;
             control_channel_append_ftp_type(SIZE, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-
-            operation_sucess = client_remote_get_size(channel_ctx.c_channel, arg, 
-                                                      strlen(arg), &f_size);
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_remote_get_size(&channel_ctx);
 
             if(operation_sucess)
             {
                 printf(GREEN);
-                printf("%d\n", f_size);
+                printf("%d\n", channel_ctx.ret_int);
                 printf(RESET_COLOR);
             }
 
@@ -448,18 +459,22 @@ int main(int argc, char* argvs[])
             char* ptr = strchr(arg, ' ');
             *ptr = '\0';
             ptr++;
-
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            channel_ctx.dest = ptr;
+            channel_ctx.dest_len = strlen(ptr);
             control_channel_append_ftp_type(RENAME, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_remote_change_name(&c_channel, arg, strlen(arg), 
-                                                         ptr, strlen(ptr));
+            operation_sucess = client_remote_change_name(&channel_ctx);
             break;
         }
         case RMDIR:
         {
             control_channel_append_ftp_type(RMDIR, channel_ctx.c_channel);
             control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_remove_remote_dir(&c_channel, arg, strlen(arg));
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
+            operation_sucess = client_remove_remote_dir(&channel_ctx);
             break;
         }
         

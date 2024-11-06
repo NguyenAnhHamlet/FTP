@@ -108,7 +108,7 @@ int data_conn( channel_context* channel_ctx )
     return 1;
 }
 
-int get(channel_context* channel_ctx, char* file_name, int* n_len)
+int get(channel_context* channel_ctx)
 {
     char* buf, *base_file_name;
     int b_len;
@@ -123,9 +123,8 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
         // send file's name over to server 
         control_channel_append_ftp_type(FTP_FILE_NAME, channel_ctx->c_channel);
-        control_channel_append_str(file_name, channel_ctx->c_channel, strlen(file_name));
-
-        LOG(CLIENT_LOG, "FILE NAME 2: %d\n", strlen(file_name));
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel, 
+                                   strlen(channel_ctx->source));
 
         control_channel_send(channel_ctx->c_channel);
 
@@ -158,7 +157,8 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
 
         LOG(SERVER_LOG, "Error when getting file0\n");
-        control_channel_get_str(channel_ctx->c_channel, file_name, n_len);
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
+                                &channel_ctx->source_len);
         
         break;
     }
@@ -180,8 +180,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
 
     buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
     data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
-    basename(file_name, &base_file_name);
-    LOG(SERVER_LOG, "NAME: %s\n", base_file_name);
+    basename(channel_ctx->source, &base_file_name);
 
     if (!not_exist(base_file_name))
     {
@@ -196,7 +195,8 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
         remove(base_file_name);
-        LOG(SERVER_LOG, "Error when getting file %s from remote server\n", file_name);
+        LOG(SERVER_LOG, "Error when getting file %s from remote server\n", 
+            channel_ctx->source);
         operation_abort(channel_ctx->c_channel);
         free(buf);
         return 0;
@@ -212,7 +212,7 @@ int get(channel_context* channel_ctx, char* file_name, int* n_len)
     return 1;
 }
 
-int put(channel_context* channel_ctx, char* file_name, int n_len)
+int put(channel_context* channel_ctx)
 {
     FILE* file;
     char buf[BUF_LEN];
@@ -229,7 +229,8 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
         // send file's name over to server
         control_channel_append_ftp_type(FTP_FILE_NAME, channel_ctx->c_channel);
-        control_channel_append_str(file_name, channel_ctx->c_channel, n_len);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel,
+                                   channel_ctx->source_len);
         control_channel_send(channel_ctx->c_channel);
 
         break;
@@ -249,7 +250,8 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         }
 
         // get file's name
-        control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);        
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
+                                &channel_ctx->source_len);        
         break;
     }
     
@@ -261,9 +263,7 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
 
     }
 
-    file = fopen(file_name, "rb"); 
-
-    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name); 
+    file = fopen(channel_ctx->source, "rb"); 
 
     // file does not exist or there is error in I/O operation
     if (file == NULL)
@@ -274,8 +274,6 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
         control_channel_send_wait(channel_ctx->c_channel);
         return 0;
     } 
-
-    LOG(SERVER_LOG, "FILE NAME: %s\n", file_name);
 
     if(channel_ctx->type == SERVER)
     {
@@ -313,9 +311,7 @@ int put(channel_context* channel_ctx, char* file_name, int n_len)
     return 1;
 }
 
-int data_append(channel_context* channel_ctx, char* file_name, 
-                unsigned int n_len, char* remote_file_name, 
-                unsigned int rn_len)
+int data_append(channel_context* channel_ctx)
 {   
     switch (channel_ctx->type)
     {
@@ -327,10 +323,11 @@ int data_append(channel_context* channel_ctx, char* file_name,
 
         // send file's name to server
         control_channel_append_ftp_type(FTP_REMOTE_FILE_NAME, channel_ctx->c_channel);
-        control_channel_append_str(remote_file_name, channel_ctx->c_channel, rn_len);
+        control_channel_append_str(channel_ctx->dest, channel_ctx->c_channel,
+                                  channel_ctx->dest_len);
         control_channel_send(channel_ctx->c_channel);
 
-        FILE* file = fopen(file_name, "rb");
+        FILE* file = fopen(channel_ctx->source, "rb");
         char buf[BUF_LEN];
         int byte;
         int ident = -1;
@@ -417,8 +414,7 @@ int data_append(channel_context* channel_ctx, char* file_name,
     return 1;
 }
 
-int data_newer(channel_context* channel_ctx, char* file_name, 
-               int n_len)
+int data_newer(channel_context* channel_ctx)
 {
     char rm_modtime[BUF_LEN], lc_modtime[BUF_LEN], *local_file_name;
     struct tm rm_datetime, lc_datetime;
@@ -428,15 +424,16 @@ int data_newer(channel_context* channel_ctx, char* file_name,
     {
     case CLIENT:
     {
-        if(!remote_modtime(channel_ctx->c_channel, channel_ctx->type, file_name, 
-                           &n_len, rm_modtime, &rm_len ))
+        if(!remote_modtime(channel_ctx))
         {
             LOG(CLIENT_LOG, "Fail to get mod time\n");
+            operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
-        basename(file_name, &local_file_name);
-        local_modtime(local_file_name, &n_len, lc_modtime, &lc_len);
+        basename(channel_ctx->source, &local_file_name);
+        local_modtime(local_file_name, &channel_ctx->source_len, 
+                      lc_modtime, &lc_len);
 
         convert_to_datetime(rm_modtime, &rm_datetime);
         convert_to_datetime(lc_modtime, &lc_datetime);
@@ -455,18 +452,16 @@ int data_newer(channel_context* channel_ctx, char* file_name,
         control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
 
-        get(channel_ctx, file_name, &n_len);
+        get(channel_ctx);
 
         break;
     }
     case SERVER:
     {
-        if(!remote_modtime(channel_ctx->c_channel, channel_ctx->type, file_name, 
-                           &n_len, rm_modtime, &rm_len ))
+        if(!remote_modtime(channel_ctx))
         {
             LOG(SERVER_LOG, "Fail to send modtime\n");
             operation_abort(channel_ctx->c_channel);
-
             return 0;
         }
 
@@ -477,7 +472,7 @@ int data_newer(channel_context* channel_ctx, char* file_name,
             return 0;
         }
 
-        put(channel_ctx, file_name, n_len);
+        put(channel_ctx);
         
         break;
     }
@@ -493,7 +488,7 @@ int data_newer(channel_context* channel_ctx, char* file_name,
     return 1;
 }
 
-int data_reget(channel_context* channel_ctx, char* file_name, int n_len)
+int data_reget(channel_context* channel_ctx)
 {
     int remote_size, local_size;
 
@@ -501,9 +496,9 @@ int data_reget(channel_context* channel_ctx, char* file_name, int n_len)
     {
     case CLIENT:
     {
-        if(!local_get_size(file_name, &n_len, &local_size) || 
-           !remote_get_size(channel_ctx->c_channel, file_name, 
-                            n_len, &remote_size, CLIENT))
+        if(!local_get_size(channel_ctx->source, &channel_ctx->source_len, 
+                           &channel_ctx->ret_int) || 
+           !remote_get_size(channel_ctx))
         {
             LOG(CLIENT_LOG, "Fail to get size\n");
             return 0;
@@ -515,7 +510,7 @@ int data_reget(channel_context* channel_ctx, char* file_name, int n_len)
             return 0;
         }
 
-        if(!get(channel_ctx, file_name, &n_len))
+        if(!get(channel_ctx))
         {
             LOG(CLIENT_LOG, "Failed to get file from remote server\n");
             return 0;
@@ -525,7 +520,7 @@ int data_reget(channel_context* channel_ctx, char* file_name, int n_len)
     }
     case SERVER:
     {
-        if(!put(channel_ctx, file_name, n_len))
+        if(!put(channel_ctx))
         {
             operation_abort(channel_ctx->c_channel);
             return 0;
