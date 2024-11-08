@@ -1,6 +1,8 @@
 #ifndef __CMD__
 #define __CMD__
 
+#include "common/channel.h"
+
 #define GET         500
 #define PUT         501
 #define RECV        502
@@ -47,10 +49,12 @@
 #define DEBUG_ENB   543
 #define CLEAR       544
 
-// Get the command and the contents of buffer pointed by cmd and contents
-// Return result will be the ftp's command code
-// Remember don't free or destroy the buffer, or else there will be coredump 
-unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd, 
-                              unsigned char** contents);
+typedef int (* command_func_ptr) (channel_context*); 
+typedef struct 
+{
+    char command_str[32];
+    unsigned int command_code;
+    command_func_ptr func ;
+} command;
 
 #endif

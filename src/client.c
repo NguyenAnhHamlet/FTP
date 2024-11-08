@@ -11,12 +11,14 @@
 #include "common/packet.h"
 #include "data.h"
 #include "control.h"
-#include "common/cmd.h"
+#include "cmd.h"
 #include "log/ftplog.h"
 #include "algo/algo.h"
 
 #define IPADDR_SIZE  32
 #define OPTION_SIZE  8
+
+extern command commands[];
 
 channel_context channel_ctx;
 char name[BUF_LEN];
@@ -29,6 +31,38 @@ socket_ftp* d_socket;
 char ipaddr[IPADDR_SIZE];
 char option[OPTION_SIZE];
 unsigned int iptype;
+
+// Get the command and the contents of buffer pointed by cmd and contents
+// Return result will be the ftp's command code
+// Remember don't free or destroy the buffer, or else there will be coredump 
+unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd, 
+                              unsigned char** contents)
+{
+    // get the command 
+    *cmd = buffer;
+    *contents = strchr(buffer, ' ');
+    if(*contents)
+    {
+        **contents = '\0';
+        (*contents)++;
+    }
+    
+    return 1;
+    
+}
+
+int run_command(channel_context* channel_ctx, unsigned int code)
+{
+    for(int i =0; commands[i].command_str != NULL; i++)
+    {
+        if(commands[i].command_code == code)
+        {
+            return commands[i].func(channel_ctx);
+        }
+    }
+
+    return 0;
+}
 
 void client_terminate_connection(control_channel* c_channel);
 
@@ -56,86 +90,6 @@ void signal_handler(int sig)
 {
     LOG(CLIENT_LOG, "Received signal %d; terminating.", sig);
     quit();
-}
-
-int client_data_put(channel_context* channel_ctx)
-{
-    return put(channel_ctx);
-}
-
-int client_data_get(channel_context* channel_ctx)
-{
-    return get(channel_ctx);
-}
-
-int client_data_append(channel_context* channel_ctx)
-{
-    return data_append(channel_ctx);
-}
-
-int client_change_dir(channel_context* channel_ctx)
-{
-    return change_dir(channel_ctx);
-}
-
-int client_change_mode(channel_context* channel_ctx)
-{
-    return change_mode(channel_ctx);
-}
-
-int client_delete_remote_file(channel_context* channel_ctx)
-{
-    return delete_remote_file(channel_ctx);
-}
-
-int client_list_remote_dir(channel_context* channel_ctx)
-{
-    return list_remote_dir(channel_ctx);
-}
-
-int client_local_change_dir(char* dir, int d_len)
-{
-    return chdir(dir);
-}
-
-int client_list_current_remote_dir(channel_context* channel_ctx)
-{
-    return list_current_dir(channel_ctx);
-}
-
-int client_idle_set_remote(channel_context* channel_ctx)
-{
-    return idle_set_remote(channel_ctx);
-}
-
-int client_remote_mode_time(channel_context* channel_ctx)
-{
-    return remote_modtime(channel_ctx);
-}
-
-int client_data_newer(channel_context* channel_ctx)
-{
-    return data_newer(channel_ctx);
-}
-
-int client_data_reget(channel_context* channel_ctx)
-{
-    return data_reget(channel_ctx);
-}
-
-int client_remote_change_name(channel_context* channel_ctx)
-{
-    return remote_change_name(channel_ctx);
-}
-
-int client_remove_remote_dir(channel_context* channel_ctx)
-{
-    return remove_remote_dir(channel_ctx);
-}
-
-int client_remote_get_size(channel_context* channel_ctx)
-{
-    return remote_get_size(channel_ctx);
 }
 
 void client_terminate_connection(control_channel* c_channel)
@@ -294,192 +248,8 @@ int main(int argc, char* argvs[])
         if(strlen(buffer) == 0) continue; 
         int operation_sucess = 1;
         request_int = get_cmd_contents(buffer, &cmd, &arg);
-        
-        switch (request_int)
-        {
-        case CLEAR:
-        {
-            printf("\033c");
-        }
-        case IPV4_OP:
-        {
-            operation_sucess = handle_option(c_socket, IPV4_OP);
-            break;
-        }
-        case IPV6_OP:
-        {
-            operation_sucess = handle_option(c_socket, IPV6_OP);
-            break;
-        }
-        case GET:
-        {
-            // send GET code to server
-            control_channel_append_ftp_type(GET, channel_ctx.c_channel);
-            control_channel_send_wait(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_data_get(&channel_ctx);
-            break;
-        }
-        case PUT:
-        {
-            // send PUT code to server
-            control_channel_append_ftp_type(PUT, channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_data_put(&channel_ctx);
-            break;
-        }
-        case APPEND:
-        {
-            char* ptr = strchr(arg, ' ');
-            *ptr = '\0';
-            ptr++;
-            // send APPEND code to server
-            control_channel_append_ftp_type(APPEND, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            channel_ctx.source = ptr;
-            channel_ctx.source_len = strlen(ptr);
-            operation_sucess = client_data_append(&channel_ctx);
-            break;
-        }
-        case NEWER:
-        {
-            // send NEWER code to server
-            control_channel_append_ftp_type(NEWER, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_data_newer(&channel_ctx);
-            break;
-        }
-        case REGET:
-        {
-            control_channel_append_ftp_type(REGET, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_data_reget(&channel_ctx);
-            break;
-        }
-        case CD:
-        {
-            // send CD code to server
-            control_channel_append_ftp_type(CD, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_change_dir(&channel_ctx);
-            break;
-        }
-        case CHMOD:
-        {
-            control_channel_append_ftp_type(CHMOD, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_change_mode(&channel_ctx);
-            break;
-        }
-        case DELETE:
-        {
-            control_channel_append_ftp_type(DELETE, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_delete_remote_file(&channel_ctx);
-            break;
-        }
-        case LS:
-        {
-            char* res = NULL;
-            unsigned int r_len;
 
-            control_channel_append_ftp_type(LS, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-
-            // check if list current dir 
-            if(!arg)
-                operation_sucess = client_list_current_remote_dir(&channel_ctx);
-            else 
-                operation_sucess = client_list_remote_dir(&channel_ctx);
-
-            printf("REMOTE DIR:\n");
-            printf(GREEN);
-            printf("%s", res);
-            printf(RESET_COLOR);
-            free(res);
-            break;
-        }
-        case MODTIME:
-        {
-            char modtime[BUF_LEN];
-            unsigned int r_len;
-            int n_len = strlen(arg);
-            memset(modtime, 0, BUF_LEN);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            channel_ctx.ret = &modtime;
-            channel_ctx.source_len = sizeof(modtime);
-            control_channel_append_ftp_type(MODTIME, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_remote_mode_time(&channel_ctx);
-
-            printf(GREEN);
-            printf("%s\n", modtime);
-            printf(RESET_COLOR);
-
-            break;
-        }
-        case SIZE:
-        {
-            control_channel_append_ftp_type(SIZE, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_remote_get_size(&channel_ctx);
-
-            if(operation_sucess)
-            {
-                printf(GREEN);
-                printf("%d\n", channel_ctx.ret_int);
-                printf(RESET_COLOR);
-            }
-
-            break;
-        }
-        case RENAME:
-        {
-            char* ptr = strchr(arg, ' ');
-            *ptr = '\0';
-            ptr++;
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            channel_ctx.dest = ptr;
-            channel_ctx.dest_len = strlen(ptr);
-            control_channel_append_ftp_type(RENAME, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            operation_sucess = client_remote_change_name(&channel_ctx);
-            break;
-        }
-        case RMDIR:
-        {
-            control_channel_append_ftp_type(RMDIR, channel_ctx.c_channel);
-            control_channel_send(channel_ctx.c_channel);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
-            operation_sucess = client_remove_remote_dir(&channel_ctx);
-            break;
-        }
-        
-        default:
-            printf("Unknown operation, Abort\n");
-            break;
-        }
+        operation_sucess = run_command(&channel_ctx, request_int);
 
         if(!operation_sucess)
             printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);

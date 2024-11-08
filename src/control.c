@@ -1,7 +1,7 @@
 #include "control.h"
 #include "common/common.h"
 #include "common/ftp_type.h"
-#include "common/cmd.h"
+#include "cmd.h"
 #include "common/channel.h"
 #include "log/ftplog.h"
 #include <string.h>

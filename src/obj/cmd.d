@@ -1,4 +1,4 @@
-obj/client.o: client.c control.h common/channel.h \
+obj/cmd.o: cmd.c cmd.h common/channel.h \
  /home/nguyenanh/Programming/FTP/src/secure/rsa.h common/buffer.h \
  common/putnum.h common/common.h \
  /home/nguyenanh/Programming/FTP/src/algo/stack.h \
@@ -8,13 +8,9 @@ obj/client.o: client.c control.h common/channel.h \
  /home/nguyenanh/Programming/FTP/src/common/buffer.h \
  /home/nguyenanh/Programming/FTP/src/common/ftp_type.h \
  /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h \
- /home/nguyenanh/Programming/FTP/src/common/common.h common/common.h \
- secure/secure.h secure/rsa.h \
- /home/nguyenanh/Programming/FTP/src/common/buffer.h \
- /home/nguyenanh/Programming/FTP/src/common/channel.h common/timer.h \
- common/socket_ftp.h common/packet.h data.h cmd.h log/ftplog.h \
- algo/algo.h
-control.h:
+ /home/nguyenanh/Programming/FTP/src/common/common.h data.h \
+ common/socket_ftp.h control.h
+cmd.h:
 common/channel.h:
 /home/nguyenanh/Programming/FTP/src/secure/rsa.h:
 common/buffer.h:
@@ -28,15 +24,6 @@ common/common.h:
 /home/nguyenanh/Programming/FTP/src/common/ftp_type.h:
 /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h:
 /home/nguyenanh/Programming/FTP/src/common/common.h:
-common/common.h:
-secure/secure.h:
-secure/rsa.h:
-/home/nguyenanh/Programming/FTP/src/common/buffer.h:
-/home/nguyenanh/Programming/FTP/src/common/channel.h:
-common/timer.h:
-common/socket_ftp.h:
-common/packet.h:
 data.h:
-cmd.h:
-log/ftplog.h:
-algo/algo.h:
+common/socket_ftp.h:
+control.h:

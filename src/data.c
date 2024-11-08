@@ -1,7 +1,7 @@
 #include "data.h"
 #include "common/channel.h"
 #include "common/file.h"
-#include "common/cmd.h"
+#include "cmd.h"
 #include "common/ftp_type.h"
 #include "common/packet.h"
 #include "control.h"

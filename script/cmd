@@ -1,96 +1,47 @@
 // Put the command code in here
 
-GET         500
-PUT         501
-RECV        502
-SEND        503
-APPEND      504
-CASE        505
-CD          506
-CHMOD       507
-DELETE      508
-_DIR        509
-LCD         510
-LS          511
-IDLE        512
-MDELETE     513
-MDIR        514
-MGET        515
-MKDIR       516
-MLS         517
-MODTIME     518
-MPUT        519
-NEWER       520
-NLIST       521
-PROMPT      522
-PWD         523
-QC          524
-REGET       525
-RENAME      526
-RESET       527
-RESTART     528
-RHELP       529
-RMDIR       530
-RSTATUS     531
-SIZE        532
-STATUS      533
-SYSTEM      534
-TICK        535
-IPV4_OP     536
-IPV6_OP     537
-PASSMODE    538
-INT_OFF     539
-AULOG_DIS   540
-GLOB_DIS    541
-VERBOSE_ENB 542
-DEBUG_ENB   543
-CLEAR       544
-
-
-// Put the command string associated with each command code in here 
-
-GET_STR         "get"
-PUT_STR         "put"  
-RECV_STR        "recv"
-SEND_STR        "send"
-APPEND_STR      "append"
-CASE_STR        "case"
-CD_STR          "cd"
-CHMOD_STR       "chmod"
-DELETE_STR      "delete"
-DIR_STR         "dir"
-LCD_STR         "lcd"
-LS_STR          "ls"
-IDLE_STR        "idle"
-MDELETE_STR     "mdelete"
-MDIR_STR        "mdir"
-MGET_STR        "mget"
-MKDIR_STR       "mkdir"
-MLS_STR         "mls"
-MODTIME_STR     "modtime"
-MPUT_STR        "mput"
-NEWER_STR       "newer"
-NLIST_STR       "nlist"
-PROMPT_STR      "prompt"
-PWD_STR         "pwd"
-QC_STR          "qc"
-REGET_STR       "reget"
-RENAME_STR      "rename"
-RESET_STR       "reset"
-RESTART_STR     "restart"
-RHELP_STR       "rhelp"
-RMDIR_STR       "rmdir"
-RSTATUS_STR     "rstatus"
-SIZE_STR        "size"
-STATUS_STR      "status"
-SYSTEM_STR      "system"
-TICK_STR        "tick"
-IPV4_OP_STR     "ipv4_op"
-IPV6_OP_STR     "ipv6_op"
-PASSMODE_STR    "passmode"
-INT_OFF_STR     "int_off"
-AULOG_DIS_STR   "aulog_dis"
-GLOB_DIS_STR    "glob_dis"
-VERBOSE_ENB_STR "verbose_enb"
-DEBUG_ENB_STR   "debug_enb"
-CLEAR_STR       "clear"
+GET         500     "get"
+PUT         501     "put"
+RECV        502     "recv"
+SEND        503     "send"
+APPEND      504     "append"
+CASE        505     "case"
+CD          506     "cd"
+CHMOD       507     "chmod"
+DELETE      508     "delete"
+_DIR        509     "dir"
+LCD         510     "lcd"
+LS          511     "ls"
+IDLE        512     "idle"
+MDELETE     513     "mdelete"
+MDIR        514     "mdir"
+MGET        515     "mget"
+MKDIR       516     "mkdir"
+MLS         517     "mls"
+MODTIME     518     "modtime"
+MPUT        519     "mput"
+NEWER       520     "newer"
+NLIST       521     "nlist"
+PROMPT      522     "prompt"
+PWD         523     "pwd"
+QC          524     "qc"
+REGET       525     "reget"
+RENAME      526     "rename"
+RESET       527     "reset"
+RESTART     528     "restart"
+RHELP       529     "rhelp"
+RMDIR       530     "rmdir"
+RSTATUS     531     "rstatus"
+SIZE        532     "size"
+STATUS      533     "status"
+SYSTEM      534     "system"
+TICK        535     "tick"
+IPV4_OP     536     "ipv4_op"
+IPV6_OP     537     "ipv6_op"
+PASSMODE    538     "passmode"
+INT_OFF     539     "int_off"
+AULOG_DIS   540     "aulog_dis"
+GLOB_DIS    541     "glob_dis"
+VERBOSE_ENB 542     "verbose_enb"
+DEBUG_ENB   543     "debug_enb"
+CLEAR       544     "clear"

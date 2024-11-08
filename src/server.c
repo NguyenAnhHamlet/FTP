@@ -20,11 +20,13 @@
 #include "common/pam.h"
 #include "common/packet.h"
 #include <pwd.h>
-#include "common/cmd.h"
+#include "cmd.h"
 #include "common/file.h"
 #include "data.h"
 #include "control.h"
 #include "algo/algo.h"
+
+extern command commands[];
 
 socket_ftp* socket_server;
 
@@ -39,21 +41,6 @@ void time_out_alarm(int sig)
 {
     LOG(SERVER_LOG, "Time out\n");
     exit(1);
-}
-
-int server_data_conn(channel_context* channel_ctx)
-{
-    return data_conn(channel_ctx);
-}
-
-int server_data_get(channel_context* channel_ctx)
-{
-    return get(channel_ctx);
-}
-
-int server_data_append(channel_context* channel_ctx)
-{
-    return data_append(channel_ctx);
 }
 
 int pass_authen_server(control_channel* c_channel)
@@ -102,71 +89,18 @@ int pass_authen_server(control_channel* c_channel)
     return 1;
 }
 
-int server_data_put(channel_context* channel_ctx)
+int run_command(channel_context* channel_ctx, unsigned int code)
 {
-    return put(channel_ctx);
-}
+    for(int i =0; commands[i].command_str != NULL; i++)
+    {
+        if(commands[i].command_code == code)
+        {
+            return commands[i].func(channel_ctx);
+        }
+    }
 
-int server_change_dir(channel_context* channel_ctx)
-{
-    return change_dir(channel_ctx);
+    return 0;
 }
-
-int server_change_mode(channel_context* channel_ctx)
-{
-    return change_mode(channel_ctx);
-}
-
-int server_delete_remote_file(channel_context* channel_ctx)
-{
-    return delete_remote_file(channel_ctx);
-}
-
-int server_list_remote_dir(channel_context* channel_ctx)
-{
-    return list_remote_dir(channel_ctx);
-}
-
-int server_list_current_remote_dir(channel_context* channel_ctx)
-{
-    return list_current_dir(channel_ctx);
-}
-
-int server_idle_set_remote(channel_context* channel_ctx)
-{
-    return idle_set_remote(channel_ctx);
-}
-
-int server_remote_mode_time(channel_context* channel_ctx)
-{
-    return remote_modtime(channel_ctx);
-}
-
-int server_data_newer(channel_context* channel_ctx)
-{
-    return data_newer(channel_ctx);
-}
-
-int server_data_reget(channel_context* channel_ctx)
-{
-    return data_reget(channel_ctx);
-}
-
-int server_remote_change_name(channel_context* channel_ctx)
-{
-    return remote_change_name(channel_ctx);
-}
-
-int server_remote_get_size(channel_context* channel_ctx)
-{
-    return remote_get_size(channel_ctx);
-}
-
-int server_remove_remote_dir(channel_context* channel_ctx)
-{
-    return remove_remote_dir(channel_ctx);
-}
-
 
 int main()
 {
@@ -306,92 +240,7 @@ int main()
 
         printf("CODE: %d\n", request_int);
 
-        switch (request_int)
-        {
-        case GET:
-        {
-            char f_name[BUF_LEN];
-            unsigned int n_len;
-            memset(f_name, 0, BUF_LEN);
-            channel_ctx.source = f_name;
-            channel_ctx.source_len = sizeof(f_name);
-            operation_sucess = server_data_put(&channel_ctx);
-            break;
-        }
-        case PUT:
-        {
-            char f_name[BUF_LEN];
-            unsigned int n_len;
-            memset(f_name, 0, BUF_LEN);
-            channel_ctx.source = f_name;
-            channel_ctx.source_len = sizeof(f_name);
-            operation_sucess = server_data_get(&channel_ctx);
-            break;
-        }
-        case APPEND:
-        {
-            operation_sucess = server_data_append(&channel_ctx);
-            break;
-        }
-        case NEWER:
-        {
-            char f_name[BUF_LEN];
-            unsigned int n_len;    
-            channel_ctx.source = f_name;
-            channel_ctx.source_len = sizeof(f_name);        
-            operation_sucess = server_data_newer(&channel_ctx);
-            break;
-        }
-        case REGET:
-        {
-            operation_sucess = server_data_reget(&channel_ctx);
-            break;
-        }
-        case CD:
-        {
-            operation_sucess = server_change_dir(&channel_ctx);
-            break;
-        }
-        case CHMOD:
-        {
-            operation_sucess = server_change_mode(&channel_ctx);
-            break;
-        }
-        case DELETE:
-        {
-            operation_sucess = server_delete_remote_file(&channel_ctx);
-            break;
-        }
-        case LS:
-        {
-            operation_sucess = server_list_remote_dir(&channel_ctx);
-            break;
-        }
-        case MODTIME:
-        {
-            operation_sucess = server_remote_mode_time(&channel_ctx);
-            break;
-        }
-        case SIZE:
-        {
-            operation_sucess = server_remote_get_size(&channel_ctx);
-            break;
-        }
-        case RENAME:
-        {
-            operation_sucess = server_remote_change_name(&channel_ctx);
-            break;
-        }
-        case RMDIR:
-        {
-            operation_sucess = server_remove_remote_dir(&channel_ctx);
-            break;
-        }
-        
-        default:
-            printf("Unknown operation\n Abort\n");
-            break;
-        }
+        operation_sucess = run_command(&channel_ctx, request_int);
 
         if(!operation_sucess)
             printf("Operation failed\n");

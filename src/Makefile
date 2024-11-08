@@ -33,11 +33,11 @@ all: ftpclient ftpserver ftpkeygen
 
 ftpclient: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o ${LDFLAGS}
 
 ftpserver: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o ${LDFLAGS}
 
 ftpkeygen: $(OBJS_CURRENT)
 	@$(call make_subdirs)
