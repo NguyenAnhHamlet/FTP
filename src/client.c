@@ -276,10 +276,18 @@ int main(int argc, char* argvs[])
             if(channel_ctx.ret)
             {
                 printf(GREEN);
-                printf("%s", channel_ctx.ret);
+                printf("%s\n", channel_ctx.ret);
                 printf(RESET_COLOR);
                 free(channel_ctx.ret);
                 channel_ctx.ret = NULL;
+            }
+
+            if(channel_ctx.ret_int)
+            {
+                printf(GREEN);
+                printf("%d\n", channel_ctx.ret_int);
+                printf(RESET_COLOR);
+                channel_ctx.ret_int = 0;
             }
 
             if(!operation_sucess)
