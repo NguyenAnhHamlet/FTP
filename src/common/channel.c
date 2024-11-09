@@ -13,6 +13,11 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
     channel_ctx->c_socket = c_socket;
     channel_ctx->d_socket = d_socket;
     channel_ctx->type = type;
+    
+    channel_ctx->source = NULL;
+    channel_ctx->source_len = 0;
+    channel_ctx->ret = NULL;
+    channel_ctx->ret_len = 0;
 }
 
 void control_channel_init(  control_channel* channel,

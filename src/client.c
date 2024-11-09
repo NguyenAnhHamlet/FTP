@@ -273,6 +273,15 @@ int main(int argc, char* argvs[])
 
             operation_sucess = run_command(&channel_ctx, cmd);
 
+            if(channel_ctx.ret)
+            {
+                printf(GREEN);
+                printf("%s", channel_ctx.ret);
+                printf(RESET_COLOR);
+                free(channel_ctx.ret);
+                channel_ctx.ret = NULL;
+            }
+
             if(!operation_sucess)
                 printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
         }        

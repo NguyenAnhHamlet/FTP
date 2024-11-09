@@ -176,7 +176,7 @@ int change_mode(channel_context* channel_ctx)
         char* token = NULL;
         int no = 0 ;
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         mode = (char*) malloc(data_len);
         memset(channel_ctx->source, 0 , data_len);
@@ -262,7 +262,7 @@ int delete_remote_file(channel_context* channel_ctx)
             return 0;
         }
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);
@@ -313,10 +313,12 @@ int list_remote_dir(channel_context* channel_ctx)
             return 0;
         }
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
-        *channel_ctx->ret = (char*) malloc(data_len);
-        control_channel_get_str(channel_ctx->c_channel, *channel_ctx->ret, 
-                                channel_ctx->ret_len);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        char* data = (char*) malloc(data_len);
+        channel_ctx->ret = data;
+        channel_ctx->ret_len= data_len;
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret, 
+                                &channel_ctx->ret_len);
 
         break;
     }
@@ -335,7 +337,7 @@ int list_remote_dir(channel_context* channel_ctx)
             return 0;
         }
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         memset(channel_ctx->source, 0, data_len);
 
@@ -344,7 +346,7 @@ int list_remote_dir(channel_context* channel_ctx)
         
         if(!list_dir(channel_ctx->source, res, &ret_len))
         {
-            LOG(SERVER_LOG, "List dir failed\n");
+            LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
             operation_abort(channel_ctx->c_channel);
             free(res);
             return 0;
@@ -444,8 +446,12 @@ int remote_modtime(channel_context* channel_ctx)
             return 0;
         }
 
-        control_channel_get_str(channel_ctx->c_channel, *channel_ctx->ret,
-                                channel_ctx->ret_len);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        char* data = (char*) malloc(data_len);
+        channel_ctx->ret = data;
+
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret,
+                                &channel_ctx->ret_len);
 
         break;
     }
@@ -552,7 +558,7 @@ int remote_get_size(channel_context* channel_ctx)
             return 0;
         }
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         memset(channel_ctx->source, 0, data_len);
 
@@ -632,7 +638,7 @@ int remote_change_name(channel_context* channel_ctx)
             operation_abort(channel_ctx->c_channel);
         }
 
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         memset(channel_ctx->source, 0, data_len);
         
@@ -714,7 +720,7 @@ int remove_remote_dir(channel_context* channel_ctx)
             return 0;
         }
         
-        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
         memset(channel_ctx->source, 0, data_len);
 

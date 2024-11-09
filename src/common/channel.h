@@ -59,8 +59,8 @@ typedef struct
     int source_len;
 
     // Data returned that will be read by client side 
-    char** ret;
-    unsigned int* ret_len;
+    char* ret;
+    unsigned int ret_len;
     unsigned int ret_int;
 
 } channel_context;
