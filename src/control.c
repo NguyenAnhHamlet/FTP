@@ -214,6 +214,8 @@ int change_mode(channel_context* channel_ctx)
         control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
 
+        free(channel_ctx->source);
+
         break;
     }
 
@@ -275,6 +277,9 @@ int delete_remote_file(channel_context* channel_ctx)
         LOG(SERVER_LOG, "Delete file %s done\n", channel_ctx->source);
         control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
+
+        free(channel_ctx->source);
+
         break;
     }
     
@@ -348,7 +353,9 @@ int list_remote_dir(channel_context* channel_ctx)
         control_channel_append_ftp_type(LS, channel_ctx->c_channel);
         control_channel_append_str(res, channel_ctx->c_channel, ret_len);
         control_channel_send(channel_ctx->c_channel);
+
         free(res);
+        free(channel_ctx->source);
 
         break;
     }
@@ -577,12 +584,26 @@ int remote_change_name(channel_context* channel_ctx)
     {
     case CLIENT:
     {
+        // Update design 
+        // Read and seperate the arg into local_name and remote_name
+        char* local_name = channel_ctx->source;
+        char* remote_name = strchr(channel_ctx->source, ' ');
+        if(!remote_name)
+        {
+            LOG(CLIENT_LOG, "arguments lack remote_name, it contains only %s\n",
+                channel_ctx->source);
+            return 0;
+        }
+
+        remote_name = 0;
+        remote_name++;
+
         control_channel_append_ftp_type(RENAME, channel_ctx->c_channel);
-        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel, 
-                                   channel_ctx->source_len);
+        control_channel_append_str(local_name, channel_ctx->c_channel, 
+                                   sizeof(local_name));
         control_channel_append_str(" ", channel_ctx->c_channel, 1);
-        control_channel_append_str(channel_ctx->dest, channel_ctx->c_channel, 
-                                   channel_ctx->dest_len);
+        control_channel_append_str(remote_name, channel_ctx->c_channel, 
+                                   strlen(remote_name));
         control_channel_send(channel_ctx->c_channel);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
@@ -599,6 +620,10 @@ int remote_change_name(channel_context* channel_ctx)
 
     case SERVER:
     {
+        // Update design 
+        // Read and seperate the arg into local_name and remote_name
+        char* local_name = NULL;
+        char* remote_name = NULL;
         if(!control_channel_read_expect(channel_ctx->c_channel, RENAME))
         {
             LOG(SERVER_LOG, "Unknown CODE from client side," 
@@ -613,16 +638,16 @@ int remote_change_name(channel_context* channel_ctx)
         
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);
-        channel_ctx->dest = channel_ctx->source;
-        while (*channel_ctx->dest != ' ') 
-            channel_ctx->dest++;
-        *channel_ctx->dest = '\0';
-        channel_ctx->dest++;
+        local_name = channel_ctx->source;
+        while (*remote_name != ' ') 
+            remote_name++;
+        remote_name = 0;
+        remote_name++;
 
-        if(rename(channel_ctx->source, channel_ctx->dest))
+        if(rename(local_name, remote_name))
         {
-            LOG(SERVER_LOG, "Fail to rename %s to %s \n", channel_ctx->source, 
-                channel_ctx->dest);
+            LOG(SERVER_LOG, "Fail to rename %s to %s \n", local_name, 
+                remote_name);
             control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
             free(channel_ctx->source);

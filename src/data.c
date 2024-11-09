@@ -110,7 +110,7 @@ int data_conn( channel_context* channel_ctx )
 
 int get(channel_context* channel_ctx)
 {
-    char* buf, *base_file_name;
+    char* buf, *base_file_name, *file_name = NULL;
     int b_len;
 
     switch (channel_ctx->type)
@@ -124,9 +124,11 @@ int get(channel_context* channel_ctx)
         // send file's name over to server 
         control_channel_append_ftp_type(FTP_FILE_NAME, channel_ctx->c_channel);
         control_channel_append_str(channel_ctx->source, channel_ctx->c_channel, 
-                                   strlen(channel_ctx->source));
+                                   channel_ctx->source_len);
 
         control_channel_send(channel_ctx->c_channel);
+
+        LOG(SERVER_LOG, "ARG: %s %d\n", channel_ctx->source, channel_ctx->source_len);
 
         // check the file's existence on remote server
         if( !control_channel_read_expect(channel_ctx->c_channel, FILE_EXIST))
@@ -155,10 +157,14 @@ int get(channel_context* channel_ctx)
             return 0;
         }
 
-
-        LOG(SERVER_LOG, "Error when getting file0\n");
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) +1;
+        file_name = (char*) malloc(data_len);
+        channel_ctx->source = file_name;
+        memset(channel_ctx->source, 0, data_len);
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);
+
+        LOG(SERVER_LOG, "COULD RUN %s %d\n", channel_ctx->source, data_len);
         
         break;
     }
@@ -178,8 +184,11 @@ int get(channel_context* channel_ctx)
         return 0;
     }
 
-    buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
-    data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
+    int data_len = data_channel_get_data_len_in(channel_ctx->d_channel) + 1;
+    LOG(SERVER_LOG, "DATALEN: %d\n", data_len);
+    buf = (char*) malloc(data_len);
+    memset(buf, 0, data_len);
+    data_channel_get_str(channel_ctx->d_channel, buf, &data_len);
     basename(channel_ctx->source, &base_file_name);
 
     if (!not_exist(base_file_name))
@@ -188,9 +197,10 @@ int get(channel_context* channel_ctx)
         remove(base_file_name);
     }
 
+    LOG(CLIENT_LOG, "File name: %s \n", base_file_name);
 
     create_file(base_file_name);
-    append_file(base_file_name, buf, b_len);
+    append_file(base_file_name, buf, data_len);
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
@@ -202,12 +212,19 @@ int get(channel_context* channel_ctx)
         return 0;
     }
 
+    LOG(SERVER_LOG, "RUNNING 1\n");
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
-    destroy_ftp_socket(channel_ctx->d_socket);
-    data_channel_destroy(channel_ctx->d_channel);
+    packet_destroy(channel_ctx->d_channel->data_in);
+    packet_destroy(channel_ctx->d_channel->data_out);
+    if(channel_ctx->type == CLIENT)
+        destroy_ftp_socket(channel_ctx->d_socket);
 
+    LOG(SERVER_LOG, "RUNNING 2\n");
     free(buf);
+    if(file_name) free(file_name);
+
+    LOG(SERVER_LOG, "RUNNING 3\n");
 
     return 1;
 }
@@ -217,7 +234,8 @@ int put(channel_context* channel_ctx)
     FILE* file;
     char buf[BUF_LEN];
     int byte;
-    int ident = -1;   
+    int ident = -1;  
+    char* file_name = NULL; 
 
     switch (channel_ctx->type)
     {
@@ -238,10 +256,11 @@ int put(channel_context* channel_ctx)
 
     case SERVER:
     {
+        // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
         
-        // establish the data channel first
+        // get file's name
         if(!control_channel_read_expect(channel_ctx->c_channel, FTP_FILE_NAME))
         {
             operation_abort(channel_ctx->c_channel);
@@ -249,7 +268,10 @@ int put(channel_context* channel_ctx)
             return 0;
         }
 
-        // get file's name
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        file_name = (char*) malloc(data_len);
+        memset(file_name, 0, data_len);
+        channel_ctx->source = file_name;
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);        
         break;
@@ -306,7 +328,12 @@ int put(channel_context* channel_ctx)
 
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
-    data_channel_destroy(channel_ctx->d_channel);
+    packet_destroy(channel_ctx->d_channel->data_in);
+    packet_destroy(channel_ctx->d_channel->data_out);
+    if(channel_ctx->type == CLIENT)
+        destroy_ftp_socket(channel_ctx->d_socket);
+
+    if(file_name) free(file_name);
 
     return 1;
 }
@@ -317,17 +344,32 @@ int data_append(channel_context* channel_ctx)
     {
     case CLIENT:
     {
+        // Update design 
+        // Read and seperate the arg into local_name and remote_name
+        char* local_name = channel_ctx->source;
+        char* remote_name = strchr(channel_ctx->source, ' ');
+
+        if(!remote_name)
+        {
+            LOG(CLIENT_LOG, "arguments lack remote_name, it contains only %s\n",
+                channel_ctx->source);
+            return 0;
+        }
+
+        remote_name = 0;
+        remote_name++;
+
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
 
         // send file's name to server
         control_channel_append_ftp_type(FTP_REMOTE_FILE_NAME, channel_ctx->c_channel);
-        control_channel_append_str(channel_ctx->dest, channel_ctx->c_channel,
-                                  channel_ctx->dest_len);
+        control_channel_append_str(remote_name, channel_ctx->c_channel,
+                                  strlen(remote_name));
         control_channel_send(channel_ctx->c_channel);
 
-        FILE* file = fopen(channel_ctx->source, "rb");
+        FILE* file = fopen(local_name, "rb");
         char buf[BUF_LEN];
         int byte;
         int ident = -1;
@@ -387,10 +429,12 @@ int data_append(channel_context* channel_ctx)
             create_file(file_name);
 
         // read data and append into file
-        buf = (char*) malloc(buffer_len(channel_ctx->d_channel->data_in->buf));
+        int data_len = data_channel_get_data_len_in(channel_ctx->d_channel) + 1;
+        buf = (char*) malloc(data_len);
+        memset(buf, 0, data_len);
         data_channel_read(channel_ctx->d_channel);
-        data_channel_get_str(channel_ctx->d_channel, buf, &b_len);
-        append_file(file_name, buf, b_len);
+        data_channel_get_str(channel_ctx->d_channel, buf, &data_len);
+        append_file(file_name, buf, data_len);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
         {

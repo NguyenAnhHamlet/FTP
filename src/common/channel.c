@@ -247,10 +247,8 @@ void data_channel_decrypt(data_channel* channel)
     memset(buf, 0, buffer_len(channel->data_in->buf));
 
     packet_get_str(channel->data_in, buf, &b_len);
-    LOG(SERVER_LOG, "DATA CLIENT1: %s\n", buf);
     aes_cypher_decrypt( channel->cipher_ctx, buf, 
                         b_len, outbuf, &out_len);
-    LOG(SERVER_LOG, "DATA CLIENT2: %s\n", outbuf);
     data_channel_clean_datain(channel);
     packet_append_str(outbuf, channel->data_in, out_len);
 }
@@ -373,6 +371,7 @@ void data_channel_destroy(data_channel* d_channel)
 {
     packet_destroy(d_channel->data_in);
     packet_destroy(d_channel->data_out);
+    free(d_channel);
 }
 
 void data_channel_set_time_out(data_channel* channel, 

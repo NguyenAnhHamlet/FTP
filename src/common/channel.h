@@ -63,10 +63,6 @@ typedef struct
     unsigned int* ret_len;
     unsigned int ret_int;
 
-    // the remote_file or some stuff as such
-    char* dest;
-    unsigned int dest_len;
-
 } channel_context;
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 

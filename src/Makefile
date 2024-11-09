@@ -15,7 +15,7 @@ OBJS := $(patsubst ./common/%.c,./common/obj/%.o,$(wildcard ./common/*.c)) \
 
 OBJS_CURRENT=$(patsubst %.c,obj/%.o,$(SRC))
 DEPS=$(OBJS:.o=.d) 	
-LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/
+LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ -lreadline
 
 # main rules here
 define make_subdirs

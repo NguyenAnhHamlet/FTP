@@ -14,19 +14,7 @@ void buffer_init(Buffer * buffer)
 }
 
 void buffer_free(Buffer * buffer)
-{
-	if(buffer == NULL )
-	{
-		LOG(SERVER_LOG, "BUFFER NULL 1\n");
-		return;
-	} 
-
-	if(buffer->buf == NULL )
-	{
-		LOG(SERVER_LOG, "BUFFER NULL 1\n");
-		return;
-	} 
-		
+{		
     memset(buffer->buf, '\0', buffer->alloc);
 	free(buffer->buf);
 }

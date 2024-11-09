@@ -91,6 +91,10 @@ int pass_authen_server(control_channel* c_channel)
 
 int run_command(channel_context* channel_ctx, unsigned int code)
 {
+    // Some unique base case
+    if(code == GET) code = PUT;
+    else if(code == PUT) code = GET;
+
     for(int i =0; commands[i].command_str != NULL; i++)
     {
         if(commands[i].command_code == code)
@@ -241,6 +245,8 @@ int main()
         printf("CODE: %d\n", request_int);
 
         operation_sucess = run_command(&channel_ctx, request_int);
+
+        printf("DONE\n");
 
         if(!operation_sucess)
             printf("Operation failed\n");

@@ -14,6 +14,11 @@
 #include "cmd.h"
 #include "log/ftplog.h"
 #include "algo/algo.h"
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <ctype.h>
+#include <string.h>
+#include <sys/types.h>
 
 #define IPADDR_SIZE  32
 #define OPTION_SIZE  8
@@ -48,15 +53,36 @@ unsigned int get_cmd_contents(unsigned char* buffer, unsigned char** cmd,
     }
     
     return 1;
-    
 }
 
-int run_command(channel_context* channel_ctx, unsigned int code)
+/* Strip whitespace from the start and end of STRING.  Return a pointer
+   into STRING. */
+char *stripwhite (char *string)
+{
+  register char *s, *t;
+
+  for (s = string; whitespace (*s); s++)
+    ;
+    
+  if (*s == 0)
+    return (s);
+
+  t = s + strlen (s) - 1;
+  while (t > s && whitespace (*t))
+    t--;
+  *++t = '\0';
+
+  return s;
+}
+
+int run_command(channel_context* channel_ctx, char* command_str)
 {
     for(int i =0; commands[i].command_str != NULL; i++)
     {
-        if(commands[i].command_code == code)
+        if(!strcmp(commands[i].command_str, command_str))
         {
+            control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
             return commands[i].func(channel_ctx);
         }
     }
@@ -172,12 +198,13 @@ int password_authen_client(control_channel* c_channel)
 
 int main(int argc, char* argvs[])
 {
-    char buffer[BUF_LEN];
+    char* buffer;
     unsigned char* request_str;
     unsigned int request_int; 
     unsigned char* cmd;
     unsigned char* arg;
     cipher_context* ctx;
+    char* line = NULL;
 
     // init
     request_str = (char*) malloc(BUF_LEN);
@@ -229,30 +256,28 @@ int main(int argc, char* argvs[])
     // Enter into ftp virtual environment
     while(ftp_running)
     {
-        printf("ftp> ");
-        if(!fgets(buffer, sizeof(buffer), stdin))
+        line = readline("ftp> ");
+
+        if(!line) 
+            break;
+
+        buffer = stripwhite(line);
+
+        if(*buffer)
         {
-            if(feof(stdin))
-            {
-                printf("EOF signal detected, terminate the program\n");
-                return 1;
-            }
-            else 
-            {
-                perror("Error reading input");
-                continue;
-            }
-        }
+            add_history (buffer);
+            int operation_sucess = 1;
+            get_cmd_contents(buffer, &cmd, &arg);
+            channel_ctx.source = arg;
+            channel_ctx.source_len = strlen(arg);
 
-        remove_endline(buffer);
-        if(strlen(buffer) == 0) continue; 
-        int operation_sucess = 1;
-        request_int = get_cmd_contents(buffer, &cmd, &arg);
+            operation_sucess = run_command(&channel_ctx, cmd);
 
-        operation_sucess = run_command(&channel_ctx, request_int);
+            if(!operation_sucess)
+                printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
+        }        
 
-        if(!operation_sucess)
-            printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
+        free (line);
     } 
 
     control_channel_destroy(&c_channel);
