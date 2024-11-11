@@ -246,7 +246,7 @@ int main(int argc, char* argvs[])
 
     // password authentication successed, init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
-                         c_socket, d_socket, CLIENT);
+                         c_socket, d_socket, CLIENT, CLIENT_LOG);
 
     // Cancel alarm as all initial steps have been done without any issue
     alarm(0);

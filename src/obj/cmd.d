@@ -8,7 +8,8 @@ obj/cmd.o: cmd.c cmd.h common/channel.h \
  /home/nguyenanh/Programming/FTP/src/common/buffer.h \
  /home/nguyenanh/Programming/FTP/src/common/ftp_type.h \
  /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h \
- /home/nguyenanh/Programming/FTP/src/common/common.h data.h \
+ /home/nguyenanh/Programming/FTP/src/common/common.h \
+ /home/nguyenanh/Programming/FTP/src/log/ftplog.h data.h \
  common/socket_ftp.h control.h
 cmd.h:
 common/channel.h:
@@ -24,6 +25,7 @@ common/common.h:
 /home/nguyenanh/Programming/FTP/src/common/ftp_type.h:
 /home/nguyenanh/Programming/FTP/src/common/socket_ftp.h:
 /home/nguyenanh/Programming/FTP/src/common/common.h:
+/home/nguyenanh/Programming/FTP/src/log/ftplog.h:
 data.h:
 common/socket_ftp.h:
 control.h:

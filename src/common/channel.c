@@ -5,7 +5,7 @@
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
                      data_channel* d_channel, control_channel* c_channel, 
                      socket_ftp* c_socket, socket_ftp* d_socket, 
-                     endpoint_type type )
+                     endpoint_type type, ftplog_type log_type)
 {
     channel_ctx->cipher_ctx = cipher_ctx;
     channel_ctx->d_channel = d_channel;
@@ -18,6 +18,7 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
     channel_ctx->source_len = 0;
     channel_ctx->ret = NULL;
     channel_ctx->ret_len = 0;
+    channel_ctx->log_type = log_type;
 }
 
 void control_channel_init(  control_channel* channel,

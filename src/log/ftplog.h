@@ -9,9 +9,9 @@
 
 typedef enum 
 {
-    COMMON_LOG,
     CLIENT_LOG,
-    SERVER_LOG
+    SERVER_LOG,
+    COMMON_LOG
 }
 ftplog_type;
 

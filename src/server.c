@@ -223,7 +223,7 @@ int main()
 
     // init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
-                         c_socket, d_socket, SERVER);
+                         c_socket, d_socket, SERVER, SERVER_LOG);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);

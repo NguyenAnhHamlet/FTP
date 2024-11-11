@@ -8,6 +8,7 @@
 #include "secure/aescipher.h"
 #include "common/packet.h"
 #include "common/socket_ftp.h"
+#include "log/ftplog.h"
 
 #define DEFAULT_CHANNEL_TMOUT 5
 
@@ -62,13 +63,14 @@ typedef struct
     char* ret;
     unsigned int ret_len;
     unsigned int ret_int;
+    unsigned int log_type;
 
 } channel_context;
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
                      data_channel* d_channel, control_channel* c_channel, 
                      socket_ftp* c_socket, socket_ftp* d_socket, 
-                     endpoint_type type);
+                     endpoint_type type, ftplog_type log_type);
 
 // 
 // Control channel

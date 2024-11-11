@@ -128,8 +128,6 @@ int get(channel_context* channel_ctx)
 
         control_channel_send(channel_ctx->c_channel);
 
-        LOG(SERVER_LOG, "ARG: %s %d\n", channel_ctx->source, channel_ctx->source_len);
-
         // check the file's existence on remote server
         if( !control_channel_read_expect(channel_ctx->c_channel, FILE_EXIST))
         {
@@ -179,13 +177,26 @@ int get(channel_context* channel_ctx)
     if(!data_channel_read_expect(channel_ctx->d_channel, SEND))
     {
         LOG(CLIENT_LOG, "Did not receive READ code\n");
+        operation_abort(channel_ctx->c_channel);
         return 0;
     }
 
-    int data_len = data_channel_get_data_len_in(channel_ctx->d_channel) + 1;
-    buf = (char*) malloc(data_len);
-    memset(buf, 0, data_len);
-    data_channel_get_str(channel_ctx->d_channel, buf, &data_len);
+    int recv_len = 0;
+    int data_len = data_channel_get_data_len_in(channel_ctx->d_channel);
+    buf = (char*) malloc(data_len + 1);
+    memset(buf, 0, data_len + 1);
+    data_channel_get_str(channel_ctx->d_channel, buf, &recv_len);
+
+    // Add check to see if data len the same as recv len
+    if(data_len != recv_len)
+    {
+        LOG(channel_ctx->log_type, "Not received enough data from server."
+            "Expected: %d vs Received : %d\n", data_len, recv_len);
+        operation_abort(channel_ctx->c_channel);
+        free(buf);
+        return 0;
+    }
+
     basename(channel_ctx->source, &base_file_name);
 
     if (!not_exist(base_file_name))
@@ -201,7 +212,7 @@ int get(channel_context* channel_ctx)
     {
         // Do not remove file when failure occurs, enable REGET
         // remove(base_file_name);
-        LOG(SERVER_LOG, "Error when getting file %s from remote server\n", 
+        LOG(channel_ctx->log_type, "Error when getting file %s from remote server\n", 
             channel_ctx->source);
         operation_abort(channel_ctx->c_channel);
         free(buf);
@@ -282,8 +293,8 @@ int put(channel_context* channel_ctx)
     // file does not exist or there is error in I/O operation
     if (file == NULL)
     {
-        LOG(SERVER_LOG, "Error opening file\n");
-        LOG(SERVER_LOG, strerror(errno));
+        LOG(channel_ctx->log_type, "Error opening file\n");
+        LOG(channel_ctx->log_type, strerror(errno));
         control_channel_append_ftp_type(FILE_NOT_EXIST, channel_ctx->c_channel);
         control_channel_send_wait(channel_ctx->c_channel);
         return 0;
@@ -308,7 +319,7 @@ int put(channel_context* channel_ctx)
     // error, abort
     if (ferror(file))
     {
-        LOG(SERVER_LOG, "Error sending file\n");
+        LOG(channel_ctx->log_type, "Error sending file\n");
         control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
         return 0;
@@ -421,11 +432,23 @@ int data_append(channel_context* channel_ctx)
             create_file(file_name);
 
         // read data and append into file
-        int data_len = data_channel_get_data_len_in(channel_ctx->d_channel) + 1;
-        buf = (char*) malloc(data_len);
-        memset(buf, 0, data_len);
+        int recv_len = 0;
+        int data_len = data_channel_get_data_len_in(channel_ctx->d_channel);
+        buf = (char*) malloc(data_len + 1);
+        memset(buf, 0, data_len + 1);
         data_channel_read(channel_ctx->d_channel);
-        data_channel_get_str(channel_ctx->d_channel, buf, &data_len);
+        data_channel_get_str(channel_ctx->d_channel, buf, &recv_len);
+
+        // Add check to see if data len the same as recv len
+        if(data_len != recv_len)
+        {
+            LOG(channel_ctx->log_type, "Not received enough data from server."
+                "Expected: %d vs Received : %d\n", data_len, recv_len);
+            operation_abort(channel_ctx->c_channel);
+            free(buf);
+            return 0;
+        }
+
         append_file(file_name, buf, data_len);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
@@ -433,9 +456,13 @@ int data_append(channel_context* channel_ctx)
             remove(file_name);
             LOG(SERVER_LOG, "Error when getting file\n");
             operation_abort(channel_ctx->c_channel);
+            free(buf);
 
             return 0;
         }
+
+        free(buf);
+
         break;
     }
     
