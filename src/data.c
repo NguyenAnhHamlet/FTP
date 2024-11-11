@@ -163,8 +163,6 @@ int get(channel_context* channel_ctx)
         memset(channel_ctx->source, 0, data_len);
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);
-
-        LOG(SERVER_LOG, "COULD RUN %s %d\n", channel_ctx->source, data_len);
         
         break;
     }
@@ -185,7 +183,6 @@ int get(channel_context* channel_ctx)
     }
 
     int data_len = data_channel_get_data_len_in(channel_ctx->d_channel) + 1;
-    LOG(SERVER_LOG, "DATALEN: %d\n", data_len);
     buf = (char*) malloc(data_len);
     memset(buf, 0, data_len);
     data_channel_get_str(channel_ctx->d_channel, buf, &data_len);
@@ -197,14 +194,13 @@ int get(channel_context* channel_ctx)
         remove(base_file_name);
     }
 
-    LOG(CLIENT_LOG, "File name: %s \n", base_file_name);
-
     create_file(base_file_name);
     append_file(base_file_name, buf, data_len);
 
     if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
     {
-        remove(base_file_name);
+        // Do not remove file when failure occurs, enable REGET
+        // remove(base_file_name);
         LOG(SERVER_LOG, "Error when getting file %s from remote server\n", 
             channel_ctx->source);
         operation_abort(channel_ctx->c_channel);
@@ -212,7 +208,6 @@ int get(channel_context* channel_ctx)
         return 0;
     }
 
-    LOG(SERVER_LOG, "RUNNING 1\n");
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
     packet_destroy(channel_ctx->d_channel->data_in);
@@ -220,11 +215,8 @@ int get(channel_context* channel_ctx)
     if(channel_ctx->type == CLIENT)
         destroy_ftp_socket(channel_ctx->d_socket);
 
-    LOG(SERVER_LOG, "RUNNING 2\n");
     free(buf);
     if(file_name) free(file_name);
-
-    LOG(SERVER_LOG, "RUNNING 3\n");
 
     return 1;
 }
@@ -524,7 +516,7 @@ int data_newer(channel_context* channel_ctx)
     default:
     {
         operation_abort(channel_ctx->c_channel);
-        return -1;
+        return 0;
     }
 
     }
@@ -534,42 +526,147 @@ int data_newer(channel_context* channel_ctx)
 
 int data_reget(channel_context* channel_ctx)
 {
-    int remote_size, local_size;
-
     switch (channel_ctx->type)
     {
     case CLIENT:
     {
-        if(!local_get_size(channel_ctx->source, &channel_ctx->source_len, 
-                           &channel_ctx->ret_int) || 
-           !remote_get_size(channel_ctx))
+        // establish the data channel first
+        if(!data_conn(channel_ctx))
+            return 0;
+
+        FILE* fp;
+        char* base = NULL;
+        basename(channel_ctx->source, &base);
+        read_file(base, &fp);
+
+        // get the offset of the end of file in client side
+        fseek(fp, 0, SEEK_END);
+        int offset = ftell(fp);
+        if(offset < 0)
         {
-            LOG(CLIENT_LOG, "Fail to get size\n");
+            LOG(CLIENT_LOG, "Fail to seek the offset\n");
+            operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
-        if(remote_size < local_size)
+        // got the offset value, send over file name and offset
+        control_channel_append_ftp_type(REGET, channel_ctx->c_channel);
+        control_channel_append_int(offset, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, 
+                                   channel_ctx->c_channel,
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        // read data into buffer
+        if(!data_channel_read_expect(channel_ctx->d_channel, REGET))
         {
-            LOG(CLIENT_LOG, "Remote file has smaller size than local. Abort\n");
+            LOG(CLIENT_LOG, "Failed to receive data, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
-        if(!get(channel_ctx))
+        int data_len = data_channel_get_data_len_in(channel_ctx->d_channel);
+        int recv_len = 0;
+        char* data = (char*) malloc(data_len + 1); 
+        memset(data, 0, data_len + 1);
+        data_channel_get_str(channel_ctx->d_channel, data ,&recv_len);
+        if(data_len != recv_len )
         {
-            LOG(CLIENT_LOG, "Failed to get file from remote server\n");
+            LOG(CLIENT_LOG, "Not received enough data from server."
+                "Expected: %d vs Received : %d\n", data_len, recv_len);
+            operation_abort(channel_ctx->c_channel);
+            free(data);
             return 0;
         }
+
+        for(int i=0; i < data_len; i++)
+            if(data[i] == '\n') printf("Y %d\n", i);
+
+        // append data into file
+        append_file(base, data, data_len);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(SERVER_LOG, "Failed to receive success, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        // happy now
+        // destroy data channel and socket
+        free(data);
+        close(channel_ctx->d_channel->data_in->in_port);
+        packet_destroy(channel_ctx->d_channel->data_in);
+        packet_destroy(channel_ctx->d_channel->data_out);
+        destroy_ftp_socket(channel_ctx->d_socket);
 
         break;
     }
     case SERVER:
     {
-        if(!put(channel_ctx))
+        // establish the data channel first
+        if(!data_conn(channel_ctx))
+            return 0;
+
+        FILE* fp;
+        int byte;
+        char buf[BUF_LEN];
+
+        // get offset from client 
+        if(!control_channel_read_expect(channel_ctx->c_channel, REGET))
         {
+            LOG(SERVER_LOG, "Failed to receive offset, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
             operation_abort(channel_ctx->c_channel);
             return 0;
         }
-        
+
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        channel_ctx->source = (char*) malloc(data_len + 1);
+        memset(channel_ctx->source, 0, data_len + 1);
+        int offset = control_channel_get_int(channel_ctx->c_channel);
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
+                                &channel_ctx->source_len);
+        if(offset < 0)
+        {
+            LOG(SERVER_LOG, "Value offset is not right\n");
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        read_file(channel_ctx->source, &fp);
+        fseek(fp, offset, SEEK_SET);
+
+        // read and send file over to other endpoint
+        data_channel_append_ftp_type(channel_ctx->d_channel, REGET);
+        while((byte = fread(buf, sizeof(char), BUF_LEN, fp)) > 0)
+        {
+            data_channel_append_str(buf, channel_ctx->d_channel, byte);
+        }
+
+        data_channel_send_wait(channel_ctx->d_channel);
+
+        // error, abort
+        if (ferror(fp))
+        {
+            LOG(SERVER_LOG, "Error sending file\n");
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
+        // send code to endpoint, notify send file successfully
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);  
+
+        // happy now
+        // destroy data channel and socket
+        close(channel_ctx->d_channel->data_in->in_port);
+        packet_destroy(channel_ctx->d_channel->data_in);
+        packet_destroy(channel_ctx->d_channel->data_out);
+
         break;
     }
     

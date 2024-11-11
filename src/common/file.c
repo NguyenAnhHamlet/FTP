@@ -5,13 +5,13 @@
 #include <sys/stat.h>
 #include "log/ftplog.h"
 
-void read_file(char path[], FILE* fp)
+void read_file(char path[], FILE** fp)
 {
     if(not_exist(path)) fatal("File does not exist\n");
 
-    fp = fopen(path, "r");
+    *fp = fopen(path, "r");
 
-    if(!fp) fatal("Could not create file descriptor\n");
+    if(!*fp) fatal("Could not create file descriptor\n");
 }
 
 void write_file(char path[], char data[], FILE* fp)
@@ -53,7 +53,7 @@ void delete_file(char path[])
 
 void append_file(char path[], char data[], int data_size)
 {
-    FILE* fp = fopen(path, "a");
+    FILE* fp = fopen(path, "ab");
 
     if(!fp) fatal("Could not create file descriptor\n");
 

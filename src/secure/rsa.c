@@ -188,7 +188,7 @@ void rsa_read_public_key(char path[], char* key)
     if(!key) 
     {   
         FILE* pub_file;
-        read_file(path, pub_file);
+        read_file(path, &pub_file);
 
         fseek(pub_file, 0, SEEK_END);
         int pub_size = ftell(pub_file);
@@ -211,7 +211,7 @@ void rsa_read_private_key(char path[], char* key)
     if(!key) 
     {   
         FILE* pub_file;
-        read_file(path, pub_file);
+        read_file(path, &pub_file);
 
         fseek(pub_file, 0, SEEK_END);
         int pub_size = ftell(pub_file);
