@@ -445,6 +445,7 @@ int remote_modtime(channel_context* channel_ctx)
 
         int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         char* data = (char*) malloc(data_len);
+        memset(data, 0, data_len);
         channel_ctx->ret = data;
 
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret,
