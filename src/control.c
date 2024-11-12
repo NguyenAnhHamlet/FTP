@@ -172,15 +172,13 @@ int change_mode(channel_context* channel_ctx)
     case SERVER:
     {
         char* file_name;
-        char* mode;
+        char* mode = NULL;
         char* token = NULL;
         int no = 0 ;
 
         int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
-        mode = (char*) malloc(data_len);
         memset(channel_ctx->source, 0 , data_len);
-        memset(mode, 0 , data_len);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, CHMOD))
         {
@@ -198,7 +196,6 @@ int change_mode(channel_context* channel_ctx)
             file_name = channel_ctx->source + (token - channel_ctx->source) + 1;
             *token = 0;
             token++;
-            channel_ctx->source = token;
             LOG(SERVER_LOG, "file_name: %s\n", file_name);
             LOG(SERVER_LOG, "mode: %s\n", mode);
         }
