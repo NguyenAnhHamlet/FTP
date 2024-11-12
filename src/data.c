@@ -356,10 +356,11 @@ int data_append(channel_context* channel_ctx)
         {
             LOG(CLIENT_LOG, "arguments lack remote_name, it contains only %s\n",
                 channel_ctx->source);
+            operation_abort(channel_ctx->c_channel);
             return 0;
         }
 
-        remote_name = 0;
+        *remote_name = 0;
         remote_name++;
 
         // establish the data channel first
@@ -377,6 +378,8 @@ int data_append(channel_context* channel_ctx)
         int byte;
         int ident = -1;
 
+        memset(buf, 0, BUF_LEN);
+
         if (file == NULL)
         {
             LOG(CLIENT_LOG, "Error opening file\n");
@@ -385,12 +388,12 @@ int data_append(channel_context* channel_ctx)
         } 
 
         // read and send file over to other endpoint
-        data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
+        data_channel_append_ftp_type(channel_ctx->d_channel, APPEND);
         while((byte = fread(buf, sizeof(char), BUF_LEN, file)) > 0)
         {
             data_channel_append_str(buf, channel_ctx->d_channel, byte);
         }
-            
+
         data_channel_send_wait(channel_ctx->d_channel);
 
         if(byte < 0)
@@ -433,10 +436,17 @@ int data_append(channel_context* channel_ctx)
 
         // read data and append into file
         int recv_len = 0;
+        if(!data_channel_read_expect(channel_ctx->d_channel, APPEND))
+        {
+            LOG(SERVER_LOG, "Did not receive APPEND code"
+            "Expected code %d but receive code %d instead\n", APPEND, 
+            data_channel_get_ftp_type_in(channel_ctx->d_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
         int data_len = data_channel_get_data_len_in(channel_ctx->d_channel);
         buf = (char*) malloc(data_len + 1);
         memset(buf, 0, data_len + 1);
-        data_channel_read(channel_ctx->d_channel);
         data_channel_get_str(channel_ctx->d_channel, buf, &recv_len);
 
         // Add check to see if data len the same as recv len
