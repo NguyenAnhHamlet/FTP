@@ -230,8 +230,8 @@ int main(int argc, char* argvs[])
     control_channel_set_time_out(&c_channel, DEFAULT_CHANNEL_TMOUT);
 
     // set alarm for 30 
-    signal(SIGALRM, time_out_alarm);
-	   alarm(30);
+    // signal(SIGALRM, time_out_alarm);
+	//    alarm(30);
 
     if( !public_key_authentication(&c_channel, 0) || 
         !public_key_authentication(&c_channel, 1))

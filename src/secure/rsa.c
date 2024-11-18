@@ -7,6 +7,381 @@
 #include <openssl/err.h>
 #include <log/ftplog.h>
 
+#ifdef OPENSSL_3
+void generate_rsa_key_pair(EVP_PKEY **pkey)
+{
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+    if (!ctx)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return;
+    }
+
+    if (EVP_PKEY_keygen_init(ctx) <= 0)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return;
+    }
+
+    if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, KEY_SIZE) <= 0)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return;
+    }
+
+    if (EVP_PKEY_keygen(ctx, pkey) <= 0)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return;
+    }
+
+    EVP_PKEY_CTX_free(ctx);
+
+}
+
+void save_rsa_public_key(char path[], EVP_PKEY *pkey)
+{
+    FILE* fp = fopen(path, "w");
+
+    if (!fp)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error opening public key file: %s\n", err_buf);
+        }
+        return; 
+    }
+
+    if (!PEM_write_PUBKEY(fp, pkey))
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code)
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error writing public key to file: %s\n", err_buf);
+        }
+    }
+
+    fclose(fp);  
+}
+
+void save_rsa_private_key(char path[], EVP_PKEY *pkey)
+{
+    FILE* fp = fopen(path, "w");  
+
+    if (!fp)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error opening private key file: %s\n", err_buf);
+        }
+        return;  
+    }
+
+    if (!PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL))
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code)
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error writing private key to file: %s\n", err_buf);
+        }
+    }
+
+    fclose(fp); 
+}
+
+int rsa_pub_encrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn)
+{
+    unsigned char *in, *out;
+	size_t inlen, outlen;
+
+    inlen = BN_num_bytes(*inbn) ;
+    in = (unsigned char*) malloc(inlen);
+
+	memset(in, 0, inlen);
+
+    BN_bn2bin(*inbn, in);
+
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey, NULL);
+
+    if(!ctx)
+    {
+        free(in);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    if (EVP_PKEY_encrypt_init(ctx) <= 0)
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0)
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    if (EVP_PKEY_encrypt(ctx, NULL, &outlen, in, inlen) <= 0)
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }   
+
+    out = OPENSSL_malloc(outlen);
+    memset(out, 0, outlen);
+
+    if (!out)   
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        perror("Fail allocate memory");
+        return 0;
+    }
+
+
+    if (EVP_PKEY_encrypt(ctx, out, &outlen, in, inlen) <= 0)
+    {
+        free(in);
+        free(out);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    LOG(1, "OUTLEN0 : %d\n", outlen);
+
+    BN_bin2bn(out, outlen, *outbn);
+
+    EVP_PKEY_CTX_free(ctx);
+    memset(out, 0, outlen);
+	memset(in, 0, inlen);
+	free(out);
+	free(in);
+
+    return 1;
+
+}
+
+int rsa_pub_decrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn)
+{
+    unsigned char *in, *out;
+	size_t inlen, outlen;
+
+    inlen = BN_num_bytes(*inbn) ;
+    in = (unsigned char*) malloc(inlen);
+
+	memset(in, 0, inlen);
+    BN_bn2bin(*inbn, in);
+
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey, NULL);
+
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
+    {
+        free(in);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0)
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    if (EVP_PKEY_decrypt(ctx, NULL, &outlen, in, inlen) <= 0)
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }   
+
+    out = OPENSSL_malloc(outlen);
+    memset(out, 0, outlen);
+
+    if (!out)   
+    {
+        free(in);
+        EVP_PKEY_CTX_free(ctx);
+        perror("Fail allocate memory");
+        return 0;
+    }
+
+    if (EVP_PKEY_decrypt(ctx, out, &outlen, in, inlen) <= 0)
+    {
+        free(in);
+        free(out);
+        EVP_PKEY_CTX_free(ctx);
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        ERR_print_errors_fp(stderr); 
+        return 0;
+    }
+
+    // LOG(1, "OUTLEN1 : %d\n", outlen);
+    // LOG(1, "INLEN1 : %d\n", inlen);
+
+    BN_bin2bn(out, outlen, *outbn);
+
+    EVP_PKEY_CTX_free(ctx);
+    memset(out, 0, outlen);
+	memset(in, 0, inlen);
+	free(out);
+	free(in);
+
+    return 1;
+}
+
+int load_rsa_auth_key(EVP_PKEY **pkey, char path[])
+{
+    FILE *fp = fopen(public_RSAkey_file, "rb");
+
+    if(!fp)
+    {
+        fclose(fp);
+        fatal("Could not open private key file\n");
+    }
+
+    if(!(*pkey = PEM_read_PUBKEY(fp, NULL, NULL, NULL)))
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    fclose(fp);
+
+    return 1;
+}
+
+int load_private_rsa_key(EVP_PKEY **pkey, char path[])
+{
+    FILE* fp = fopen(private_RSAkey_file, "r");
+
+    if(!fp)
+    {
+        fclose(fp);
+        fatal("Could not open private key file\n");
+    }
+
+    if(!(*pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL)))
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+        }
+        return 0;
+    }
+
+    fclose(fp);
+}
+
+#elif OPENSSL_OLDER
+
 void generate_RSA_KEYPAIR(RSA *key_pair)
 {
     if(!key_pair)
@@ -142,7 +517,7 @@ int load_rsa_auth_key(RSA **pub_key, char path[])
 
     *pub_key = PEM_read_RSAPublicKey(fp, &t, NULL, NULL);
 
-    if (!pub_key) 
+    if (!*pub_key) 
     {
         BIO *bio = BIO_new(BIO_s_file());
         BIO_set_fp(bio, stderr, BIO_NOCLOSE);
@@ -179,49 +554,4 @@ int load_private_rsa_key(RSA **private_key, char path[])
     fclose(fp);
     return Success;
 }
-
-void rsa_read_public_key(char path[], char* key)
-{
-    if(not_exist(path))
-        fatal("File %s does not exist\n");
-    
-    if(!key) 
-    {   
-        FILE* pub_file;
-        read_file(path, &pub_file);
-
-        fseek(pub_file, 0, SEEK_END);
-        int pub_size = ftell(pub_file);
-        fseek(pub_file, 0, SEEK_SET);
-
-        key = (char*) malloc(pub_size);
-
-        if(!key) 
-            fatal("Could not allocate memory to store public key\n");
-
-        fread(key, 1, pub_size, pub_file);
-    }
-}
-
-void rsa_read_private_key(char path[], char* key)
-{
-    if(not_exist(path))
-        fatal("File %s does not exist\n");
-    
-    if(!key) 
-    {   
-        FILE* pub_file;
-        read_file(path, &pub_file);
-
-        fseek(pub_file, 0, SEEK_END);
-        int pub_size = ftell(pub_file);
-        fseek(pub_file, 0, SEEK_SET);
-
-        key = (char*) malloc(pub_size);
-
-        if(!key) 
-            fatal("Could not allocate memory to store private key\n");
-
-        fread(key, 1, pub_size, pub_file);
-    }
-}
+#endif

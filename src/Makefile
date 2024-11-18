@@ -14,7 +14,11 @@ OBJS := $(patsubst ./common/%.c,./common/obj/%.o,$(wildcard ./common/*.c)) \
         $(patsubst ./log/%.c,./log/obj/%.o,$(wildcard ./log/*.c))	
 
 OBJS_CURRENT=$(patsubst %.c,obj/%.o,$(SRC))
-DEPS=$(OBJS:.o=.d) 	
+DEPS=$(OBJS:.o=.d) 
+
+openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
+OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_OLDER)
+
 LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ -lreadline
 
 # main rules here
@@ -25,7 +29,7 @@ define make_subdirs
 endef
 
 obj/%.o:%.c
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $< -o $@ ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $< -o $@ ${LDFLAGS} ${OPENSSL_FLAG}
 
 .PHONY: all
 
@@ -33,15 +37,15 @@ all: ftpclient ftpserver ftpkeygen
 
 ftpclient: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 ftpserver: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 ftpkeygen: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/keygen.o ${LDFLAGS}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/keygen.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 cleanall: 
 	rm -rf obj/* bin/*
