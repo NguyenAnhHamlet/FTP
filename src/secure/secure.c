@@ -9,6 +9,7 @@
 #include "common/packet.h"
 #include "log/ftplog.h"
 #include "secure/kex.h"
+#include <openssl/param_build.h>
 
 #ifdef OPENSSL_3
 #include <openssl/evp.h>
@@ -95,7 +96,7 @@ int public_key_authentication(control_channel* channel, int evolution)
         RSA *pub_key = RSA_new();
 
 #ifdef OPENSSL_3
-        EVP_PKEY* pkey = EVP_PKEY_new(); //EVP_RSA_gen(KEY_SIZE);
+        EVP_PKEY* pkey = NULL; //EVP_PKEY_new(); //EVP_RSA_gen(KEY_SIZE);
 #endif
 
         challenge = BN_new();
@@ -258,9 +259,9 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
     // printf("RSA exponent (e):\n");
     // BN_print_fp(stdout, pub_key_e);
     // printf("\n");
-
+#ifdef OPENSSL_OLDER
     RSA_set0_key(*pub_key ,pub_key_n, pub_key_e, NULL);
-#ifdef OPENSSL_3
+#elif OPENSSL_3
 
     // Seems like the approach assigning module n and e directly into 
     // EVP_PKEY_RSA does not work. 
@@ -287,8 +288,51 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
     //     return 0;
     // }
 
-    LOG(1, "RUNNNING HEARE 10\n");    
-    EVP_PKEY_assign_RSA(*pkey, *pub_key);
+    // Function is deprecated in openssl 3. Switch to new approach
+    // LOG(1, "RUNNNING HEARE 10\n");    
+    // EVP_PKEY_assign_RSA(*pkey, *pub_key);
+
+    OSSL_PARAM_BLD *params_build = OSSL_PARAM_BLD_new();
+    if ( !OSSL_PARAM_BLD_push_BN(params_build, "n", pub_key_n) ) 
+    {
+        LOG(SERVER_LOG, "Error: failed to push modulus into param build.\n");
+        return 0;
+    }
+    if ( !OSSL_PARAM_BLD_push_BN(params_build, "e", pub_key_e) ) 
+    {
+        LOG(SERVER_LOG, "Error: failed to push exponent into param build.\n");
+        return 0;
+    }
+    if ( !OSSL_PARAM_BLD_push_BN(params_build, "d", NULL) ) 
+    {
+        LOG(SERVER_LOG, "Error: failed to push NULL into param build.\n");
+        return 0;
+    }
+    OSSL_PARAM *params = OSSL_PARAM_BLD_to_param(params_build);
+    if ( params == NULL ) 
+    {
+        LOG(SERVER_LOG, "Error: failed to construct params from build.\n");
+        return 0;
+    }
+
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+    *pkey = NULL;
+
+    if(ctx == NULL || 
+       EVP_PKEY_fromdata_init(ctx) <= 0 || 
+       EVP_PKEY_fromdata(ctx, pkey, EVP_PKEY_PUBLIC_KEY, params) <= 0)
+    {
+        unsigned long err_code = ERR_get_error();
+        if (err_code) 
+        {
+            char err_buf[120];
+            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
+            fprintf(stderr, "Error: %s\n", err_buf);
+            LOG(SERVER_LOG, "Failure : %s\n", err_buf);
+        }
+        return 0;
+    }
+
 #endif
 
     // Don't make a stupid mistake of freeing this 
@@ -296,6 +340,10 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
     // BN_free(pub_key_n);
     // BN_free(pub_key_e);
 
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(params_build);
+    EVP_PKEY_CTX_free(ctx);
+    
     return 1;
 }
 
