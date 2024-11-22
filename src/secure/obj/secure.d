@@ -3,7 +3,7 @@ obj/secure.o: secure.c ../secure/rsa.h ../common/common.h ../algo/stack.h \
  ../common/putnum.h ../common/channel.h ../common/buffer.h \
  ../common/common.h ../secure/aescipher.h ../common/packet.h \
  ../common/ftp_type.h ../common/socket_ftp.h ../log/ftplog.h \
- ../common/file.h ../secure/kex.h
+ ../common/file.h ../secure/kex.h ../secure/ed25519.h
 ../secure/rsa.h:
 ../common/common.h:
 ../algo/stack.h:
@@ -22,3 +22,4 @@ obj/secure.o: secure.c ../secure/rsa.h ../common/common.h ../algo/stack.h \
 ../log/ftplog.h:
 ../common/file.h:
 ../secure/kex.h:
+../secure/ed25519.h:
