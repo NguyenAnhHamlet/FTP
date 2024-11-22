@@ -10,7 +10,7 @@
 void keygen(int argc, ...)
 {
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
     RSA* rsa = RSA_new();
     if (!rsa) 
     {

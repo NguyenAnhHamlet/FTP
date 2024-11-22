@@ -23,7 +23,7 @@ int public_key_authentication(control_channel* channel, int evolution)
     case 0:
     {
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
         RSA* rsa_private_key = NULL;
 #elif OPENSSL_3
         EVP_PKEY* pkey = NULL; //EVP_RSA_gen(KEY_SIZE);
@@ -46,7 +46,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 
         control_channel_get_bignum(&recv_challenge, channel);
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
         load_private_rsa_key(&rsa_private_key, private_RSAkey_file);
         rsa_pub_decrypt(rsa_private_key, &recv_challenge, &decrypt_challenge);
 #elif OPENSSL_3
@@ -82,7 +82,7 @@ int public_key_authentication(control_channel* channel, int evolution)
         BN_clear(recv_challenge);
         BN_clear(decrypt_challenge);
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
         RSA_free(rsa_private_key);
 #elif OPENSSL_3
         EVP_PKEY_free(pkey);
@@ -93,9 +93,10 @@ int public_key_authentication(control_channel* channel, int evolution)
     case 1 :
     {
         BIGNUM* challenge, *decrypt_challenge, *sig, *recv_challenge;
-        RSA *pub_key = RSA_new();
 
-#ifdef OPENSSL_3
+#ifdef OPENSSL_1
+        RSA *pub_key = RSA_new();
+#elif OPENSSL_3
         EVP_PKEY* pkey = NULL; //EVP_PKEY_new(); //EVP_RSA_gen(KEY_SIZE);
 #endif
 
@@ -113,12 +114,12 @@ int public_key_authentication(control_channel* channel, int evolution)
         // printf("\nchallenge org:\n");
         // BN_print_fp(stdout, challenge);
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
         // encrypt data 
         channel_recv_public_key(channel, &pub_key, NULL);
         rsa_pub_encrypt(pub_key, &challenge, &sig);
 #elif OPENSSL_3
-        channel_recv_public_key(channel, &pub_key, &pkey);
+        channel_recv_public_key(channel, NULL, &pkey);
         // PEM_write_PUBKEY(stdout, pkey);
         rsa_pub_encrypt(pkey, &challenge, &sig);
 #endif
@@ -129,8 +130,6 @@ int public_key_authentication(control_channel* channel, int evolution)
             LOG(SERVER_LOG, "Failed encryption\n");
             return 0;
         }
-
-        LOG(1, "RUNNNING 2 here\n");
 
         // char *hex_str = BN_bn2hex(sig);
         // printf("BIGNUM (hex): %s\n", hex_str);
@@ -173,7 +172,7 @@ int public_key_authentication(control_channel* channel, int evolution)
         BN_clear(challenge);
         BN_clear(decrypt_challenge);
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
         RSA_free(pub_key);
 #elif OPENSSL_3
         EVP_PKEY_free(pkey);
@@ -193,10 +192,9 @@ int public_key_authentication(control_channel* channel, int evolution)
 int channel_send_public_key(control_channel* channel, char path[])
 {
     BIGNUM *e, *n;
-    RSA* pub_key = NULL;
     EVP_PKEY* pkey;
 
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
     load_rsa_auth_key(&pub_key, path);
     RSA_get0_key(pub_key, &n, &e, NULL );
 
@@ -225,7 +223,10 @@ int channel_send_public_key(control_channel* channel, char path[])
     control_channel_append_bignum(&e, channel);
     control_channel_append_bignum(&n, channel);
     control_channel_send_wait(channel);
+    
+#ifdef OPENSSL_1
     RSA_free(pub_key);
+#endif
 
     return 1;
 }
@@ -259,7 +260,7 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
     // printf("RSA exponent (e):\n");
     // BN_print_fp(stdout, pub_key_e);
     // printf("\n");
-#ifdef OPENSSL_OLDER
+#ifdef OPENSSL_1
     RSA_set0_key(*pub_key ,pub_key_n, pub_key_e, NULL);
 #elif OPENSSL_3
 
@@ -349,24 +350,35 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
 
 int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
 {
+#ifdef OPENSSL_1
     DH* dh = dh_creation();
+#elif OPENSSL_3
+    EVP_PKEY* pkey = EVP_PKEY_DH_init();
+#endif
     BIGNUM* pub;
-    BIGNUM* bn;
+    BIGNUM* perr_pub;
 
-    pub = BN_new();
-    bn = BN_new();
+    pub = NULL; 
+    perr_pub = BN_new();
 
-    if(!generate_pub_keys(dh))
+#ifdef OPENSSL_1
+    if(!generate_keys(dh))
     {
         LOG(SERVER_LOG, "Failed to generate public keys\n");
         return 0;
     }
+#endif
 
     // Sending the public key over to the endpoint
-    control_channel_append_header(channel, 0, sizeof(Packet), 0, 
-                                  FTP_PUB_KEX_SEND, 0, 0);
-    bn = DH_get0_pub_key(dh);
-    control_channel_append_bignum(&bn, channel);
+#ifdef OPENSSL_1
+    pub = DH_get0_pub_key(dh);
+#elif OPENSSL_3
+    // BN_print_fp(stdout, pub);
+    EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, &pub);
+    // BN_print_fp(stdout, pub);
+#endif
+    control_channel_append_bignum(&pub, channel);
+    control_channel_append_ftp_type(FTP_PUB_KEX_SEND, channel);
     control_channel_send(channel);
     // Get the public key from endpoint
     if(!control_channel_read_expect(channel, FTP_PUB_KEX_SEND))
@@ -375,15 +387,17 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
         return 0;
     }
 
-    control_channel_get_bignum(&pub, channel);
+    control_channel_get_bignum(&perr_pub, channel);
 
-    if(!generate_secret_key(dh, &ctx->key, &pub))
+#ifdef OPENSSL_1
+    if(!generate_secret_key(dh, &ctx->key, &perr_pub))
+#elif OPENSSL_3
+    if(!generate_secret_key(pkey, &ctx->key, &perr_pub))
+#endif
     {
         LOG(SERVER_LOG, "Failed to compute shared secret key\n");
         return 0;
     }
-
-    char *dec_str = BN_bn2dec(ctx->key);
 
     return 1;
 }

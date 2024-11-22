@@ -23,7 +23,7 @@ int rsa_pub_decrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn);
 int load_rsa_auth_key(EVP_PKEY **pkey, char path[]);
 int load_private_rsa_key(EVP_PKEY **pkey, char path[]);
 
-#elif OPENSSL_OLDER
+#elif OPENSSL_1
 void generate_RSA_KEYPAIR(RSA *key_pair);
 void save_RSApublic_key(RSA * rsa, char path[]);
 void save_RSAprivate_key(RSA * rsa, char path[]);

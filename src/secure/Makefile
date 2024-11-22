@@ -1,6 +1,6 @@
 CC=gcc
 DEBUG_FLAGS=-g 
-CFLAGS=-MMD -MP -Wno-deprecated-declarations 
+CFLAGS=-MMD -MP 
 LDFLAGS= -lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ 
 
 SRC=$(wildcard *.c)
@@ -9,7 +9,7 @@ SECURE_DEPS=$(SECURE_OBJS:.o=.d)
 INC_SECURE_FLAGS=-I ../
 
 openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
-OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_OLDER)
+OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_1)
 
 # main rules here
 all: ${SECURE_OBJS}

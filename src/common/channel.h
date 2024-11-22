@@ -22,7 +22,7 @@ typedef struct
 
 // Remove these sensitive infos
 
-// // #ifdef OPENSSL_OLDER
+// // #ifdef OPENSSL_1
 //     RSA* rsa_public_key;
 //     RSA* rsa_private_key;
 // // #endif

@@ -1,6 +1,6 @@
 CC=gcc
 DEBUG_FLAGS=-g -lpam
-CFLAGS=-MMD -MP -Wno-deprecated-declarations -lcrypto -lz -lpam
+CFLAGS=-MMD -MP -lcrypto -lz -lpam
 
 SRC=$(wildcard *.c)
 ALGO_OBJS=$(patsubst %.c,obj/%.o,$(SRC))

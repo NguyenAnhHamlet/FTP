@@ -380,7 +380,7 @@ int load_private_rsa_key(EVP_PKEY **pkey, char path[])
     fclose(fp);
 }
 
-#elif OPENSSL_OLDER
+#elif OPENSSL_1
 
 void generate_RSA_KEYPAIR(RSA *key_pair)
 {

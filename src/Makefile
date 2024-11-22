@@ -17,7 +17,7 @@ OBJS_CURRENT=$(patsubst %.c,obj/%.o,$(SRC))
 DEPS=$(OBJS:.o=.d) 
 
 openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
-OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_OLDER)
+OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_1)
 
 LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ -lreadline
 
