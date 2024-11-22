@@ -10,6 +10,7 @@
 #include "log/ftplog.h"
 #include "secure/kex.h"
 #include <openssl/param_build.h>
+#include "secure/ed25519.h"
 
 #ifdef OPENSSL_3
 #include <openssl/evp.h>
@@ -26,7 +27,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 #ifdef OPENSSL_1
         RSA* rsa_private_key = NULL;
 #elif OPENSSL_3
-        EVP_PKEY* pkey = NULL; //EVP_RSA_gen(KEY_SIZE);
+        EVP_PKEY* pkey = NULL; 
 #endif
 
         BIGNUM *challenge, *recv_challenge, *decrypt_challenge;
@@ -97,7 +98,7 @@ int public_key_authentication(control_channel* channel, int evolution)
 #ifdef OPENSSL_1
         RSA *pub_key = RSA_new();
 #elif OPENSSL_3
-        EVP_PKEY* pkey = NULL; //EVP_PKEY_new(); //EVP_RSA_gen(KEY_SIZE);
+        EVP_PKEY* pkey = NULL; 
 #endif
 
         challenge = BN_new();

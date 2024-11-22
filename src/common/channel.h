@@ -19,18 +19,7 @@
 typedef struct
 {
     endpoint_type conn;   
-
-// Remove these sensitive infos
-
-// // #ifdef OPENSSL_1
-//     RSA* rsa_public_key;
-//     RSA* rsa_private_key;
-// // #endif
-
-// // #ifdef OPENSSL_3
-//     EVP_PKEY_CTX *ctx;
-//     EVP_PKEY *pkey;
-// // #endif
+    
 
     Packet* data_in;
     Packet* data_out;

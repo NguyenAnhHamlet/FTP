@@ -542,7 +542,7 @@ int load_private_rsa_key(RSA **private_key, char path[])
     
     *private_key = PEM_read_RSAPrivateKey(fp, &t, NULL, NULL);
 
-    if (! *private_key) 
+    if (!*private_key) 
     {
         BIO *bio = BIO_new(BIO_s_file());
         BIO_set_fp(bio, stderr, BIO_NOCLOSE);
