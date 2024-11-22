@@ -192,7 +192,12 @@ int public_key_authentication(control_channel* channel, int evolution)
 int channel_send_public_key(control_channel* channel, char path[])
 {
     BIGNUM *e, *n;
+
+#ifdef OPENSSL_3
     EVP_PKEY* pkey;
+#elif` OPENSSL_1
+    RSA* pub_key;
+#endif
 
 #ifdef OPENSSL_1
     load_rsa_auth_key(&pub_key, path);
@@ -334,8 +339,6 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
         return 0;
     }
 
-#endif
-
     // Don't make a stupid mistake of freeing this 
     // Only clean these after done with public key
     // BN_free(pub_key_n);
@@ -344,7 +347,8 @@ int channel_recv_public_key(control_channel* channel, RSA** pub_key, EVP_PKEY **
     OSSL_PARAM_free(params);
     OSSL_PARAM_BLD_free(params_build);
     EVP_PKEY_CTX_free(ctx);
-    
+#endif    
+
     return 1;
 }
 
