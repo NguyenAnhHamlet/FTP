@@ -34,9 +34,8 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
     BN_bn2bin(cipher_ctx->key, convert_key);
     EVP_CIPHER_CTX_reset(cipher_ctx->evp);
 
-    if (!EVP_CipherInit_ex2(cipher_ctx->evp, EVP_aes_256_cbc(), 
-                           (const char *) convert_key, NULL, ENCRYPT,
-                           NULL))
+    if(!EVP_CipherInit_ex(cipher_ctx->evp, cipher_ctx->evptype, NULL, 
+                     (const char*) convert_key, NULL, ENCRYPT))
     {
         unsigned long err_code = ERR_get_error();
 
@@ -50,6 +49,13 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
         LOG(SERVER_LOG, "Could not perform encryption\n");
         return 0;
     }
+
+    // if (!EVP_CipherInit_ex2(cipher_ctx->evp, EVP_aes_256_cbc(), 
+    //                        (const char *) convert_key, NULL, ENCRYPT,
+    //                        NULL))
+    // {
+        
+    // }
 
     if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, outlen, inbuf, inlen))
     {
@@ -100,9 +106,8 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
     BN_bn2bin(cipher_ctx->key, convert_key);
     EVP_CIPHER_CTX_reset(cipher_ctx->evp);
 
-    if (!EVP_CipherInit_ex2(cipher_ctx->evp, EVP_aes_256_cbc(), 
-                            (const char *) convert_key, 
-                            NULL, DECRYPT, NULL))
+    if(!EVP_CipherInit_ex(cipher_ctx->evp, cipher_ctx->evptype, NULL, 
+                     (const char*) convert_key, NULL, DECRYPT))
     { 
         unsigned long err_code = ERR_get_error();
 
