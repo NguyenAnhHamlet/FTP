@@ -16,11 +16,16 @@
 // Control channel
 // 
 
+typedef enum 
+{
+    RSAK = 1,
+    ED25519K = 2
+} pubkey_type;
+
 typedef struct
 {
     endpoint_type conn;   
     
-
     Packet* data_in;
     Packet* data_out;
 
@@ -52,6 +57,7 @@ typedef struct
     socket_ftp* d_socket;
     socket_ftp* d_socket_listening;
     endpoint_type type;
+    pubkey_type pkeytype;
 
     // Data assigned by client side 
     char *source;
@@ -69,6 +75,8 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
                      data_channel* d_channel, control_channel* c_channel, 
                      socket_ftp* c_socket, socket_ftp* d_socket, 
                      endpoint_type type, ftplog_type log_type);
+
+void channel_context_set_pub(channel_context* channel_ctx, pubkey_type pkeytype );
 
 // 
 // Control channel

@@ -6,6 +6,8 @@
 #include <openssl/param_build.h>
 #include <openssl/core_names.h>
 
+extern void openssl_get_error();
+
 #ifdef OPENSSL_1
 DH* dh_creation()
 {

@@ -21,6 +21,11 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
     channel_ctx->log_type = log_type;
 }
 
+void channel_context_set_pub(channel_context* channel_ctx, pubkey_type pkeytype )
+{
+    channel_ctx->pkeytype = pkeytype;
+}
+
 void control_channel_init(  control_channel* channel,
                             unsigned int out_port, unsigned int in_port,
                             endpoint_type conn,

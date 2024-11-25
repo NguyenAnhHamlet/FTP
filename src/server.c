@@ -27,8 +27,90 @@
 #include "algo/algo.h"
 
 extern command commands[];
-
 socket_ftp* socket_server;
+
+static struct 
+{
+    unsigned int pkeyaccept;
+    unsigned int rlogin;
+    unsigned int maxauth;
+    unsigned int passauth;
+    unsigned int dataport;
+    unsigned int controlport;
+    unsigned int addrfamily;
+} server_config;
+
+// Pattern in config file
+typedef enum 
+{
+    PubkeyAcceptedKeyTypes
+} server_opcode;
+
+static struct {
+	const char *name;
+	server_opcode opcode;
+} keywords[] = {
+    {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
+    {"rsa", RSAK},
+    {"ed25519", ED25519K},
+    {NULL, 0}
+};
+
+int parse_token(const char *cp, const char *filename,
+	    int linenum)
+{
+	unsigned int i;
+
+	for (i = 0; keywords[i].name; i++)
+		if (strncmp(cp, keywords[i].name, strlen(cp)) == 0)
+			return keywords[i].opcode;
+
+	fprintf(stderr, "%s: line %d: Bad configuration option: %s\n",
+		filename, linenum, cp);
+	return -1;
+}
+
+int read_config(char* conf)
+{
+    FILE* fp = NULL;    
+    read_file(conf, &fp);
+    char* cp = NULL; 
+    int opcode;
+    
+    char line[1024];
+    int linenum = 0;
+
+    while(fgets(line, 1024, fp))
+    {
+        linenum++;  
+        cp = line + strspn(line, WHITESPACE);
+        if (!*cp || *cp == '#')
+			continue;
+        cp = strtok(cp, WHITESPACE);
+        opcode = parse_token(cp, conf, linenum);
+
+        switch(opcode)
+        {
+            case PubkeyAcceptedKeyTypes:
+            {
+                int ret = 0;
+                cp = strtok(NULL, WHITESPACE);
+                while( cp = strtok(NULL, WHITESPACE))
+                {
+                    opcode = parse_token(cp, conf, linenum);
+                    ret |= opcode;
+                    cp = strtok(NULL, WHITESPACE); 
+                }
+                server_config.pkeyaccept = ret;
+                printf("ret : %d\n", ret);
+                break;
+
+            }
+        }
+    }
+
+    return 1;
+}
 
 void signal_handler(int sig)
 {
@@ -120,6 +202,9 @@ int main()
     int activity_client;
     pthread_t pub_key_thread;
     char buf[BUF_LEN];
+    char conf[] = "/etc/ftp/sftpd_config";
+
+    read_config(conf);
 
     // signal and handle
     signal(SIGINT, signal_handler);
@@ -177,7 +262,6 @@ int main()
         }
     }
 
-
     // Client process handle
     control_channel c_channel; 
     data_channel d_channel;
@@ -203,8 +287,8 @@ int main()
 
     char buf_[4096];
 
-    if(public_key_authentication(&c_channel, 1) == 0 || 
-       public_key_authentication(&c_channel, 0) == 0)
+    if(!public_key_authentication(&c_channel, 1, server_config.pkeyaccept)|| 
+       !public_key_authentication(&c_channel, 0, server_config.pkeyaccept))
     {
         LOG(SERVER_LOG, "Pub authen failed with socket %d\n", c_channel.data_in->in_port);
         exit(1);

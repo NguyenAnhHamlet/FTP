@@ -19,12 +19,12 @@
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
+#include "common/file.h"
 
 #define IPADDR_SIZE  32
 #define OPTION_SIZE  8
 
 extern command commands[];
-
 channel_context channel_ctx;
 char name[BUF_LEN];
 char pass[BUF_LEN];
@@ -36,6 +36,30 @@ socket_ftp* d_socket;
 char ipaddr[IPADDR_SIZE];
 char option[OPTION_SIZE];
 unsigned int iptype;
+
+// Pattern in config file
+typedef enum 
+{
+    PubkeyAcceptedKeyTypes
+} client_opcode;
+
+static struct {
+	const char *name;
+	client_opcode opcode;
+} keywords[] = {
+    {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
+    {"rsa", RSAK},
+    {"ed25519", ED25519K},
+    {NULL, 0}
+};
+
+static struct 
+{
+    unsigned int pkeyaccept;
+    unsigned int dataport;
+    unsigned int controlport;
+    unsigned int addrfamily;
+} client_config;
 
 // Get the command and the contents of buffer pointed by cmd and contents
 // Return result will be the ftp's command code
@@ -196,8 +220,62 @@ int password_authen_client(control_channel* c_channel)
 
 }
 
+int parse_token(const char *cp, const char *filename,
+	    int linenum)
+{
+	unsigned int i;
+
+	for (i = 0; keywords[i].name; i++)
+		if (strncmp(cp, keywords[i].name, strlen(cp)) == 0)
+			return keywords[i].opcode;
+
+	fprintf(stderr, "%s: line %d: Bad configuration option: %s\n",
+		filename, linenum, cp);
+	return -1;
+}
+
+int read_config(char* conf)
+{
+    FILE* fp = NULL;    
+    read_file(conf, &fp);
+    char* cp = NULL; 
+    int opcode;
+    
+    char line[1024];
+    int linenum = 0;
+    while(fgets(line, 1024, fp))
+    {
+        linenum++;  
+        cp = line + strspn(line, WHITESPACE);
+        if (!*cp || *cp == '#')
+			continue;
+        cp = strtok(cp, WHITESPACE);
+        opcode = parse_token(cp, conf, linenum);
+
+        switch(opcode)
+        {
+            case PubkeyAcceptedKeyTypes:
+            {
+                int ret = 0;
+                cp = strtok(NULL, WHITESPACE);
+                while(cp = strtok(NULL, WHITESPACE))
+                {
+                    opcode = parse_token(cp, conf, linenum);
+                    ret |= opcode;
+                }
+                printf("ret : %d\n", ret);
+                client_config.pkeyaccept = ret;
+                break;
+            }
+        }
+    }
+
+    return 1;
+}
+
 int main(int argc, char* argvs[])
 {
+    char conf[] = "/etc/ftp/sftp_config"; 
     char* buffer;
     unsigned char* request_str;
     unsigned int request_int; 
@@ -205,6 +283,8 @@ int main(int argc, char* argvs[])
     unsigned char* arg;
     cipher_context* ctx;
     char* line = NULL;
+
+    read_config(conf);
 
     // init
     request_str = (char*) malloc(BUF_LEN);
@@ -232,9 +312,9 @@ int main(int argc, char* argvs[])
     // set alarm for 30 
     // signal(SIGALRM, time_out_alarm);
 	//    alarm(30);
-
-    if( !public_key_authentication(&c_channel, 0) || 
-        !public_key_authentication(&c_channel, 1))
+    
+    if( !public_key_authentication(&c_channel, 0, client_config.pkeyaccept) || 
+        !public_key_authentication(&c_channel, 1, client_config.pkeyaccept))
         fatal("Public key authentication failed\n");
     
     // // perform password authentication

@@ -22,5 +22,8 @@
 #define FTP_PUB_KEX_SEND            18
 #define FTP_FAIL_AUTHEN             19
 #define FTP_CONN                    20
+#define FTP_PKEY_NEGOTIATE          21
+#define FTP_USE_RSA                 22
+#define FTP_USE_ED25519             23 
 
 #endif

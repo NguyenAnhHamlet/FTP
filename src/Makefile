@@ -53,8 +53,8 @@ cleanall:
 
 install:
 	chmod 755 bin/* && sudo mv bin/* /usr/bin/
-	chmod 755 ../script/* && sudo cp ../script/ftp* /usr/bin;
 	chmod 644 ../script/sftp.pam && sudo cp ../script/sftp.pam /etc/pam.d/sftp
+	chmod 644 ../script/*config && sudo cp ../script/*config /etc/ftp/
 
 -include $(DEPS)
 
