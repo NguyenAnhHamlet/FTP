@@ -1,5 +1,6 @@
 #include "ed25519.h"
 #include "common/common.h"
+#include "log/ftplog.h"
 
 extern void openssl_get_error();
 
@@ -85,10 +86,9 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
 	memset(in, 0, inlen);
     BN_bn2bin(*inbn, in);
 
-    pctx = NULL; //EVP_PKEY_CTX_new(pkey, NULL);
     mdctx = EVP_MD_CTX_create();
 
-    if(!pctx || !mdctx)
+    if(!mdctx)
     {
         free(in);
         EVP_PKEY_CTX_free(pctx);
@@ -97,10 +97,7 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
         return 0;
     }
 
-    // assign the pkey context for mdctx
-    // EVP_MD_CTX_set_pkey_ctx(mdctx, pctx);
-
-    if(!EVP_DigestSignInit(mdctx, &pctx, EVP_sha512(), NULL, pkey))
+    if(!EVP_DigestSignInit(mdctx, NULL, NULL, NULL, pkey))
     {
         free(in);
         EVP_MD_CTX_destroy(mdctx);
@@ -108,18 +105,7 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
         return 0;
     }
 
-    if(!EVP_DigestSignUpdate(mdctx, in, inlen))
-    {
-        free(in);
-        EVP_MD_CTX_destroy(mdctx);
-        openssl_get_error();
-        return 0;
-    }
-
-    /* Finalise the DigestSign operation */
-    /* First call EVP_DigestSignFinal with a NULL sig parameter to obtain the length of the
-    * signature. Length is returned in slen */
-    if(!EVP_DigestSignFinal(mdctx, NULL, &signlen)) 
+    if(!EVP_DigestSign(mdctx, NULL, &signlen, in, inlen))
     {
         free(in);
         EVP_MD_CTX_destroy(mdctx);
@@ -129,16 +115,17 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
 
     sign = (char*) malloc(signlen);
 
-    // Sign the data now
-    if(!EVP_DigestSignFinal(mdctx, sign, &signlen)) 
+    if(!EVP_DigestSign(mdctx, sign, &signlen, in, inlen))
     {
         free(in);
-        EVP_MD_CTX_free(mdctx);
+        EVP_MD_CTX_destroy(mdctx);
         openssl_get_error();
         return 0;
-    } 
+    }
 
     BN_bin2bn(sign, signlen, *signbn);
+    EVP_MD_CTX_destroy(mdctx);
+    free(in);
 
     return 1;
 }
@@ -152,20 +139,20 @@ int ed25519_pub_verify(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
 
     inlen = BN_num_bytes(*inbn) ;
     in = (unsigned char*) malloc(inlen);
-    signlen = BN_num_bytes(*inbn) ;
-    sign = (unsigned char*) malloc(inlen);
+    signlen = BN_num_bytes(*signbn) ;
+    sign = (unsigned char*) malloc(signlen);
 
 	memset(in, 0, inlen);
     BN_bn2bin(*inbn, in);
     memset(sign, 0, signlen);
     BN_bn2bin(*signbn, sign);
 
-    pctx = NULL ; //EVP_PKEY_CTX_new(pkey, NULL);
     mdctx = EVP_MD_CTX_create();
 
-    if(!pctx || !mdctx)
+    if(!mdctx)
     {
         free(in);
+        free(sign);
         EVP_MD_CTX_destroy(mdctx);
         openssl_get_error();
         return 0;
@@ -173,37 +160,32 @@ int ed25519_pub_verify(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
 
     // assign the pkey context for mdctx
     // EVP_MD_CTX_set_pkey_ctx(mdctx, pctx);
+    LOG(1, "HERE 0\n");
 
-    if(!EVP_DigestVerifyInit(mdctx, &pctx, EVP_sha512(), NULL, pkey))
+    if(!EVP_DigestVerifyInit(mdctx, NULL, NULL, NULL, pkey))
     {
         free(in);
+        free(sign);
         EVP_MD_CTX_destroy(mdctx);
         openssl_get_error();
         return 0;
     }
 
-    if(!EVP_DigestVerifyUpdate(mdctx, in, inlen))
+
+    if(!EVP_DigestVerify(mdctx, sign, signlen, in, inlen))
     {
         free(in);
+        free(sign);
         EVP_MD_CTX_destroy(mdctx);
         openssl_get_error();
         return 0;
     }
 
-    if(EVP_DigestVerifyFinal(mdctx, sign, signlen))
-    {
-        if(mdctx)
-        {
-            EVP_MD_CTX_destroy(mdctx);
-        }
-        return 1;
-    }
-    
-    if(mdctx)
-    {
-        EVP_MD_CTX_destroy(mdctx);
-    }
-    return 0;
+    free(in);
+    free(sign);
+    EVP_MD_CTX_destroy(mdctx);
+
+    return 1;
 }
 
 int load_ed25519_auth_key(EVP_PKEY **pkey, char path[])
@@ -213,7 +195,7 @@ int load_ed25519_auth_key(EVP_PKEY **pkey, char path[])
     if(!fp)
     {
         fclose(fp);
-        fatal("Could not open private key file\n");
+        fatal("Could not open public key file\n");
     }
 
     if(!(*pkey = PEM_read_PUBKEY(fp, NULL, NULL, NULL)))

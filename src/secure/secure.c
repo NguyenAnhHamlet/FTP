@@ -452,8 +452,10 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             }
             
             ed25519_priv_sign(edpkey, &challenge, &sign);
-            if(BN_cmp(challenge, sign))
-            {
+
+            if(!BN_cmp(challenge, sign))
+            {   
+                BN_print_fp(stdout, challenge); printf("\n"); BN_print_fp(stdout, sign);
                 LOG(COMMON_LOG, "Fail to sign\n");
                 return 0;
             }
@@ -462,6 +464,7 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             control_channel_append_ftp_type(FTP_ASYM_AUTHEN, channel);
             control_channel_append_bignum(&challenge, channel);
             control_channel_append_bignum(&sign, channel);
+            control_channel_send_wait(channel);
 
             if(!control_channel_read_expect(channel, SUCCESS))
             {
@@ -479,6 +482,7 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             BIGNUM* challenge = BN_new();
             BIGNUM* sign = BN_new();
             // receive the public key from end point
+            
             channel_recv_public_key_ed25519(channel, &edpkey);
 
             // send confirmation 
@@ -488,8 +492,8 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             // receive signature and challenge 
             if(!control_channel_read_expect(channel, FTP_ASYM_AUTHEN))
             {
-                LOG(COMMON_LOG, "Expected %d but received %d", 
-                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                LOG(1, "Expected %d but received %d", 
+                    FTP_ASYM_AUTHEN, control_channel_get_ftp_type_in(channel));
                 return 0;
             }
 
@@ -500,20 +504,23 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             if(!ed25519_pub_verify(edpkey, &challenge, &sign))
             {
                 LOG(COMMON_LOG, "Could not verify the signature\n");
+                control_channel_append_ftp_type(ABORT, channel);
+                control_channel_send(channel);
                 return 0;
             }
 
-            return 1;
-
+            control_channel_append_ftp_type(SUCCESS, channel);
+            control_channel_send(channel);
         }
     }
+
+    return 1;
 }
 
 int channel_send_public_key_ed25519(control_channel* channel, char path[])
 {
     // load the public key from ed25519.pub
     EVP_PKEY* pkey = NULL;
-    BIGNUM* edpkey = NULL;
     load_ed25519_auth_key(&pkey, PUBLIC_ED25519);
 
     if(!pkey)
@@ -522,27 +529,50 @@ int channel_send_public_key_ed25519(control_channel* channel, char path[])
         return 0;
     }
 
-    if(!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, &edpkey))
+    LOG(1, "RUNNING 10\n");
+
+    size_t pubkey_len = 0;
+    if (!EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, NULL, 0, &pubkey_len)) 
     {
-        openssl_get_error();
-        return 0;
+        ERR_print_errors_fp(stderr);
+        return 1;                                                                                                                                   
     }
+
+    unsigned char *pubkey = OPENSSL_malloc(pubkey_len);
+
+    if (!EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, pubkey, pubkey_len, &pubkey_len)) 
+    {
+        ERR_print_errors_fp(stderr);
+        OPENSSL_free(pubkey);
+        return 1;
+    }
+
+    if (!pubkey) 
+    {
+        ERR_print_errors_fp(stderr);
+        return 1;
+    }
+
+    LOG(1, "RUNNING 11\n");
 
     // send the public ed25519 over 
     control_channel_append_ftp_type(FTP_PUB_KEY_SEND, channel);
-    control_channel_append_bignum(&edpkey, channel);
+    control_channel_append_str(pubkey, channel, pubkey_len);
     control_channel_send_wait(channel);
 
     // free
     EVP_PKEY_free(pkey);
-    BN_free(edpkey);
 
     return 1;
 }
 
 int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
 {
-    BIGNUM* edpkeybn = NULL;
+    char* pubkey = NULL;
+    int pubkey_len = 0;
+    
+    LOG(1, "RUNNING 0\n");
+
     if(!control_channel_read_expect(channel, FTP_PUB_KEY_SEND))
     {
         LOG(COMMON_LOG, "Expected code value %d but got %d instead\n",
@@ -550,19 +580,27 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
         return 0;
     }
 
-    control_channel_get_bignum(&edpkeybn, channel);
-    if(!edpkeybn)
+    LOG(1, "RUNNING\n");
+
+    pubkey = (char*) malloc(control_channel_get_data_len_in(channel));
+    control_channel_get_str(channel, pubkey, &pubkey_len);
+
+    if(!pubkey)
     {
-        LOG(COMMON_LOG, "edpkey NULL\n");
+        LOG(COMMON_LOG, "pubkey NULL\n");
         return 0;
     }
 
+    LOG(1, "RUNNING 2\n");
+
     OSSL_PARAM_BLD *params_build = OSSL_PARAM_BLD_new();
-    if ( !OSSL_PARAM_BLD_push_BN(params_build, OSSL_PKEY_PARAM_PUB_KEY, edpkeybn)) 
+    if ( !OSSL_PARAM_BLD_push_octet_string(params_build, OSSL_PKEY_PARAM_PUB_KEY, pubkey, pubkey_len)) 
     {
         LOG(COMMON_LOG, "Error: failed to push public value into param build.\n");
         return 0;
     }
+
+    LOG(1, "RUNNING 3\n");
 
     OSSL_PARAM *params = OSSL_PARAM_BLD_to_param(params_build);
     if ( params == NULL ) 
@@ -570,6 +608,8 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
         LOG(COMMON_LOG, "Error: failed to construct params from build.\n");
         return 0;
     }
+
+    LOG(1, "RUNNING 4\n");
 
     EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_from_name(NULL, "ED25519", NULL);
     *pkey = NULL;
@@ -581,6 +621,8 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
         openssl_get_error();
         return 0;
     }
+
+    LOG(1, "RUNNING 5\n");
 
     OSSL_PARAM_free(params);
     OSSL_PARAM_BLD_free(params_build);
