@@ -158,10 +158,6 @@ int ed25519_pub_verify(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
         return 0;
     }
 
-    // assign the pkey context for mdctx
-    // EVP_MD_CTX_set_pkey_ctx(mdctx, pctx);
-    LOG(1, "HERE 0\n");
-
     if(!EVP_DigestVerifyInit(mdctx, NULL, NULL, NULL, pkey))
     {
         free(in);
