@@ -187,10 +187,16 @@ int public_key_authentication_rsa(control_channel* channel, int evolution)
 #ifdef OPENSSL_1
         // encrypt data 
         channel_recv_public_key_rsa(channel, &pub_key, NULL);
+        // TODO 
+        // Write public key into "/etc/ftp/know_hosts" with format
+        // "host_name keytype keyvalue"
         rsa_pub_encrypt(pub_key, &challenge, &sig);
 #elif OPENSSL_3
         channel_recv_public_key_rsa(channel, NULL, &pkey);
         // PEM_write_PUBKEY(stdout, pkey);
+        // TODO 
+        // Write public key into "/etc/ftp/know_hosts" with format
+        // "host_name keytype keyvalue"
         rsa_pub_encrypt(pkey, &challenge, &sig);
 #endif
 
@@ -674,6 +680,10 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, &pub);
     // BN_print_fp(stdout, pub);
 #endif
+    // TODO
+    // Load public key of peer from know_hosts  
+    // encrypt the DH's pub key with peer's RSA public key before send over 
+
     control_channel_append_bignum(&pub, channel);
     control_channel_append_ftp_type(FTP_PUB_KEX_SEND, channel);
     control_channel_send(channel);
@@ -685,6 +695,8 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     }
 
     control_channel_get_bignum(&perr_pub, channel);
+    // TODO 
+    // decrypt the perr_pub key with private RSA key
 
 #ifdef OPENSSL_1
     if(!generate_secret_key(dh, &ctx->key, &perr_pub))

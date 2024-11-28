@@ -94,7 +94,7 @@ int read_config(char* conf)
             case PubkeyAcceptedKeyTypes:
             {
                 int ret = 0;
-                cp = strtok(NULL, WHITESPACE);
+                // cp = strtok(NULL, WHITESPACE);
                 while( cp = strtok(NULL, WHITESPACE))
                 {
                     opcode = parse_token(cp, conf, linenum);
@@ -285,7 +285,10 @@ int main()
     signal(SIGALRM, time_out_alarm);
 	alarm(30);
 
-    char buf_[4096];
+    if(!(server_config.pkeyaccept = pkey_negotiate(&c_channel, server_config.pkeyaccept, SERVER)))
+    {
+        return 0;
+    }
 
     if(!public_key_authentication(&c_channel, 1, server_config.pkeyaccept)|| 
        !public_key_authentication(&c_channel, 0, server_config.pkeyaccept))
