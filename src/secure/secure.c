@@ -11,6 +11,7 @@
 #include "secure/kex.h"
 #include <openssl/param_build.h>
 #include "secure/ed25519.h"
+#include <regex.h>  
 
 #ifdef OPENSSL_3
 #include <openssl/evp.h>
@@ -286,14 +287,7 @@ int channel_send_public_key_rsa(control_channel* channel, char path[])
     if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n) || 
         !EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e)) 
     {
-        unsigned long err_code = ERR_get_error();
-        if (err_code) 
-        {
-            char err_buf[120];
-            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "EVP_PKEY_get_bn_param: %s\n",  err_buf);
-            fprintf(stderr, "Error: %s\n", err_buf);
-        }
+        ERR_print_errors_fp(stderr);
         return 0;
     }
 
@@ -706,6 +700,107 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     {
         LOG(SERVER_LOG, "Failed to compute shared secret key\n");
         return 0;
+    }
+
+    return 1;
+}
+
+int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type)
+{
+    switch(type)
+    {
+        case CLIENT:
+        {
+            char* hash = NULL, rhost = NULL, pattern = NULL;
+            int hlen, rsa_namelen = 5;
+            FILE* fp = NULL;
+            char* line[BUF_LEN];
+            // receive the hash value of server's public key
+            if(!control_channel_read_expect(channel, FTP_FINGER_PRINT))
+            {
+                LOG("Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                return 0;
+            }
+
+            int data_len = control_channel_get_data_len_in(channel);
+            hash = (char*) malloc(data_len);
+            control_channel_get_str(channel, hash, &hlen); 
+
+            // check in know_hosts 
+            hostname(control_channel_get_sockfd_in(channel), rhost);
+            pattern = (char*) malloc(data_len + strlen(rhost) + rsa_namelen);
+            strncpy(pattern, rhost, strlen(rhost));
+            strncpy(pattern, " RSA ", rsa_namelen);
+            strncpy(pattern, hash, hlen);
+
+            read_file(KNOW_HOSTS, fp);
+            while(fgets(line, sizeof(line), fp))
+            {
+                if (strstr(line, pattern) != NULL) 
+                {
+                    // hash value exists, no further operation 
+                    return FINGER_PRINT_EXITS;
+                }
+                line = 0;
+            }
+
+            // ask user's permission to save into know_hosts
+            printf("RSA fingerprint is SHA256: %s\n", hash);
+            printf("Are you sure you want to continue connecting (yes/no/[fingerprint])? ");
+            fgets(line, 4, stdin);
+
+            if(!strncmp(line, "no", 4))
+            {
+                return FINGER_PRINT_SAVED_FAILED;
+            }
+
+            // save in know_hosts
+            append_file(KNOW_HOSTS, pattern, data_len + strlen(rhost) + rsa_namelen);
+            
+            break;
+        }
+
+        case SERVER:
+        {
+            // hash public key
+#ifdef OPENSSL_1
+            RSA* pubkey;
+#elif OPENSSL_3
+            EVP_PKEY* pubkey;
+#endif
+            char* hash = NULL;
+            unsigned int hlen;
+            load_rsa_auth_key(&pubkey, public_RSAkey_file);
+            rsa_pubkey_hash(pubkey, hash, hlen);
+
+            // send hash value of public key
+            control_channel_append_ftp_type(FTP_FINGER_PRINT, channel);
+            control_channel_append_str(hash, channel, hlen);
+            control_channel_send_wait(channel);
+
+            if(!control_channel_read_expect(channel, SUCCESS))
+            {
+                LOG("Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                free(hash);
+#ifdef OPENSSL_1
+                RSA_free(pubkey);
+#elif OPENSSL_3
+                EVP_PKEY_free(pubkey);
+#endif
+                return 0;
+            }
+
+#ifdef OPENSSL_1
+            RSA_free(pubkey);
+#elif OPENSSL_3
+            EVP_PKEY_free(pubkey);
+#endif      
+            free(hash);      
+            
+            break;
+        }
     }
 
     return 1;

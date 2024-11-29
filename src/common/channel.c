@@ -199,6 +199,16 @@ int control_channel_get_ftp_type_out(control_channel* c_channel)
     return c_channel->data_out->p_header->packet_type;
 }
 
+int control_channel_get_sockfd_in(control_channel* c_channel)
+{
+    return c_channel->data_in->in_port;
+}   
+
+int control_channel_get_sockfd_out(control_channel* c_channel)
+{
+    return c_channel->data_in->out_port;
+}
+
 // DATA
 
 void data_channel_init( data_channel* channel,

@@ -25,5 +25,6 @@
 #define FTP_PKEY_NEGOTIATE          21
 #define FTP_USE_RSA                 22
 #define FTP_USE_ED25519             23 
+#define FTP_FINGER_PRINT            24
 
 #endif

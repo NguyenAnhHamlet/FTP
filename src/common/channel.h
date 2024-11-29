@@ -133,6 +133,8 @@ int control_channel_get_data_len_out(control_channel* c_channel);
 int control_channel_get_data_len_in(control_channel* c_channel);
 int control_channel_get_ftp_type_in(control_channel* c_channel);
 int control_channel_get_ftp_type_out(control_channel* c_channel);
+int control_channel_get_sockfd_in(control_channel* c_channel);
+int control_channel_get_sockfd_out(control_channel* c_channel);
 
 // 
 // data channel

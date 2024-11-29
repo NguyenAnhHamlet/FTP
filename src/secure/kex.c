@@ -49,8 +49,8 @@ DH* dh_creation()
     if (!BN_sub_word(p_cp, 1) || !BN_rshift1(q, p_cp))
     {
         DH_free(dh);
-        BN_clear_free(p);
         BN_clear_free(g);
+        BN_clear_free(p);
         BN_clear_free(p_cp);
         BN_clear_free(q);
         return NULL;

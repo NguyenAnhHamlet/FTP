@@ -6,6 +6,16 @@
 #include "common/buffer.h"
 #include "common/channel.h"
 
+
+#define KNOW_HOSTS "/etc/ftp/know_hosts"
+
+enum finger_print_opcode
+{
+    FINGER_PRINT_SAVED_FAILED,
+    FINGER_PRINT_SAVED_SUCCEED,
+    FINGER_PRINT_EXITS,
+};
+
 // negotiate and return associated public key type
 // pkeyaccept_avail is a pointer points to an array of unsined int 
 // that represents the available public key of this side 
@@ -28,5 +38,12 @@ int public_key_authentication(control_channel* channel, int evolution,
 
 // Diffie-Hellman
 int channel_generate_shared_key(control_channel* channel, cipher_context* ctx);
+
+// finger-print
+int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type);
+int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type type, 
+                                unsigned int pkeyaccept);
+int channel_verify_finger_print(control_channel* channel, endpoint_type type, 
+                                unsigned int pkeyaccept);
 
 #endif

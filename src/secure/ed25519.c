@@ -1,6 +1,7 @@
 #include "ed25519.h"
 #include "common/common.h"
 #include "log/ftplog.h"
+#include "hash.h" 
 
 extern void openssl_get_error();
 
