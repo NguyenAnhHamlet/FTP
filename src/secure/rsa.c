@@ -7,6 +7,7 @@
 #include <openssl/err.h>
 #include <log/ftplog.h>
 #include "hash.h"
+#include <openssl/core_names.h>
 
 #ifdef OPENSSL_3
 void generate_rsa_key_pair(EVP_PKEY **pkey)
@@ -388,13 +389,13 @@ void rsa_pubkey_hash(EVP_PKEY* pub_key, char* ret,  int* retlen)
     BIGNUM* e = BN_new();
     BIGNUM* n = BN_new();
 
-    if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n) || 
-        !EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e)) 
+    if (!EVP_PKEY_get_bn_param(pub_key, OSSL_PKEY_PARAM_RSA_N, &n) || 
+        !EVP_PKEY_get_bn_param(pub_key, OSSL_PKEY_PARAM_RSA_E, &e)) 
     {
         ERR_print_errors_fp(stderr);
         BN_free(e);
-        BN_free(n)
-        return 0;
+        BN_free(n);
+        return;
     }
 
     nlen  = BN_num_bits(n);

@@ -41,8 +41,7 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx);
 
 // finger-print
 int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type);
-int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type type, 
-                                unsigned int pkeyaccept);
+int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type type);
 int channel_verify_finger_print(control_channel* channel, endpoint_type type, 
                                 unsigned int pkeyaccept);
 

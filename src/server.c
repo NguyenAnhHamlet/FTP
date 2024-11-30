@@ -290,6 +290,14 @@ int main()
         return 0;
     }
 
+    // FUTO
+    if(channel_verify_finger_print(&c_channel, SERVER, server_config.pkeyaccept) 
+       == FINGER_PRINT_SAVED_FAILED)
+    {
+        LOG(SERVER_LOG, "Client did not accept finger print\n");
+        exit(1);
+    }
+
     if(!public_key_authentication(&c_channel, 1, server_config.pkeyaccept)|| 
        !public_key_authentication(&c_channel, 0, server_config.pkeyaccept))
     {

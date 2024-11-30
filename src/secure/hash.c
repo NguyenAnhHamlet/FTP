@@ -4,10 +4,10 @@
 #include <string.h>
 #include <openssl/evp.h>
 
-void sha256(char* in, int inlen, char* out, int outlen )
+void sha256(char* in, int inlen, char* out, int *outlen )
 {
 #ifdef OPENSSL_1 
-    outlen = SHA256_DIGEST_LENGTH;
+    *outlen = SHA256_DIGEST_LENGTH;
     out = (char*) malloc(SHA256_DIGEST_LENGTH);
     SHA256_CTX sh256;
     SHA256_Init(&sha256);
@@ -35,7 +35,7 @@ void sha256(char* in, int inlen, char* out, int outlen )
         exit(EXIT_FAILURE);
     }
 
-    if (!EVP_DigestFinal_ex(mdCtx, out, &outlen))
+    if (!EVP_DigestFinal_ex(mdCtx, out, outlen))
     {
         printf("Message digest finalization failed.\n");
         EVP_MD_CTX_free(mdCtx);
