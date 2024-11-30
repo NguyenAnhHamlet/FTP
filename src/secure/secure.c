@@ -63,12 +63,12 @@ int pkey_negotiate(control_channel* channel, unsigned int pkeyaccept_avail, endp
             control_channel_append_ftp_type(FTP_PKEY_NEGOTIATE, channel);
             if(recv_pkeyaccept & ED25519K)
             {
-                ret = 1;
+                ret = ED25519K;
                 control_channel_append_int(ED25519K, channel);
             }
             else if(recv_pkeyaccept & RSAK)
             {
-                ret = 1;
+                ret = RSAK;
                 control_channel_append_int(RSAK, channel);
             }
             else 

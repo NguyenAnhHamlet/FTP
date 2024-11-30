@@ -318,7 +318,6 @@ int main(int argc, char* argvs[])
     }
 
     // FUTO
-    LOG(SERVER_LOG, "CLIENT HERE 0 p : %d\n",client_config.pkeyaccept );
     if(channel_verify_finger_print(&c_channel, CLIENT, client_config.pkeyaccept) 
        == FINGER_PRINT_SAVED_FAILED)
     {
