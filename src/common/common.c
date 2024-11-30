@@ -201,6 +201,23 @@ int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2)
     return strcmp(ip_addr1, ip_addr2) ? 0 : 1;
 }
 
+int hostname(unsigned int sockfd, char** ret)
+{
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+
+    if(getpeername(sockfd, (struct sockaddr*)&addr, &addr_len) < 0)
+    {
+        perror("Get peer name \n");
+        return 0;
+    }
+
+    *ret = (char*) malloc(INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &addr.sin_addr, *ret, INET_ADDRSTRLEN);
+
+    return 1;
+}
+
 void x_chdir(char* path)
 {
     if (chdir(path) != 0) 

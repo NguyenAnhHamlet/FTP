@@ -303,7 +303,6 @@ int main(int argc, char* argvs[])
                                  PORT_CONTROL, CONTROL, 
                                  cre_socket());
     
-    // public key authen 
     control_channel_init_socket_ftp(&c_channel, c_socket, 
                                     c_socket, CLIENT, NULL);
 
@@ -317,10 +316,19 @@ int main(int argc, char* argvs[])
     {
         return 0;
     }
+
+    // FUTO
+    if(channel_verify_finger_print(&c_channel, CLIENT, client_config.pkeyaccept) 
+       == FINGER_PRINT_SAVED_FAILED)
+    {
+        fatal("Fail to save the finger print\n");
+    }
     
     if( !public_key_authentication(&c_channel, 0, client_config.pkeyaccept) || 
         !public_key_authentication(&c_channel, 1, client_config.pkeyaccept))
+    {
         fatal("Public key authentication failed\n");
+    }
     
     // // perform password authentication
     // password_authen_client(&c_channel);

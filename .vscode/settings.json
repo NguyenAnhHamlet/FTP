@@ -115,7 +115,10 @@
     "history.h": "c",
     "err.h": "c",
     "ed25519.h": "c",
-    "core_names.h": "c"
+    "core_names.h": "c",
+    "ec.h": "c",
+    "param_build.h": "c",
+    "cstdlib": "c"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "C_Cpp.dimInactiveRegions": false

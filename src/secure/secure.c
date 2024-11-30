@@ -11,6 +11,7 @@
 #include "secure/kex.h"
 #include <openssl/param_build.h>
 #include "secure/ed25519.h"
+#include <regex.h>  
 
 #ifdef OPENSSL_3
 #include <openssl/evp.h>
@@ -62,12 +63,12 @@ int pkey_negotiate(control_channel* channel, unsigned int pkeyaccept_avail, endp
             control_channel_append_ftp_type(FTP_PKEY_NEGOTIATE, channel);
             if(recv_pkeyaccept & ED25519K)
             {
-                ret = 1;
+                ret = ED25519K;
                 control_channel_append_int(ED25519K, channel);
             }
             else if(recv_pkeyaccept & RSAK)
             {
-                ret = 1;
+                ret = RSAK;
                 control_channel_append_int(RSAK, channel);
             }
             else 
@@ -286,14 +287,7 @@ int channel_send_public_key_rsa(control_channel* channel, char path[])
     if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n) || 
         !EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e)) 
     {
-        unsigned long err_code = ERR_get_error();
-        if (err_code) 
-        {
-            char err_buf[120];
-            ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "EVP_PKEY_get_bn_param: %s\n",  err_buf);
-            fprintf(stderr, "Error: %s\n", err_buf);
-        }
+        ERR_print_errors_fp(stderr);
         return 0;
     }
 
@@ -535,8 +529,6 @@ int channel_send_public_key_ed25519(control_channel* channel, char path[])
         return 0;
     }
 
-    LOG(1, "RUNNING 10\n");
-
     size_t pubkey_len = 0;
     if (!EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, NULL, 0, &pubkey_len)) 
     {
@@ -709,4 +701,262 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     }
 
     return 1;
+}
+
+int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type)
+{
+    switch(type)
+    {
+        case CLIENT:
+        {
+            char* hash = NULL, *rhost = NULL, *pattern = NULL;
+            int hlen, rsa_namelen = 5;
+            FILE* fp = NULL;
+            char line[BUF_LEN];
+
+            // receive the hash value of server's public key
+            if(!control_channel_read_expect(channel, FTP_FINGER_PRINT))
+            {
+                LOG(CLIENT_LOG, "Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                return 0;
+            }
+
+            int data_len = control_channel_get_data_len_in(channel);
+            hash = (char*) malloc(data_len);
+            control_channel_get_str(channel, hash, &hlen); 
+
+           // check in know_hosts 
+            hostname(control_channel_get_sockfd_in(channel), &rhost);
+            int tt_len = data_len + strlen(rhost) +  rsa_namelen + 1;
+            pattern = (char*) malloc(tt_len);
+            memset(pattern, 0, tt_len);
+            strncat(pattern, rhost, strlen(rhost));
+            strncat(pattern, " RSA ",  rsa_namelen);
+            strncat(pattern, hash, hlen);
+            strncat(pattern, "\n", 1);
+
+            LOG(SERVER_LOG, "%s", pattern);
+
+            if(not_exist(KNOW_HOSTS)) 
+                create_file(KNOW_HOSTS);
+            read_file(KNOW_HOSTS, &fp);
+
+            while(fgets(line, sizeof(line), fp))
+            {
+                if (strstr(line, pattern) != NULL) 
+                {
+                    // hash value exists, no further operation
+                    control_channel_append_ftp_type(SUCCESS, channel);
+                    control_channel_send(channel); 
+                    
+                    free(hash);
+                    free(rhost);
+                    free(pattern);
+
+                    return FINGER_PRINT_EXITS;
+                }
+                line[0] = 0;
+            }
+
+            // ask user's permission to save into know_hosts
+            printf("RSA fingerprint is SHA256: %s\n", hash);
+            printf("Are you sure you want to continue connecting (yes/no/[fingerprint])? ");
+            fgets(line, 4, stdin);
+
+            if(!strncmp(line, "no", 4))
+            {
+                return FINGER_PRINT_SAVED_FAILED;
+            }
+
+            // save in know_hosts
+            append_file(KNOW_HOSTS, pattern, data_len + strlen(rhost) + rsa_namelen);
+
+            control_channel_append_ftp_type(SUCCESS, channel);
+            control_channel_send(channel);
+
+            free(hash);
+            free(rhost);
+            free(pattern);
+            
+            break;
+        }
+
+        case SERVER:
+        {
+            // hash public key
+#ifdef OPENSSL_1
+            RSA* pubkey;
+#elif OPENSSL_3
+            EVP_PKEY* pubkey;
+#endif
+            char* hash = NULL;
+            unsigned int hlen;
+            load_rsa_auth_key(&pubkey, public_RSAkey_file);
+            rsa_pubkey_hash(pubkey, &hash, &hlen);
+
+            // send hash value of public key
+            control_channel_append_ftp_type(FTP_FINGER_PRINT, channel);
+            control_channel_append_str(hash, channel, hlen);
+            control_channel_send_wait(channel);
+
+            if(!control_channel_read_expect(channel, SUCCESS))
+            {
+                LOG(SERVER_LOG, "Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                free(hash);
+#ifdef OPENSSL_1
+                RSA_free(pubkey);
+#elif OPENSSL_3
+                EVP_PKEY_free(pubkey);
+#endif
+                return 0;
+            }
+
+#ifdef OPENSSL_1
+            RSA_free(pubkey);
+#elif OPENSSL_3
+            EVP_PKEY_free(pubkey);
+#endif      
+            free(hash);      
+            
+            break;
+        }
+    }
+
+    return 1;
+}
+
+int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type type)
+{
+    switch(type)
+    {
+        case CLIENT:
+        {
+            char* hash = NULL, *rhost = NULL, *pattern = NULL;
+            int hlen, ed25519_namelen = 9;
+            FILE* fp = NULL;
+            char line[BUF_LEN];
+
+            // receive the hash value of server's public key
+            if(!control_channel_read_expect(channel, FTP_FINGER_PRINT))
+            {
+                LOG(CLIENT_LOG, "Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                return 0;
+            }
+
+            int data_len = control_channel_get_data_len_in(channel);
+            hash = (char*) malloc(data_len);
+            control_channel_get_str(channel, hash, &hlen); 
+
+            // check in know_hosts 
+            hostname(control_channel_get_sockfd_in(channel), &rhost);
+            int tt_len = data_len + strlen(rhost) +  ed25519_namelen + 1;
+            pattern = (char*) malloc(tt_len);
+            memset(pattern, 0, tt_len);
+            strncat(pattern, rhost, strlen(rhost));
+            strncat(pattern, " ED25519 ",  ed25519_namelen);
+            strncat(pattern, hash, hlen);
+            strncat(pattern, "\n", 1);
+
+            LOG(SERVER_LOG, "%s", pattern);
+
+            if(not_exist(KNOW_HOSTS)) 
+                create_file(KNOW_HOSTS);
+            read_file(KNOW_HOSTS, &fp);
+            while(fgets(line, sizeof(line), fp))
+            {
+                if (strstr(line, pattern) != NULL) 
+                {
+                    // hash value exists, no further operation 
+                    control_channel_append_ftp_type(SUCCESS, channel);
+                    control_channel_send(channel);
+
+                    free(hash);
+                    free(rhost);
+                    free(pattern);
+
+                    return FINGER_PRINT_EXITS;
+                }
+                line[0] = 0;
+            }
+
+            // ask user's permission to save into know_hosts
+            printf("ED25519 fingerprint is SHA256: %s\n", hash);
+            printf("Are you sure you want to continue connecting (yes/no/[fingerprint])? ");
+            fgets(line, 4, stdin);
+
+            if(!strncmp(line, "no", 4))
+            {
+                free(hash);
+                free(rhost);
+                free(pattern);
+                return FINGER_PRINT_SAVED_FAILED;
+            }
+
+            // save in know_hosts
+            append_file(KNOW_HOSTS, pattern, tt_len);
+
+            control_channel_append_ftp_type(SUCCESS, channel);
+            control_channel_send(channel);
+
+            free(hash);
+            free(rhost);
+            free(pattern);
+
+            break;
+        }
+
+        case SERVER:
+        {
+            EVP_PKEY* pubkey;
+            char* hash = NULL;
+            unsigned int hlen;
+
+            load_ed25519_auth_key(&pubkey, PUBLIC_ED25519);
+            ed25519_pubkey_hash(pubkey, &hash, &hlen);
+
+            LOG(SERVER_LOG, "HERE 1, %s\n", hash);
+
+            // send hash value of public key
+            control_channel_append_ftp_type(FTP_FINGER_PRINT, channel);
+            control_channel_append_str(hash, channel, hlen);
+            control_channel_send_wait(channel);
+
+            LOG(SERVER_LOG, "HERE 3 %d\n", type);
+
+            if(!control_channel_read_expect(channel, SUCCESS))
+            {
+                LOG(SERVER_LOG, "Expected %d but received %d\n",
+                    SUCCESS, control_channel_get_ftp_type_in(channel));
+                free(hash);
+                return 0;
+            }
+
+            EVP_PKEY_free(pubkey);
+            free(hash); 
+
+            break;
+        }
+
+        default:
+            LOG(COMMON_LOG, "Unknown type\n");
+            return 0;
+    }
+
+    return 1;
+}
+
+int channel_verify_finger_print(control_channel* channel, endpoint_type type, 
+                                unsigned int pkeyaccept)
+{
+    switch(pkeyaccept)
+    {
+        case ED25519K:
+            LOG(SERVER_LOG, "HERE 0 type: %d\n", type);
+            return channel_verify_finger_print_ed25519(channel, type);
+        case RSAK: 
+            return channel_verify_finger_print_rsa(channel, type);
+    }
 }

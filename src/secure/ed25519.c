@@ -1,6 +1,8 @@
 #include "ed25519.h"
 #include "common/common.h"
 #include "log/ftplog.h"
+#include "hash.h" 
+#include <openssl/core_names.h>
 
 extern void openssl_get_error();
 
@@ -222,4 +224,37 @@ int load_private_ed25519_key(EVP_PKEY **pkey, char path[])
     }
 
     fclose(fp);
+}
+
+void ed25519_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen)
+{
+    size_t pubkeystr_len = 0;
+    if (!EVP_PKEY_get_octet_string_param(pub_key, OSSL_PKEY_PARAM_PUB_KEY, NULL, 0, &pubkeystr_len)) 
+    {
+        ERR_print_errors_fp(stderr);
+        return ;                                                                                                                                   
+    }
+
+    unsigned char *pubkeystr = OPENSSL_malloc(pubkeystr_len);
+
+    if (!EVP_PKEY_get_octet_string_param(pub_key, OSSL_PKEY_PARAM_PUB_KEY, pubkeystr, pubkeystr_len, &pubkeystr_len)) 
+    {
+        ERR_print_errors_fp(stderr);
+        OPENSSL_free(pubkeystr);
+        return;
+    }
+
+    if (!pubkeystr) 
+    {
+        ERR_print_errors_fp(stderr);
+        return;
+    }
+
+    LOG(SERVER_LOG, "HERE 0\n");
+
+    sha256(pubkeystr, pubkeystr_len, ret, retlen);
+
+    LOG(SERVER_LOG, "HERE 2\n");
+
+    OPENSSL_free(pubkeystr);
 }

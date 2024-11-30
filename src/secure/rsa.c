@@ -6,6 +6,8 @@
 #include <node/openssl/rsa.h>
 #include <openssl/err.h>
 #include <log/ftplog.h>
+#include "hash.h"
+#include <openssl/core_names.h>
 
 #ifdef OPENSSL_3
 void generate_rsa_key_pair(EVP_PKEY **pkey)
@@ -380,6 +382,46 @@ int load_private_rsa_key(EVP_PKEY **pkey, char path[])
     fclose(fp);
 }
 
+void rsa_pubkey_hash(EVP_PKEY* pub_key, char** ret,  int* retlen)
+{
+    unsigned char *nbuf, *ebuf, *bbuf;
+    unsigned int ttlen, nlen, elen;
+    BIGNUM* e = BN_new();
+    BIGNUM* n = BN_new();
+
+    if (!EVP_PKEY_get_bn_param(pub_key, OSSL_PKEY_PARAM_RSA_N, &n) || 
+        !EVP_PKEY_get_bn_param(pub_key, OSSL_PKEY_PARAM_RSA_E, &e)) 
+    {
+        ERR_print_errors_fp(stderr);
+        BN_free(e);
+        BN_free(n);
+        return;
+    }
+
+    nlen  = BN_num_bits(n);
+    elen = BN_num_bits(e);
+    ttlen += nlen;
+    ttlen += elen;
+
+    nbuf = (char*) malloc(nlen);
+    bbuf = (char*) malloc(ttlen);
+    ebuf = (char*) malloc(elen);
+
+    BN_bn2bin(n, nbuf);
+    BN_bn2bin(e, ebuf);
+
+    strncpy(bbuf, nbuf, nlen);
+    strncpy(bbuf, ebuf, elen);
+
+    sha256(bbuf, ttlen, ret, retlen);
+
+    free(nbuf);
+    free(ebuf);
+    free(bbuf); 
+    BN_free(n);
+    BN_free(e);
+}
+
 #elif OPENSSL_1
 
 void generate_RSA_KEYPAIR(RSA *key_pair)
@@ -554,4 +596,34 @@ int load_private_rsa_key(RSA **private_key, char path[])
     fclose(fp);
     return Success;
 }
+
+void rsa_pubkey_hash(RSA* pubkey, char** ret, int* retlen)
+{
+    BIGNUM *e, *n;
+    unsigned char *nbuf, *ebuf, *bbuf;
+    unsigned int ttlen, nlen, elen;
+
+    RSA_get0_key(pub_key, &n, &e, NULL );
+    nlen  = BN_num_bits(n);
+    elen = BN_num_bits(e);
+    ttlen += nlen;
+    ttlen += elen;
+
+    nbuf = (char*) malloc(nlen);
+    bbuf = (char*) malloc(ttlen);
+    ebuf = (char*) malloc(elen);
+
+    BN_bn2bin(n, nbuf);
+    BN_bn2bin(e, ebuf);
+
+    strncpy(bbuf, nbuf, nlen);
+    strncpy(bbuf, ebuf, elen);
+
+    sha256(bbuf, ttlen, ret, retlen);
+
+    free(nbuf);
+    free(ebuf);
+    free(bbuf);  
+}   
+
 #endif
