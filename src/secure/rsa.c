@@ -382,7 +382,7 @@ int load_private_rsa_key(EVP_PKEY **pkey, char path[])
     fclose(fp);
 }
 
-void rsa_pubkey_hash(EVP_PKEY* pub_key, char* ret,  int* retlen)
+void rsa_pubkey_hash(EVP_PKEY* pub_key, char** ret,  int* retlen)
 {
     unsigned char *nbuf, *ebuf, *bbuf;
     unsigned int ttlen, nlen, elen;
@@ -597,7 +597,7 @@ int load_private_rsa_key(RSA **private_key, char path[])
     return Success;
 }
 
-void rsa_pubkey_hash(RSA* pubkey, char* ret, int* retlen)
+void rsa_pubkey_hash(RSA* pubkey, char** ret, int* retlen)
 {
     BIGNUM *e, *n;
     unsigned char *nbuf, *ebuf, *bbuf;

@@ -22,7 +22,7 @@ int rsa_pub_encrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn);
 int rsa_pub_decrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn);
 int load_rsa_auth_key(EVP_PKEY **pkey, char path[]);
 int load_private_rsa_key(EVP_PKEY **pkey, char path[]);
-void rsa_pubkey_hash(EVP_PKEY* pub_key, char* ret, int* retlen);
+void rsa_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen);
 
 #elif OPENSSL_1
 void generate_RSA_KEYPAIR(RSA *key_pair);
@@ -32,7 +32,7 @@ int rsa_pub_encrypt(RSA * pub, BIGNUM** in, BIGNUM** out);
 int rsa_pub_decrypt(RSA * pub, BIGNUM** in, BIGNUM** out);
 int load_rsa_auth_key(RSA **pub_key, char path[]);
 int load_private_rsa_key(RSA **private_key, char path[]);
-void rsa_pubkey_hash(RSA* pubkey, char* ret, int* retlen);
+void rsa_pubkey_hash(RSA* pubkey, char** ret, int* retlen);
 #endif
 
 

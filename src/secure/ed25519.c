@@ -226,7 +226,7 @@ int load_private_ed25519_key(EVP_PKEY **pkey, char path[])
     fclose(fp);
 }
 
-void ed25519_pubkey_hash(EVP_PKEY* pub_key, char* ret, int* retlen)
+void ed25519_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen)
 {
     size_t pubkeystr_len = 0;
     if (!EVP_PKEY_get_octet_string_param(pub_key, OSSL_PKEY_PARAM_PUB_KEY, NULL, 0, &pubkeystr_len)) 

@@ -16,7 +16,7 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn);
 int ed25519_pub_verify(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn);
 int load_ed25519_auth_key(EVP_PKEY **pkey, char path[]);
 int load_private_ed25519_key(EVP_PKEY **pkey, char path[]);
-void ed25519_pubkey_hash(EVP_PKEY* pub_key, char* ret, int* retlen);
+void ed25519_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen);
 
 #define __ED25519__
 #endif
