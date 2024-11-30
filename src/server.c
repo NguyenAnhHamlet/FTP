@@ -79,7 +79,6 @@ int read_config(char* conf)
     
     char line[1024];
     int linenum = 0;
-
     while(fgets(line, 1024, fp))
     {
         linenum++;  
@@ -95,16 +94,15 @@ int read_config(char* conf)
             {
                 int ret = 0;
                 // cp = strtok(NULL, WHITESPACE);
-                while( cp = strtok(NULL, WHITESPACE))
+                while(cp = strtok(NULL, WHITESPACE))
                 {
                     opcode = parse_token(cp, conf, linenum);
                     ret |= opcode;
-                    cp = strtok(NULL, WHITESPACE); 
                 }
                 server_config.pkeyaccept = ret;
                 printf("ret : %d\n", ret);
-                break;
 
+                break;
             }
         }
     }
@@ -291,6 +289,8 @@ int main()
     }
 
     // FUTO
+    LOG(SERVER_LOG, "HERE 0 p : %d\n",server_config.pkeyaccept );
+
     if(channel_verify_finger_print(&c_channel, SERVER, server_config.pkeyaccept) 
        == FINGER_PRINT_SAVED_FAILED)
     {

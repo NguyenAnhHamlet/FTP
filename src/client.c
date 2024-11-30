@@ -303,7 +303,6 @@ int main(int argc, char* argvs[])
                                  PORT_CONTROL, CONTROL, 
                                  cre_socket());
     
-    // public key authen 
     control_channel_init_socket_ftp(&c_channel, c_socket, 
                                     c_socket, CLIENT, NULL);
 
@@ -319,6 +318,7 @@ int main(int argc, char* argvs[])
     }
 
     // FUTO
+    LOG(SERVER_LOG, "CLIENT HERE 0 p : %d\n",client_config.pkeyaccept );
     if(channel_verify_finger_print(&c_channel, CLIENT, client_config.pkeyaccept) 
        == FINGER_PRINT_SAVED_FAILED)
     {

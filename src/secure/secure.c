@@ -863,11 +863,18 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
 
         case SERVER:
         {
+            LOG(SERVER_LOG, "HERE 0 %d\n", type);
+
             EVP_PKEY* pubkey;
             char* hash = NULL;
             unsigned int hlen;
+
+            LOG(SERVER_LOG, "HERE -1\n");
+
             load_ed25519_auth_key(&pubkey, PUBLIC_ED25519);
             ed25519_pubkey_hash(pubkey, hash, &hlen);
+
+            LOG(SERVER_LOG, "HERE 1\n");
 
             // send hash value of public key
             control_channel_append_ftp_type(FTP_FINGER_PRINT, channel);
@@ -886,6 +893,10 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
 
             break;
         }
+
+        default:
+            LOG(COMMON_LOG, "Unknown type\n");
+            return 0;
     }
 
     return 1;
@@ -897,6 +908,7 @@ int channel_verify_finger_print(control_channel* channel, endpoint_type type,
     switch(pkeyaccept)
     {
         case ED25519K:
+            LOG(SERVER_LOG, "HERE 0 type: %d\n", type);
             return channel_verify_finger_print_ed25519(channel, type);
         case RSAK: 
             return channel_verify_finger_print_rsa(channel, type);

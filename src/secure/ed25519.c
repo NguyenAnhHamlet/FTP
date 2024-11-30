@@ -250,7 +250,11 @@ void ed25519_pubkey_hash(EVP_PKEY* pub_key, char* ret, int* retlen)
         return;
     }
 
+    LOG(SERVER_LOG, "HERE 0\n");
+
     sha256(pubkeystr, pubkeystr_len, ret, retlen);
+
+    LOG(SERVER_LOG, "HERE 2\n");
 
     OPENSSL_free(pubkeystr);
 }
