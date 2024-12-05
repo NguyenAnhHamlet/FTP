@@ -6,7 +6,7 @@
 #AddressFamily any
 
 #specify which keytype is available 
-PubkeyAcceptedKeyTypes rsa ed25519
+PubkeyAcceptedKeyTypes rsa
 
 # TODO 
 # Implement this
