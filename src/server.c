@@ -100,7 +100,6 @@ int read_config(char* conf)
                     ret |= opcode;
                 }
                 server_config.pkeyaccept = ret;
-                printf("ret : %d\n", ret);
 
                 break;
             }
@@ -219,8 +218,6 @@ int main()
 
     while(isRunning)
     {
-        printf("SOCKET: %d\n", socket_server->sockfd);
-
         // add server socket
         FD_ZERO(&readfds);
         FD_SET(socket_server->sockfd, &readfds);
@@ -230,14 +227,9 @@ int main()
         if ((activity < 0) && (errno != EINTR)) 
             perror("select error");
 
-        printf("New connection detected\n");
-
         if (FD_ISSET(socket_server->sockfd, &readfds))
         {
             newsock = accept_new_connection_ftp(socket_server);
-
-            printf("NEW_SOCK: %d\n", newsock );
-            printf("SOCKET_ADDRESS_LEN: %d\n", socket_server->endpoint_addr_size);
 
             if(newsock < 0 )
             {
@@ -345,14 +337,10 @@ int main()
 
         request_int = control_channel_get_ftp_type_in(&c_channel);
 
-        printf("CODE: %d\n", request_int);
-
         operation_sucess = run_command(&channel_ctx, request_int);
 
-        printf("DONE\n");
-
         if(!operation_sucess)
-            printf("Operation failed\n");
+            LOG(SERVER_LOG, "Operation failed\n");
     }
     
     return 0;
