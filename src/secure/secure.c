@@ -766,11 +766,14 @@ int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type
 
             if(!strncmp(line, "no", 4))
             {
+                free(hash);
+                free(rhost);
+                free(pattern);
                 return FINGER_PRINT_SAVED_FAILED;
             }
 
             // save in know_hosts
-            append_file(KNOW_HOSTS, pattern, data_len + strlen(rhost) + rsa_namelen);
+            append_file(KNOW_HOSTS, pattern, tt_len);
 
             control_channel_append_ftp_type(SUCCESS, channel);
             control_channel_send(channel);
@@ -917,14 +920,10 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
             load_ed25519_auth_key(&pubkey, PUBLIC_ED25519);
             ed25519_pubkey_hash(pubkey, &hash, &hlen);
 
-            LOG(SERVER_LOG, "HERE 1, %s\n", hash);
-
             // send hash value of public key
             control_channel_append_ftp_type(FTP_FINGER_PRINT, channel);
             control_channel_append_str(hash, channel, hlen);
             control_channel_send_wait(channel);
-
-            LOG(SERVER_LOG, "HERE 3 %d\n", type);
 
             if(!control_channel_read_expect(channel, SUCCESS))
             {
