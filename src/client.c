@@ -26,8 +26,6 @@
 
 extern command commands[];
 channel_context channel_ctx;
-char name[BUF_LEN];
-char pass[BUF_LEN];
 bool ftp_running;
 control_channel c_channel;
 data_channel d_channel;
@@ -179,9 +177,13 @@ void callBackTimer(timer* timer)
     fatal("Time out\n");
 }
 
-int password_authen_client(control_channel* c_channel)
+int password_authen_client(control_channel* c_channel, cipher_context *ctx)
 {
     if(!c_channel) return -1;
+
+    char pass[BUF_LEN], *pass_enc = NULL;
+    char name[BUF_LEN], *name_enc = NULL;
+    int name_enc_len, pass_enc_len;
 
     memset(name, '\0', BUF_LEN);
     memset(pass, '\0', BUF_LEN);
@@ -202,22 +204,37 @@ int password_authen_client(control_channel* c_channel)
     enable_echo();
 
     // remove newline char
-    int len;
-    len = strlen(pass); pass[len-1] = '\0';
+    remove_endline(name);
+    remove_endline(pass); 
+
+    // init 
+    name_enc = (char*) malloc(strlen(name) +  EVP_MAX_BLOCK_LENGTH);
+    pass_enc = (char*) malloc(strlen(pass) +  EVP_MAX_BLOCK_LENGTH);
+
+    // encrypt the name and the password 
+    aes_cypher_encrypt(ctx, name, strlen(name), name_enc, &name_enc_len);
+    aes_cypher_encrypt(ctx, pass, strlen(pass), pass_enc, &pass_enc_len);    
 
     control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
-    control_channel_append_str(name, c_channel, strlen(name));
-    control_channel_append_str(pass, c_channel, strlen(pass));
+    control_channel_append_str(name_enc, c_channel, name_enc_len);
+    control_channel_send_wait(c_channel);
 
+    control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
+    control_channel_append_str(pass_enc, c_channel, pass_enc_len);
     control_channel_send_wait(c_channel);
 
     if(control_channel_read_expect(c_channel, FTP_ACK) < 1)
     {
       fatal("Pass authenticate failed\n");
+      free(name_enc);
+      free(pass_enc);
       return 0; 
     }
 
     printf("Pass authenticate succeed\n");
+    free(name_enc);
+    free(pass_enc);
+
     return 1;
 
 }
@@ -331,19 +348,20 @@ int main(int argc, char* argvs[])
     {
         fatal("Public key authentication failed\n");
     }
-    
-    // // perform password authentication
-    // password_authen_client(&c_channel);
 
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx))
         fatal("Failed to create a shared secret key\n");
 
+
     // password authentication successed, init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
                          c_socket, d_socket, CLIENT, CLIENT_LOG);
+    
+    // perform password authentication
+    password_authen_client(&c_channel, ctx);
 
-    // Cancel alarm as all initial steps have been done without any issue
+    // Cancel alarm as all initial steps have been completed without any issue
     alarm(0);
 
     ftp_running = true;

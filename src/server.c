@@ -100,7 +100,6 @@ int read_config(char* conf)
                     ret |= opcode;
                 }
                 server_config.pkeyaccept = ret;
-                printf("ret : %d\n", ret);
 
                 break;
             }
@@ -123,29 +122,37 @@ void time_out_alarm(int sig)
     exit(1);
 }
 
-int pass_authen_server(control_channel* c_channel)
+int pass_authen_server(control_channel* c_channel, cipher_context *ctx)
 {
     struct passwd* pw;
-    char data[BUF_LEN];
     char user_name[BUF_LEN];
     char user_pass[BUF_LEN];
+    char *user_pass_dec, *name_dec;
     int len;
 
     if(control_channel_read_expect(c_channel, FTP_PASS_AUTHEN) <= 0)
     {
-        LOG(SERVER_LOG, "Failed receive infos name & pass\n");
+        LOG(SERVER_LOG, "Failed receive infos name\n");
         return 0;
     }
 
     len = control_channel_get_data_len_in(c_channel);
+    control_channel_get_str(c_channel, user_name, &len);
+    name_dec = (char*) malloc(len);
+    aes_cypher_decrypt(ctx, user_name, len, name_dec, &len);
 
-    control_channel_get_str(c_channel, data, &len);
+    if(control_channel_read_expect(c_channel, FTP_PASS_AUTHEN) <= 0)
+    {
+        LOG(SERVER_LOG, "Failed receive infos pass\n");
+        return 0;
+    }
 
-    unsigned int index = find_index(data, len, '\n');
-    strncpy(user_name, data, index );
-    strcpy(user_pass, data + index + 1);
+    len = control_channel_get_data_len_in(c_channel);
+    control_channel_get_str(c_channel, user_pass, &len);
+    user_pass_dec = (char*) malloc(len);
+    aes_cypher_decrypt(ctx, user_pass, len, user_pass_dec, &len);
 
-    pw = getpwnam(user_name);
+    pw = getpwnam(name_dec);
 
     if (!pw )
     {
@@ -155,7 +162,7 @@ int pass_authen_server(control_channel* c_channel)
 
     start_pam(pw);
 
-    if( auth_pam_password(pw, user_pass))
+    if( auth_pam_password(pw, user_pass_dec))
     {
         control_channel_append_ftp_type(FTP_ACK, c_channel);
     }
@@ -211,8 +218,6 @@ int main()
 
     while(isRunning)
     {
-        printf("SOCKET: %d\n", socket_server->sockfd);
-
         // add server socket
         FD_ZERO(&readfds);
         FD_SET(socket_server->sockfd, &readfds);
@@ -222,14 +227,9 @@ int main()
         if ((activity < 0) && (errno != EINTR)) 
             perror("select error");
 
-        printf("New connection detected\n");
-
         if (FD_ISSET(socket_server->sockfd, &readfds))
         {
             newsock = accept_new_connection_ftp(socket_server);
-
-            printf("NEW_SOCK: %d\n", newsock );
-            printf("SOCKET_ADDRESS_LEN: %d\n", socket_server->endpoint_addr_size);
 
             if(newsock < 0 )
             {
@@ -305,9 +305,6 @@ int main()
         exit(1);
     }
 
-    // if(!pass_authen_server(&c_channel))
-    //     exit(1);
-
     // cipher context init for dec/enc of data channel
     aes_cipher_init(ctx);
 
@@ -319,6 +316,9 @@ int main()
     // init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
                          c_socket, d_socket, SERVER, SERVER_LOG);
+
+    if(!pass_authen_server(&c_channel, ctx))
+        exit(1);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);
@@ -337,14 +337,10 @@ int main()
 
         request_int = control_channel_get_ftp_type_in(&c_channel);
 
-        printf("CODE: %d\n", request_int);
-
         operation_sucess = run_command(&channel_ctx, request_int);
 
-        printf("DONE\n");
-
         if(!operation_sucess)
-            printf("Operation failed\n");
+            LOG(SERVER_LOG, "Operation failed\n");
     }
     
     return 0;
