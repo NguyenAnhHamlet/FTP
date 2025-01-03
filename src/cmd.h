@@ -55,6 +55,7 @@ typedef struct
     char command_str[32];
     unsigned int command_code;
     command_func_ptr func ;
+    char helper[512];
 } command;
 
 #endif

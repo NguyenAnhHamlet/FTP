@@ -105,6 +105,8 @@ int run_command(channel_context* channel_ctx, char* command_str)
     {
         if(!strcmp(commands[i].command_str, command_str))
         {
+            printf(commands[i].helper);
+            printf("\n");
             control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
             return commands[i].func(channel_ctx);
@@ -366,6 +368,16 @@ int main(int argc, char* argvs[])
 
             operation_sucess = run_command(&channel_ctx, cmd);
 
+            if(!operation_sucess)
+            {
+                printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
+                continue;
+            }
+            else 
+            {
+                printf("Operation Succeed \n");
+            }
+
             if(channel_ctx.ret)
             {
                 printf(GREEN);
@@ -383,8 +395,6 @@ int main(int argc, char* argvs[])
                 channel_ctx.ret_int = 0;
             }
 
-            if(!operation_sucess)
-                printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
         }        
 
         free (line);
