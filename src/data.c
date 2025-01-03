@@ -117,6 +117,8 @@ int get(channel_context* channel_ctx)
     {
     case CLIENT:
     {
+        
+
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
