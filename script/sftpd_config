@@ -14,4 +14,4 @@ PubkeyAcceptedKeyTypes rsa ed25519
 #PermitRootLogin yes
 #MaxAuthTries 3
 #PasswordAuthentication yes
-
+IdleTimeOut 30
