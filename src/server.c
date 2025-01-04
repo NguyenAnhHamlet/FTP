@@ -45,7 +45,8 @@ static struct
 typedef enum 
 {
     PubkeyAcceptedKeyTypes,
-    IdleTimeOut
+    IdleTimeOut,
+    MaxAuthTries
 } server_opcode;
 
 static struct {
@@ -56,6 +57,7 @@ static struct {
     {"rsa", RSAK},
     {"ed25519", ED25519K},
     {"IdleTimeOut", IdleTimeOut},
+    {"MaxAuthTries", MaxAuthTries},
     {NULL, 0}
 };
 
@@ -129,6 +131,14 @@ int read_config(char* conf)
                 printf("%d\n", server_config.idle_tmout);
                 break;
             }
+            case MaxAuthTries:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                server_config.maxauth = str_to_int(cp, strlen(cp));
+                printf("%d\n", server_config.maxauth);
+                break;
+            }
         }
     }
 
@@ -157,12 +167,14 @@ void idle_timeout_hdl(int sig)
 
 int pass_authen_server(control_channel* c_channel, cipher_context *ctx)
 {
-    struct passwd* pw;
+    struct passwd* pw = NULL;
     char user_name[BUF_LEN];
     char user_pass[BUF_LEN];
     char *user_pass_dec, *name_dec;
     int len;
 
+restart:
+    server_config.maxauth--;
     if(control_channel_read_expect(c_channel, FTP_PASS_AUTHEN) <= 0)
     {
         LOG(SERVER_LOG, "Failed receive infos name\n");
@@ -189,22 +201,46 @@ int pass_authen_server(control_channel* c_channel, cipher_context *ctx)
 
     if (!pw )
     {
-      LOG(SERVER_LOG, "Athentication failed for user %s", pw->pw_name);
-      return 0;
+        LOG(SERVER_LOG, "Athentication failed for user %s", name_dec);
+
+        if(server_config.maxauth > 0)
+        {
+            control_channel_append_ftp_type(FTP_AUTHEN_RETRY, c_channel);
+            control_channel_send_wait(c_channel);
+            printf("Fail \n");
+            goto restart;
+        }
+        else
+        {
+            control_channel_append_ftp_type(FTP_UNACK, c_channel);
+            control_channel_send_wait(c_channel);
+            return 0;
+        }        
     }
 
     start_pam(pw);
 
+    printf("HERE3\n");
+
     if( auth_pam_password(pw, user_pass_dec))
     {
         control_channel_append_ftp_type(FTP_ACK, c_channel);
+        control_channel_send_wait(c_channel);
     }
-    else 
+    else if(server_config.maxauth)
+    {
+        control_channel_append_ftp_type(FTP_AUTHEN_RETRY, c_channel);
+        control_channel_send_wait(c_channel);
+        printf("Fail \n");
+        server_config.maxauth--;
+        goto restart;
+    }
+    else
     {
         control_channel_append_ftp_type(FTP_UNACK, c_channel);
+        control_channel_send_wait(c_channel);
+        return 0;
     }
-
-    control_channel_send_wait(c_channel);
 
     return 1;
 }
@@ -345,8 +381,8 @@ int main()
                          ftp_server_session.c_socket, ftp_server_session.d_socket, 
                          SERVER, SERVER_LOG);
 
-    // if(!pass_authen_server(&c_channel, ctx))
-    //     exit(1);
+    if(!pass_authen_server(&ftp_server_session.c_channel, ftp_server_session.ctx))
+        exit(1);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);

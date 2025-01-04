@@ -185,6 +185,7 @@ int password_authen_client(control_channel* c_channel, cipher_context *ctx)
     char name[BUF_LEN], *name_enc = NULL;
     int name_enc_len, pass_enc_len;
 
+restart: 
     memset(name, '\0', BUF_LEN);
     memset(pass, '\0', BUF_LEN);
 
@@ -223,19 +224,27 @@ int password_authen_client(control_channel* c_channel, cipher_context *ctx)
     control_channel_append_str(pass_enc, c_channel, pass_enc_len);
     control_channel_send_wait(c_channel);
 
-    if(control_channel_read_expect(c_channel, FTP_ACK) < 1)
+    printf("HERE1\n");
+
+    if(control_channel_read_expect(c_channel, FTP_ACK))
     {
-      fatal("Pass authenticate failed\n");
-      free(name_enc);
-      free(pass_enc);
-      return 0; 
+        printf("Pass authenticate succeed\n");
+        free(name_enc);
+        free(pass_enc); 
+        return 1;
     }
 
-    printf("Pass authenticate succeed\n");
-    free(name_enc);
-    free(pass_enc);
+    if(control_channel_get_ftp_type_in(c_channel) == FTP_UNACK)
+    {
+        fatal("Pass authenticate failed\n");
+        free(name_enc);
+        free(pass_enc);
+        return 0;
+    }
 
-    return 1;
+    printf("Pass authentication failed, retry: \n");
+    
+goto restart;
 
 }
 
@@ -360,7 +369,7 @@ int main(int argc, char* argvs[])
                          c_socket, d_socket, CLIENT, CLIENT_LOG);
     
     // perform password authentication
-    // password_authen_client(&c_channel, ctx);
+    password_authen_client(&c_channel, ctx);
 
     // Cancel alarm as all initial steps have been completed without any issue
     alarm(0);

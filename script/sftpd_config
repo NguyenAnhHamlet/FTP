@@ -15,3 +15,4 @@ PubkeyAcceptedKeyTypes rsa ed25519
 #MaxAuthTries 3
 #PasswordAuthentication yes
 IdleTimeOut 30
+MaxAuthTries 3
