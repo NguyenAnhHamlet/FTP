@@ -29,7 +29,7 @@ channel_context channel_ctx;
 bool ftp_running;
 control_channel c_channel;
 data_channel d_channel;
-socket_ftp* c_socket;
+socket_ftp*  c_socket;
 socket_ftp* d_socket;
 char ipaddr[IPADDR_SIZE];
 char option[OPTION_SIZE];
@@ -314,6 +314,7 @@ int main(int argc, char* argvs[])
     signal(SIGINT, signal_handler);
     signal(SIGQUIT, signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGPIPE, signal_handler);
 
     handle_init_command(argc, argvs);
 
@@ -328,8 +329,8 @@ int main(int argc, char* argvs[])
     control_channel_set_time_out(&c_channel, DEFAULT_CHANNEL_TMOUT);
 
     // set alarm for 30 
-    // signal(SIGALRM, time_out_alarm);
-	//    alarm(30);
+    signal(SIGALRM, time_out_alarm);
+	alarm(30);
 
     if(!(client_config.pkeyaccept = pkey_negotiate(&c_channel, client_config.pkeyaccept, CLIENT)))
     {
@@ -359,7 +360,7 @@ int main(int argc, char* argvs[])
                          c_socket, d_socket, CLIENT, CLIENT_LOG);
     
     // perform password authentication
-    password_authen_client(&c_channel, ctx);
+    // password_authen_client(&c_channel, ctx);
 
     // Cancel alarm as all initial steps have been completed without any issue
     alarm(0);

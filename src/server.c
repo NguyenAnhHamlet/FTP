@@ -38,12 +38,14 @@ static struct
     unsigned int dataport;
     unsigned int controlport;
     unsigned int addrfamily;
+    unsigned int idle_tmout;
 } server_config;
 
 // Pattern in config file
 typedef enum 
 {
-    PubkeyAcceptedKeyTypes
+    PubkeyAcceptedKeyTypes,
+    IdleTimeOut
 } server_opcode;
 
 static struct {
@@ -53,8 +55,24 @@ static struct {
     {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
     {"rsa", RSAK},
     {"ed25519", ED25519K},
+    {"IdleTimeOut", IdleTimeOut},
     {NULL, 0}
 };
+
+static struct {
+    control_channel c_channel; 
+    data_channel d_channel;
+    cipher_context* ctx;
+    int time_out;
+    int conn_remain;
+    unsigned request_int;
+    bool operation_sucess;
+    socket_ftp* d_socket;
+    socket_ftp* c_socket;
+    channel_context channel_ctx;
+    fd_set read_set;
+    unsigned int clientfd;
+} ftp_server_session;
 
 int parse_token(const char *cp, const char *filename,
 	    int linenum)
@@ -103,6 +121,14 @@ int read_config(char* conf)
 
                 break;
             }
+            case IdleTimeOut:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                server_config.idle_tmout = str_to_int(cp, strlen(cp));
+                printf("%d\n", server_config.idle_tmout);
+                break;
+            }
         }
     }
 
@@ -119,6 +145,13 @@ void signal_handler(int sig)
 void time_out_alarm(int sig)
 {
     LOG(SERVER_LOG, "Time out\n");
+    exit(1);
+}
+
+void idle_timeout_hdl(int sig)
+{
+    LOG(SERVER_LOG, "Idle time out\n");
+    shutdown(ftp_server_session.clientfd, SHUT_RDWR);
     exit(1);
 }
 
@@ -261,29 +294,21 @@ int main()
     }
 
     // Client process handle
-    control_channel c_channel; 
-    data_channel d_channel;
-    cipher_context* ctx = NULL;
-    int time_out = 30 * 60;
-    int conn_remain = 1;
-    unsigned request_int;
-    bool operation_sucess = 1;
-    socket_ftp* d_socket;
-    socket_ftp* c_socket = socket_ftp_raw_cre();
-    channel_context channel_ctx;
-    fd_set read_set;
-
     // init
-    ctx = (cipher_context*) malloc(sizeof(cipher_context));
+    ftp_server_session.ctx = (cipher_context*) malloc(sizeof(cipher_context));
+    ftp_server_session.c_socket = socket_ftp_raw_cre();
+    ftp_server_session.time_out = 30 * 60;
+    ftp_server_session.conn_remain = 1;
+    ftp_server_session.operation_sucess = 1;
 
-    ftp_socket_cp(c_socket, socket_server);
-
-    control_channel_init(&c_channel, clientfd, clientfd, SERVER, NULL);
+    ftp_socket_cp(ftp_server_session.c_socket, socket_server);
+    control_channel_init(&ftp_server_session.c_channel, clientfd, clientfd, SERVER, NULL);
+    ftp_server_session.clientfd = clientfd;
     
     signal(SIGALRM, time_out_alarm);
 	alarm(30);
 
-    if(!(server_config.pkeyaccept = pkey_negotiate(&c_channel, server_config.pkeyaccept, SERVER)))
+    if(!(server_config.pkeyaccept = pkey_negotiate(&ftp_server_session.c_channel, server_config.pkeyaccept, SERVER)))
     {
         return 0;
     }
@@ -291,56 +316,66 @@ int main()
     // FUTO
     LOG(SERVER_LOG, "HERE 0 p : %d\n",server_config.pkeyaccept );
 
-    if(channel_verify_finger_print(&c_channel, SERVER, server_config.pkeyaccept) 
+    if(channel_verify_finger_print(&ftp_server_session.c_channel, SERVER, server_config.pkeyaccept) 
        == FINGER_PRINT_SAVED_FAILED)
     {
         LOG(SERVER_LOG, "Client did not accept finger print\n");
         exit(1);
     }
 
-    if(!public_key_authentication(&c_channel, 1, server_config.pkeyaccept)|| 
-       !public_key_authentication(&c_channel, 0, server_config.pkeyaccept))
+    if(!public_key_authentication(&ftp_server_session.c_channel, 1, server_config.pkeyaccept)|| 
+       !public_key_authentication(&ftp_server_session.c_channel, 0, server_config.pkeyaccept))
     {
-        LOG(SERVER_LOG, "Pub authen failed with socket %d\n", c_channel.data_in->in_port);
+        LOG(SERVER_LOG, "Pub authen failed with socket %d\n", 
+            ftp_server_session.c_channel.data_in->in_port);
         exit(1);
     }
 
     // cipher context init for dec/enc of data channel
-    aes_cipher_init(ctx);
+    aes_cipher_init(ftp_server_session.ctx);
 
-        // Trying to create a shared secret key
-    if(!channel_generate_shared_key(&c_channel, ctx))
+    // Trying to create a shared secret key
+    if(!channel_generate_shared_key(&ftp_server_session.c_channel, ftp_server_session.ctx))
         fatal("Failed to create a shared secret key\n");
 
 
     // init channel_ctx
-    channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
-                         c_socket, d_socket, SERVER, SERVER_LOG);
+    channel_context_init(&ftp_server_session.channel_ctx, ftp_server_session.ctx, 
+                         &ftp_server_session.d_channel, &ftp_server_session.c_channel, 
+                         ftp_server_session.c_socket, ftp_server_session.d_socket, 
+                         SERVER, SERVER_LOG);
 
-    if(!pass_authen_server(&c_channel, ctx))
-        exit(1);
+    // if(!pass_authen_server(&c_channel, ctx))
+    //     exit(1);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);
 
-    while(conn_remain)
-    {
-        FD_ZERO(&read_set);
-        FD_SET(c_channel.data_in->in_port, &read_set);
-        select(c_channel.data_in->in_port + 1, &read_set, NULL, NULL, NULL);
+    signal(SIGALRM, idle_timeout_hdl);
+    alarm(server_config.idle_tmout);
 
-        if(control_channel_read_expect(&c_channel, TERMINATE))
+    while(ftp_server_session.conn_remain)
+    {
+        FD_ZERO(&ftp_server_session.read_set);
+        FD_SET(ftp_server_session.c_channel.data_in->in_port, 
+               &ftp_server_session.read_set);
+        select(ftp_server_session.c_channel.data_in->in_port + 1, 
+               &ftp_server_session.read_set, NULL, NULL, NULL);
+
+        if(control_channel_read_expect(&ftp_server_session.c_channel, TERMINATE))
         {
             LOG(SERVER_LOG, "Terminate connection with client fd %d", clientfd);
             exit(1);
         }
 
-        request_int = control_channel_get_ftp_type_in(&c_channel);
+        ftp_server_session.request_int = control_channel_get_ftp_type_in(&ftp_server_session.c_channel);
 
-        operation_sucess = run_command(&channel_ctx, request_int);
+        ftp_server_session.operation_sucess = run_command(&ftp_server_session.channel_ctx, 
+                                                          ftp_server_session.request_int);
 
-        if(!operation_sucess)
+        if(!ftp_server_session.operation_sucess)
             LOG(SERVER_LOG, "Operation failed\n");
+        alarm(server_config.idle_tmout);
     }
     
     return 0;

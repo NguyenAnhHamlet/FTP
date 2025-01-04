@@ -10,7 +10,7 @@ char to_char(int num)
 
 int char_to_int(char c)
 {
-    return (int)(c);
+    return c - '0';
 }
 
 int str_to_int(char num[], unsigned int size)
