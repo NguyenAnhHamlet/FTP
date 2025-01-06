@@ -38,7 +38,9 @@ unsigned int iptype;
 // Pattern in config file
 typedef enum 
 {
-    PubkeyAcceptedKeyTypes
+    PubkeyAcceptedKeyTypes,
+    ChannelPort,
+    DataPort,
 } client_opcode;
 
 static struct {
@@ -48,6 +50,8 @@ static struct {
     {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
     {"rsa", RSAK},
     {"ed25519", ED25519K},
+    {"ChannelPort", ChannelPort},
+    {"DataPort", DataPort},
     {NULL, 0}
 };
 
@@ -299,6 +303,22 @@ int read_config(char* conf)
                 client_config.pkeyaccept = ret;
                 break;
             }
+            case ChannelPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                client_config.dataport = str_to_int(cp, strlen(cp));
+                printf("%d\n", client_config.dataport);
+                break;
+            }
+            case DataPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                client_config.controlport = str_to_int(cp, strlen(cp));
+                printf("%d\n", client_config.controlport);
+                break;
+            }
         }
     }
 
@@ -322,6 +342,8 @@ int main(int argc, char* argvs[])
     request_str = (char*) malloc(BUF_LEN);
     ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
     aes_cipher_init(ctx);
+    channel_ctx.control_port = client_config.controlport;
+    channel_ctx.data_port = client_config.dataport;
 
     // signal and handle
     signal(SIGINT, signal_handler);
@@ -333,8 +355,8 @@ int main(int argc, char* argvs[])
 
     // Create a FTP socket
     c_socket = create_ftp_socket(ipaddr, AF_INET, CLIENT, 
-                                 PORT_CONTROL, CONTROL, 
-                                 cre_socket());
+                                 channel_ctx.control_port, 
+                                 CONTROL, cre_socket());
     
     control_channel_init_socket_ftp(&c_channel, c_socket, 
                                     c_socket, CLIENT, NULL);

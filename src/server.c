@@ -47,7 +47,9 @@ typedef enum
     PubkeyAcceptedKeyTypes,
     IdleTimeOut,
     MaxAuthTries,
-    PermitRootLogin
+    PermitRootLogin,
+    ChannelPort,
+    DataPort
 } server_opcode;
 
 static struct {
@@ -60,6 +62,8 @@ static struct {
     {"IdleTimeOut", IdleTimeOut},
     {"MaxAuthTries", MaxAuthTries},
     {"PermitRootLogin", PermitRootLogin},
+    {"ChannelPort", ChannelPort},
+    {"DataPort", DataPort},
     {NULL, 0}
 };
 
@@ -149,6 +153,22 @@ int read_config(char* conf)
                 else 
                     server_config.rlogin = 1;
                 printf("%d\n", server_config.rlogin);
+                break;
+            }
+            case ChannelPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                server_config.dataport = str_to_int(cp, strlen(cp));
+                printf("%d\n", server_config.dataport);
+                break;
+            }
+            case DataPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                server_config.controlport = str_to_int(cp, strlen(cp));
+                printf("%d\n", server_config.controlport);
                 break;
             }
         }
@@ -284,9 +304,6 @@ int run_command(channel_context* channel_ctx, unsigned int code)
 
 int main()
 {
-    socket_server = create_ftp_socket(NULL, AF_INET, SERVER, 
-                                      PORT_CONTROL, SERVER_LISTENING, 
-                                      cre_socket());
     bool isRunning = 1;
     int pid, newsock;
     unsigned int maxClientSocket = 0;
@@ -299,6 +316,14 @@ int main()
     char conf[] = "/etc/ftp/sftpd_config";
 
     read_config(conf);
+
+    // init
+    ftp_server_session.channel_ctx.control_port = server_config.controlport;
+    ftp_server_session.channel_ctx.data_port = server_config.dataport;
+    socket_server = create_ftp_socket(NULL, AF_INET, SERVER, 
+                                      ftp_server_session.channel_ctx.control_port, 
+                                      SERVER_LISTENING, 
+                                      cre_socket());
 
     // signal and handle
     signal(SIGINT, signal_handler);

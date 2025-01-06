@@ -119,7 +119,8 @@
     "ec.h": "c",
     "param_build.h": "c",
     "cstdlib": "c",
-    "sftp_config": "cpp"
+    "sftp_config": "cpp",
+    "sftpd_config": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "C_Cpp.dimInactiveRegions": false
