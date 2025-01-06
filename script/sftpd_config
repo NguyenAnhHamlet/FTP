@@ -11,8 +11,7 @@ PubkeyAcceptedKeyTypes rsa ed25519
 # TODO 
 # Implement this
 #security
-#PermitRootLogin yes
-#MaxAuthTries 3
 #PasswordAuthentication yes
+PermitRootLogin no
 IdleTimeOut 30
 MaxAuthTries 3

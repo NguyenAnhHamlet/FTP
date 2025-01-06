@@ -46,7 +46,8 @@ typedef enum
 {
     PubkeyAcceptedKeyTypes,
     IdleTimeOut,
-    MaxAuthTries
+    MaxAuthTries,
+    PermitRootLogin
 } server_opcode;
 
 static struct {
@@ -58,6 +59,7 @@ static struct {
     {"ed25519", ED25519K},
     {"IdleTimeOut", IdleTimeOut},
     {"MaxAuthTries", MaxAuthTries},
+    {"PermitRootLogin", PermitRootLogin},
     {NULL, 0}
 };
 
@@ -113,7 +115,6 @@ int read_config(char* conf)
             case PubkeyAcceptedKeyTypes:
             {
                 int ret = 0;
-                // cp = strtok(NULL, WHITESPACE);
                 while(cp = strtok(NULL, WHITESPACE))
                 {
                     opcode = parse_token(cp, conf, linenum);
@@ -137,6 +138,17 @@ int read_config(char* conf)
                 printf("%s\n", cp);
                 server_config.maxauth = str_to_int(cp, strlen(cp));
                 printf("%d\n", server_config.maxauth);
+                break;
+            }
+            case PermitRootLogin:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                if(strncmp(cp, "no", strlen(cp)))
+                    server_config.rlogin = 0;
+                else 
+                    server_config.rlogin = 1;
+                printf("%d\n", server_config.rlogin);
                 break;
             }
         }
@@ -207,7 +219,6 @@ restart:
         {
             control_channel_append_ftp_type(FTP_AUTHEN_RETRY, c_channel);
             control_channel_send_wait(c_channel);
-            printf("Fail \n");
             goto restart;
         }
         else
@@ -216,6 +227,15 @@ restart:
             control_channel_send_wait(c_channel);
             return 0;
         }        
+    }
+
+    // prevent user with root privileges
+    if(!server_config.rlogin && pw->pw_uid == 0 )
+    {
+        LOG(SERVER_LOG, "User %s is stopped due to having root privileges\n", name_dec);
+        control_channel_append_ftp_type(FTP_ROOT_DENY, c_channel);
+        control_channel_send(c_channel);
+        return 0;
     }
 
     start_pam(pw);

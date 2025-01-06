@@ -6,12 +6,5 @@
 #AddressFamily any
 
 #specify which keytype is available 
-PubkeyAcceptedKeyTypes rsa
-
-# TODO 
-# Implement this
-#security
-#PermitRootLogin yes
-#MaxAuthTries 3
-#PasswordAuthentication yes
+PubkeyAcceptedKeyTypes rsa ed25519 
 

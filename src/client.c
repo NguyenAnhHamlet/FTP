@@ -224,8 +224,6 @@ restart:
     control_channel_append_str(pass_enc, c_channel, pass_enc_len);
     control_channel_send_wait(c_channel);
 
-    printf("HERE1\n");
-
     if(control_channel_read_expect(c_channel, FTP_ACK))
     {
         printf("Pass authenticate succeed\n");
@@ -236,10 +234,16 @@ restart:
 
     if(control_channel_get_ftp_type_in(c_channel) == FTP_UNACK)
     {
-        fatal("Pass authenticate failed\n");
         free(name_enc);
         free(pass_enc);
-        return 0;
+        fatal("Pass authenticate failed\n");
+    }
+
+    if(control_channel_get_ftp_type_in(c_channel) == FTP_ROOT_DENY)
+    {
+        free(name_enc);
+        free(pass_enc); 
+        fatal("User has root privileges denied\n");
     }
 
     printf("Pass authentication failed, retry: \n");
