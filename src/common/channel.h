@@ -75,6 +75,10 @@ typedef struct
     unsigned int ret_int;
     unsigned int log_type;
 
+    // control port and data port
+    unsigned int control_port;
+    unsigned int data_port; 
+
 } channel_context;
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 

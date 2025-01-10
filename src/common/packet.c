@@ -192,7 +192,7 @@ int packet_send_wait(Packet* packet)
     struct timeval timeout;
     int retval;
 
-    timeout.tv_sec = 5;
+    timeout.tv_sec = 20;
     timeout.tv_usec = 0;
 
     // send the header first
@@ -223,7 +223,7 @@ int packet_wait(Packet* packet)
 {
     fd_set read_set;
     struct timeval timeout;
-    timeout.tv_sec = 5;
+    timeout.tv_sec = 20;
     timeout.tv_usec = 0; 
 
     FD_ZERO(&read_set);

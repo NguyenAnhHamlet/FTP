@@ -26,12 +26,10 @@
 
 extern command commands[];
 channel_context channel_ctx;
-char name[BUF_LEN];
-char pass[BUF_LEN];
 bool ftp_running;
 control_channel c_channel;
 data_channel d_channel;
-socket_ftp* c_socket;
+socket_ftp*  c_socket;
 socket_ftp* d_socket;
 char ipaddr[IPADDR_SIZE];
 char option[OPTION_SIZE];
@@ -41,7 +39,9 @@ unsigned int iptype;
 typedef enum 
 {
     PubkeyAcceptedKeyTypes,
-    KexkeyAcceptedKeyTypes
+    KexkeyAcceptedKeyTypes,
+    ChannelPort,
+    DataPort
 } client_opcode;
 
 static struct {
@@ -54,6 +54,8 @@ static struct {
     {"KexkeyAcceptedKeyTypes", KexkeyAcceptedKeyTypes},
     {"ecdh", ECK},
     {"dh", DHK},
+    {"ChannelPort", ChannelPort},
+    {"DataPort", DataPort},
     {NULL, 0}
 };
 
@@ -110,6 +112,8 @@ int run_command(channel_context* channel_ctx, char* command_str)
     {
         if(!strcmp(commands[i].command_str, command_str))
         {
+            printf(commands[i].helper);
+            printf("\n");
             control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
             return commands[i].func(channel_ctx);
@@ -182,10 +186,15 @@ void callBackTimer(timer* timer)
     fatal("Time out\n");
 }
 
-int password_authen_client(control_channel* c_channel)
+int password_authen_client(control_channel* c_channel, cipher_context *ctx)
 {
     if(!c_channel) return -1;
 
+    char pass[BUF_LEN], *pass_enc = NULL;
+    char name[BUF_LEN], *name_enc = NULL;
+    int name_enc_len, pass_enc_len;
+
+restart: 
     memset(name, '\0', BUF_LEN);
     memset(pass, '\0', BUF_LEN);
 
@@ -205,23 +214,50 @@ int password_authen_client(control_channel* c_channel)
     enable_echo();
 
     // remove newline char
-    int len;
-    len = strlen(pass); pass[len-1] = '\0';
+    remove_endline(name);
+    remove_endline(pass); 
+
+    // init 
+    name_enc = (char*) malloc(strlen(name) +  EVP_MAX_BLOCK_LENGTH);
+    pass_enc = (char*) malloc(strlen(pass) +  EVP_MAX_BLOCK_LENGTH);
+
+    // encrypt the name and the password 
+    aes_cypher_encrypt(ctx, name, strlen(name), name_enc, &name_enc_len);
+    aes_cypher_encrypt(ctx, pass, strlen(pass), pass_enc, &pass_enc_len);    
 
     control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
-    control_channel_append_str(name, c_channel, strlen(name));
-    control_channel_append_str(pass, c_channel, strlen(pass));
-
+    control_channel_append_str(name_enc, c_channel, name_enc_len);
     control_channel_send_wait(c_channel);
 
-    if(control_channel_read_expect(c_channel, FTP_ACK) < 1)
+    control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
+    control_channel_append_str(pass_enc, c_channel, pass_enc_len);
+    control_channel_send_wait(c_channel);
+
+    if(control_channel_read_expect(c_channel, FTP_ACK))
     {
-      fatal("Pass authenticate failed\n");
-      return 0; 
+        printf("Pass authenticate succeed\n");
+        free(name_enc);
+        free(pass_enc); 
+        return 1;
     }
 
-    printf("Pass authenticate succeed\n");
-    return 1;
+    if(control_channel_get_ftp_type_in(c_channel) == FTP_UNACK)
+    {
+        free(name_enc);
+        free(pass_enc);
+        fatal("Pass authenticate failed\n");
+    }
+
+    if(control_channel_get_ftp_type_in(c_channel) == FTP_ROOT_DENY)
+    {
+        free(name_enc);
+        free(pass_enc); 
+        fatal("User has root privileges denied\n");
+    }
+
+    printf("Pass authentication failed, retry: \n");
+    
+goto restart;
 
 }
 
@@ -285,6 +321,22 @@ int read_config(char* conf)
                 client_config.kexkey_accept = ret;
                 break;
             }
+            case ChannelPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                client_config.dataport = str_to_int(cp, strlen(cp));
+                printf("%d\n", client_config.dataport);
+                break;
+            }
+            case DataPort:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                client_config.controlport = str_to_int(cp, strlen(cp));
+                printf("%d\n", client_config.controlport);
+                break;
+            }
         }
     }
 
@@ -308,18 +360,21 @@ int main(int argc, char* argvs[])
     request_str = (char*) malloc(BUF_LEN);
     ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
     aes_cipher_init(ctx);
+    channel_ctx.control_port = client_config.controlport;
+    channel_ctx.data_port = client_config.dataport;
 
     // signal and handle
     signal(SIGINT, signal_handler);
     signal(SIGQUIT, signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGPIPE, signal_handler);
 
     handle_init_command(argc, argvs);
 
     // Create a FTP socket
     c_socket = create_ftp_socket(ipaddr, AF_INET, CLIENT, 
-                                 PORT_CONTROL, CONTROL, 
-                                 cre_socket());
+                                 channel_ctx.control_port, 
+                                 CONTROL, cre_socket());
     
     control_channel_init_socket_ftp(&c_channel, c_socket, 
                                     c_socket, CLIENT, NULL);
@@ -327,8 +382,8 @@ int main(int argc, char* argvs[])
     control_channel_set_time_out(&c_channel, DEFAULT_CHANNEL_TMOUT);
 
     // set alarm for 30 
-    // signal(SIGALRM, time_out_alarm);
-	//    alarm(30);
+    signal(SIGALRM, time_out_alarm);
+	alarm(30);
 
     if(!(client_config.pkeyaccept = pkey_negotiate(&c_channel, client_config.pkeyaccept, CLIENT)))
     {
@@ -352,19 +407,20 @@ int main(int argc, char* argvs[])
     {
         fatal("Public key authentication failed\n");
     }
-    
-    // // perform password authentication
-    // password_authen_client(&c_channel);
 
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx, client_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
 
+
     // password authentication successed, init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
                          c_socket, d_socket, CLIENT, CLIENT_LOG);
+    
+    // perform password authentication
+    password_authen_client(&c_channel, ctx);
 
-    // Cancel alarm as all initial steps have been done without any issue
+    // Cancel alarm as all initial steps have been completed without any issue
     alarm(0);
 
     ftp_running = true;
@@ -389,6 +445,16 @@ int main(int argc, char* argvs[])
 
             operation_sucess = run_command(&channel_ctx, cmd);
 
+            if(!operation_sucess)
+            {
+                printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
+                continue;
+            }
+            else 
+            {
+                printf("Operation Succeed \n");
+            }
+
             if(channel_ctx.ret)
             {
                 printf(GREEN);
@@ -406,8 +472,6 @@ int main(int argc, char* argvs[])
                 channel_ctx.ret_int = 0;
             }
 
-            if(!operation_sucess)
-                printf("Operation failed, see log in %s for more infos and retry\n", FTP_CLIENT_LOG_FILE);
         }        
 
         free (line);

@@ -30,7 +30,7 @@ int data_conn( channel_context* channel_ctx )
         // the data channel has been established by server, connect now
         channel_ctx->d_socket = create_ftp_socket(channel_ctx->c_socket->ip_addr, 
                                                   channel_ctx->c_socket->endpoint_addr->sin_family, 
-                                                  CLIENT, PORT_DATA, DATA, cre_socket());
+                                                  CLIENT, channel_ctx->data_port, DATA, cre_socket());
                                      
         data_channel_init_socket_ftp(channel_ctx->d_channel, channel_ctx->d_socket, channel_ctx->d_socket, 
                                      CLIENT, channel_ctx->cipher_ctx);
@@ -55,7 +55,8 @@ int data_conn( channel_context* channel_ctx )
         }
 
         // Open litening and waiting for connection from client
-        channel_ctx->d_socket_listening = create_ftp_socket(NULL, AF_INET, SERVER, PORT_DATA, DATA, cre_socket());
+        channel_ctx->d_socket_listening = create_ftp_socket(NULL, AF_INET, SERVER, 
+                                                            channel_ctx->data_port, DATA, cre_socket());
         // Send FTP_ACK to notify client
         control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
@@ -117,6 +118,8 @@ int get(channel_context* channel_ctx)
     {
     case CLIENT:
     {
+        
+
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
