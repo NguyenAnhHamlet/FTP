@@ -37,7 +37,19 @@ int public_key_authentication(control_channel* channel, int evolution,
                               unsigned int pkeyaccept_avail);
 
 // Diffie-Hellman
-int channel_generate_shared_key(control_channel* channel, cipher_context* ctx);
+
+// kex key negotiation
+int kexkey_negotiate(control_channel* channel, unsigned int kexkeyaccept_avail, endpoint_type type);
+
+// DH 
+int channel_generate_shared_key_dh(control_channel* channel, cipher_context* ctx);
+
+// ECDH 
+int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* ctx);
+
+// abstract wrapper function
+int channel_generate_shared_key(control_channel* channel, cipher_context* ctx, 
+                                unsigned int kexkeyaccept_avail);
 
 // finger-print
 int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type);

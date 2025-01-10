@@ -22,6 +22,12 @@ typedef enum
     ED25519K = 2
 } pubkey_type;
 
+typedef enum
+{
+    DHK = 1,
+    ECK = 2
+} kexkey_type;
+
 typedef struct
 {
     endpoint_type conn;   

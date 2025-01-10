@@ -1,17 +1,18 @@
 # TODO 
 # Implement this
 #config
-ChannelPort 50000 
-DataPort 51000
-AddressFamily any
+#ChannelPort 50000 
+#DataPort 51000
+#AddressFamily any
 
 #specify which keytype is available 
 PubkeyAcceptedKeyTypes rsa ed25519
+KexkeyAcceptedKeyTypes ecdh dh
 
 # TODO 
 # Implement this
 #security
-PermitRootLogin yes
-MaxAuthTries 3
-PasswordAuthentication yes
+#PermitRootLogin yes
+#MaxAuthTries 3
+#PasswordAuthentication yes
 

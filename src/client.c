@@ -40,7 +40,8 @@ unsigned int iptype;
 // Pattern in config file
 typedef enum 
 {
-    PubkeyAcceptedKeyTypes
+    PubkeyAcceptedKeyTypes,
+    KexkeyAcceptedKeyTypes
 } client_opcode;
 
 static struct {
@@ -50,12 +51,16 @@ static struct {
     {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
     {"rsa", RSAK},
     {"ed25519", ED25519K},
+    {"KexkeyAcceptedKeyTypes", KexkeyAcceptedKeyTypes},
+    {"ecdh", ECK},
+    {"dh", DHK},
     {NULL, 0}
 };
 
 static struct 
 {
     unsigned int pkeyaccept;
+    unsigned int kexkey_accept;
     unsigned int dataport;
     unsigned int controlport;
     unsigned int addrfamily;
@@ -267,6 +272,19 @@ int read_config(char* conf)
                 client_config.pkeyaccept = ret;
                 break;
             }
+            case KexkeyAcceptedKeyTypes:
+            {
+                int ret = 0;
+                // cp = strtok(NULL, WHITESPACE);
+                while(cp = strtok(NULL, WHITESPACE))
+                {
+                    opcode = parse_token(cp, conf, linenum);
+                    ret |= opcode;
+                }
+                printf("ret : %d\n", ret);
+                client_config.kexkey_accept = ret;
+                break;
+            }
         }
     }
 
@@ -317,6 +335,11 @@ int main(int argc, char* argvs[])
         return 0;
     }
 
+    if(!(client_config.kexkey_accept = kexkey_negotiate(&c_channel, client_config.kexkey_accept, CLIENT)))
+    {
+        return 0;
+    }
+
     // FUTO
     if(channel_verify_finger_print(&c_channel, CLIENT, client_config.pkeyaccept) 
        == FINGER_PRINT_SAVED_FAILED)
@@ -334,7 +357,7 @@ int main(int argc, char* argvs[])
     // password_authen_client(&c_channel);
 
     // Trying to create a shared secret key
-    if(!channel_generate_shared_key(&c_channel, ctx))
+    if(!channel_generate_shared_key(&c_channel, ctx, client_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
 
     // password authentication successed, init channel_ctx

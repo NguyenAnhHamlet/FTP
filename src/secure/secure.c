@@ -643,7 +643,71 @@ int public_key_authentication(control_channel* channel, int evolution,
 }
 
 //  diffie-hellman
-int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
+int kexkey_negotiate(control_channel* channel, unsigned int kexkeyaccept_avail, endpoint_type type)
+{
+    switch(type)
+    {
+        case CLIENT:
+        {
+            // Send the list of available key type to server
+            control_channel_append_ftp_type(FTP_KEXKEY_NEGOTIATE, channel);
+            control_channel_append_int(kexkeyaccept_avail, channel);
+            control_channel_send_wait(channel);
+
+            // get response from server
+            if(control_channel_read_expect(channel, ABORT))
+            {
+                LOG(CLIENT_LOG, "No kex key available\n");
+                return 0;
+            }
+
+            // Now we have the agreed upon public key type 
+            return control_channel_get_int(channel);
+
+            break;        
+        }
+
+        case SERVER:
+        {
+            int ret =0;
+            // get the list of available pub key from client
+            if(!control_channel_read_expect(channel, FTP_KEXKEY_NEGOTIATE))
+            {
+                LOG(SERVER_LOG, "Expected %d but got %d instead", FTP_KEXKEY_NEGOTIATE, 
+                    control_channel_get_ftp_type_in(channel));
+                return 0;
+            }
+            int recv_kexkeyaccept = control_channel_get_int(channel);
+            control_channel_append_ftp_type(FTP_PKEY_NEGOTIATE, channel);
+            if(recv_kexkeyaccept & ECK)
+            {
+                ret = ECK;
+                control_channel_append_int(ECK, channel);
+            }
+            else if(recv_kexkeyaccept & DHK)
+            {
+                ret = DHK;
+                control_channel_append_int(DHK, channel);
+            }
+            else 
+            {
+                control_channel_append_ftp_type(ABORT, channel);
+            }
+
+            LOG(SERVER_LOG, "RET VALUE: %d\n", ret);
+
+            control_channel_send_wait(channel);
+            return ret;
+
+            break;
+        }
+
+        default:
+            return 0;
+    }
+}
+
+int channel_generate_shared_key_dh(control_channel* channel, cipher_context* ctx)
 {
 #ifdef OPENSSL_1
     DH* dh = dh_creation();
@@ -701,6 +765,85 @@ int channel_generate_shared_key(control_channel* channel, cipher_context* ctx)
     }
 
     return 1;
+}
+
+int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* ctx)
+{
+#ifdef OPENSSL_1
+    EC_KEY *ec_key = EC_KEY_ECDH_init();
+#elif OPENSSL_3
+    EVP_PKEY* pkey = EC_KEY_ECDH_init();
+#endif
+    BIGNUM* peer_pub_x, *peer_pub_y;
+    BIGNUM* pub_x, *pub_y;
+
+    pub_x = NULL, pub_y = NULL; 
+    peer_pub_x = BN_new();
+    peer_pub_y = BN_new();
+
+    // Sending the public key over to the endpoint
+#ifdef OPENSSL_1
+    if(!extract_public_key_values(ec_key, &pub_x, &pub_y))
+    {
+        LOG(COMMON_LOG, "Fail to extract public key value from ecdh key\n");
+        return 0;
+    }
+
+#elif OPENSSL_3
+    // BN_print_fp(stdout, pub);
+    if(!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_X, &pub_x) || 
+       !EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_Y, &pub_y) )
+    {
+        ERR_print_errors_fp(stderr);
+        return 0;
+    }
+
+    // BN_print_fp(stdout, pub);
+#endif
+
+    // Send x and y coordinates over to other endpoint
+    control_channel_append_bignum(&pub_x, channel);
+    control_channel_append_bignum(&pub_y, channel);
+    control_channel_append_ftp_type(FTP_PUB_KEX_SEND, channel);
+    control_channel_send(channel);
+    // Get the public key from endpoint
+    if(!control_channel_read_expect(channel, FTP_PUB_KEX_SEND))
+    {
+        LOG(SERVER_LOG, "Failed receive public key from endpoint\n");
+        return 0;
+    }
+
+    control_channel_get_bignum(&peer_pub_x, channel);
+    control_channel_get_bignum(&peer_pub_y, channel);
+
+#ifdef OPENSSL_1
+    if(!generate_secret_key_ecdh(ec_key, &ctx->key, &peer_pub_x, &peer_pub_y))
+#elif OPENSSL_3
+    if(!generate_secret_key_ecdh(pkey, &ctx->key, &peer_pub_x, &peer_pub_y))
+#endif
+    {
+        LOG(SERVER_LOG, "Failed to compute shared secret key\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+int channel_generate_shared_key(control_channel* channel, cipher_context* ctx, 
+                                unsigned int kexkeyaccept_avail)
+{
+    switch(kexkeyaccept_avail)
+    {
+    
+        case DHK:
+            return channel_generate_shared_key_dh(channel, ctx);
+        case ECK:
+            return channel_generate_shared_key_ecdh(channel, ctx);
+        default:
+            return 0;
+    }
+
+    return 0;
 }
 
 int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type)

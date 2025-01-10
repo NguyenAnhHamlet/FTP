@@ -7,6 +7,7 @@
 
 #specify which keytype is available 
 PubkeyAcceptedKeyTypes rsa ed25519
+KexkeyAcceptedKeyTypes ecdh dh
 
 # TODO 
 # Implement this

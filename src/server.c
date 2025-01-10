@@ -32,6 +32,7 @@ socket_ftp* socket_server;
 static struct 
 {
     unsigned int pkeyaccept;
+    unsigned int kexkey_accept;
     unsigned int rlogin;
     unsigned int maxauth;
     unsigned int passauth;
@@ -43,7 +44,8 @@ static struct
 // Pattern in config file
 typedef enum 
 {
-    PubkeyAcceptedKeyTypes
+    PubkeyAcceptedKeyTypes,
+    KexkeyAcceptedKeyTypes
 } server_opcode;
 
 static struct {
@@ -53,6 +55,9 @@ static struct {
     {"PubkeyAcceptedKeyTypes", PubkeyAcceptedKeyTypes},
     {"rsa", RSAK},
     {"ed25519", ED25519K},
+    {"KexkeyAcceptedKeyTypes", KexkeyAcceptedKeyTypes},
+    {"ecdh", ECK},
+    {"dh", DHK},
     {NULL, 0}
 };
 
@@ -102,6 +107,19 @@ int read_config(char* conf)
                 server_config.pkeyaccept = ret;
                 printf("ret : %d\n", ret);
 
+                break;
+            }
+            case KexkeyAcceptedKeyTypes:
+            {
+                int ret = 0;
+                // cp = strtok(NULL, WHITESPACE);
+                while(cp = strtok(NULL, WHITESPACE))
+                {
+                    opcode = parse_token(cp, conf, linenum);
+                    ret |= opcode;
+                }
+                printf("ret : %d\n", ret);
+                server_config.kexkey_accept = ret;
                 break;
             }
         }
@@ -288,6 +306,11 @@ int main()
         return 0;
     }
 
+    if(!(server_config.kexkey_accept = kexkey_negotiate(&c_channel, server_config.kexkey_accept, SERVER)))
+    {
+        return 0;
+    }
+
     // FUTO
     LOG(SERVER_LOG, "HERE 0 p : %d\n",server_config.pkeyaccept );
 
@@ -312,7 +335,7 @@ int main()
     aes_cipher_init(ctx);
 
         // Trying to create a shared secret key
-    if(!channel_generate_shared_key(&c_channel, ctx))
+    if(!channel_generate_shared_key(&c_channel, ctx, server_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
 
 
