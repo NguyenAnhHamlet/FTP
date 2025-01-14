@@ -12,10 +12,10 @@
 #include <openssl/param_build.h>
 #include "secure/ed25519.h"
 #include <regex.h>  
+#include <openssl/core_names.h>
 
 #ifdef OPENSSL_3
 #include <openssl/evp.h>
-#include <openssl/core_names.h>
 #endif
 
 extern void openssl_get_error();
@@ -783,6 +783,8 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
 
     // Sending the public key over to the endpoint
 #ifdef OPENSSL_1
+    pub_x = BN_new();
+    pub_y = BN_new();
     if(!extract_public_key_values(ec_key, &pub_x, &pub_y))
     {
         LOG(COMMON_LOG, "Fail to extract public key value from ecdh key\n");
@@ -813,8 +815,11 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
         return 0;
     }
 
+    LOG(SERVER_LOG, "PUB 0\n");
     control_channel_get_bignum(&peer_pub_x, channel);
     control_channel_get_bignum(&peer_pub_y, channel);
+
+    LOG(SERVER_LOG, "PUB 1\n");
 
 #ifdef OPENSSL_1
     if(!generate_secret_key_ecdh(ec_key, &ctx->key, &peer_pub_x, &peer_pub_y))
@@ -1006,7 +1011,7 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
             strncat(pattern, hash, hlen);
             strncat(pattern, "\n", 1);
 
-            LOG(SERVER_LOG, "%s", pattern);
+            LOG(SERVER_LOG, "FINGER PRINT %s\n", pattern);
 
             if(not_exist(KNOW_HOSTS)) 
                 create_file(KNOW_HOSTS);
@@ -1016,6 +1021,7 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
                 if (strstr(line, pattern) != NULL) 
                 {
                     // hash value exists, no further operation 
+                    LOG(SERVER_LOG, "FG PR0\n");
                     control_channel_append_ftp_type(SUCCESS, channel);
                     control_channel_send(channel);
 
@@ -1027,6 +1033,8 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
                 }
                 line[0] = 0;
             }
+
+            LOG(SERVER_LOG, "FG PR1\n");
 
             // ask user's permission to save into know_hosts
             printf("ED25519 fingerprint is SHA256: %s\n", hash);
@@ -1096,7 +1104,6 @@ int channel_verify_finger_print(control_channel* channel, endpoint_type type,
     switch(pkeyaccept)
     {
         case ED25519K:
-            LOG(SERVER_LOG, "HERE 0 type: %d\n", type);
             return channel_verify_finger_print_ed25519(channel, type);
         case RSAK: 
             return channel_verify_finger_print_rsa(channel, type);

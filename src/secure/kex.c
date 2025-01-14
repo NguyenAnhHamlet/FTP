@@ -8,6 +8,10 @@
 #include <openssl/ec.h>
 #include <openssl/pem.h>
 
+#ifdef __OPENSSL_1 
+#include <openssl/obj_mac.h>
+#endif
+
 extern void openssl_get_error();
 
 #ifdef OPENSSL_1
@@ -261,13 +265,8 @@ EC_KEY *EC_KEY_ECDH_init()
 
 int extract_public_key_values(EC_KEY* ec_key, BIGNUM** x, BIGNUM** y)
 {
-    *x = EC_POINT_get_affine_coordinates_GFp(ec_key->group, ec_key->pub_key, NULL, *x, NULL);
-    *y = EC_POINT_get_affine_coordinates_GFp(ec_key->group, ec_key->pub_key, NULL, *y, NULL); 
-
-    if (x == NULL || y == NULL) {
-        LOG(COMMON_LOG, "Error: Failed to get public key coordinates.\n");
-        return 0;
-    }
+    EC_POINT_get_affine_coordinates_GFp(EC_KEY_get0_group(ec_key), 
+                                        EC_KEY_get0_public_key(ec_key), *x, *y, NULL);
 
     return 1;
 }
@@ -302,7 +301,7 @@ int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_v
 	field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
 	secret_len = (field_size + 7) / 8;
 
-	if (NULL == (secret = OPENSSL_malloc(*secret_len))) {
+	if (NULL == (secret = OPENSSL_malloc(secret_len))) {
 		openssl_get_error();
         EC_POINT_free(peer_pub_key);
         EC_GROUP_free(group); 
@@ -316,7 +315,7 @@ int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_v
     {
         EC_POINT_free(peer_pub_key);
         EC_GROUP_free(group); 
-		OPENSSL_free(shared_key);
+		OPENSSL_free(secret);
 		return 0;
 	}
 
@@ -324,7 +323,7 @@ int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_v
 
     EC_POINT_free(peer_pub_key);
     EC_GROUP_free(group); 
-    OPENSSL_free(shared_key);
+    OPENSSL_free(secret);
 
 	return 1;
 }
@@ -484,45 +483,6 @@ int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_v
     {
         return 0;
     }
-
-    // const EC_KEY *eckey = EVP_PKEY_get0_EC_KEY(peer_pub_key);
-    // if (!eckey) {
-    //     fprintf(stderr, "Error: Failed to get EC_KEY from EVP_PKEY.\n");
-    //     return;
-    // }
-
-    // const EC_GROUP *group = EC_KEY_get0_group(eckey);
-    // if (!group) {
-    //     fprintf(stderr, "Error: Failed to get EC_GROUP from EC_KEY.\n");
-    //     return;
-    // }
-
-    // const EC_POINT *pub_key = EC_KEY_get0_public_key(eckey);
-    // if (!pub_key) {
-    //     fprintf(stderr, "Error: Public key point is missing.\n");
-    //     return;
-    // }
-
-    // BIGNUM *x = BN_new();
-    // BIGNUM *y = BN_new();
-
-    // if (!EC_POINT_get_affine_coordinates_GFp(group, pub_key, x, y, NULL)) {
-    //     fprintf(stderr, "Error: Failed to get affine coordinates.\n");
-    //     BN_free(x);
-    //     BN_free(y);
-    //     return;
-    // }
-
-    // printf("Public Key (x): ");
-    // BN_print_fp(stdout, x);
-    // printf("\n");
-
-    // printf("Public Key (y): ");
-    // BN_print_fp(stdout, y);
-    // printf("\n");
-
-    // BN_free(x);
-    // BN_free(y);
 
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey, NULL);
     if (ctx == NULL) {

@@ -9,7 +9,7 @@ SECURE_DEPS=$(SECURE_OBJS:.o=.d)
 INC_SECURE_FLAGS=-I ../
 
 openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
-OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_1)
+OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_1, -DOPENSSL_1)
 
 # main rules here
 all: ${SECURE_OBJS}

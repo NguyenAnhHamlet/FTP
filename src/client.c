@@ -408,10 +408,12 @@ int main(int argc, char* argvs[])
         fatal("Public key authentication failed\n");
     }
 
+
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx, client_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
 
+    printf("RUNNIG\n");
 
     // password authentication successed, init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 

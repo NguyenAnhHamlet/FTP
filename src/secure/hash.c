@@ -10,13 +10,41 @@ void sha256(char* in, int inlen, char** out, int *outlen )
     char* out_sha256 = NULL;
     unsigned int out_sha256_len;
 
+    LOG(SERVER_LOG, "HERE BEGIN\n");
+
 #ifdef OPENSSL_1 
-    out_sha256 = SHA256_DIGEST_LENGTH;
-    out_sha256_len = (char*) malloc(SHA256_DIGEST_LENGTH);
-    SHA256_CTX sh256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, in, inlen);
-    SHA256_Final(out_sha256, &sha256);
+    SHA256_CTX sha256;
+    out_sha256_len = SHA256_DIGEST_LENGTH;
+    out_sha256 = (char*) malloc(SHA256_DIGEST_LENGTH);
+
+    LOG(SERVER_LOG, "HERE NOT BLOCK 0\n");
+
+    if(!SHA256_Init(&sha256))
+    {
+        openssl_get_error();
+        free(out_sha256);
+        return 0;
+    }
+
+    LOG(SERVER_LOG, "HERE NOT BLOCK 1\n");
+
+    if(!SHA256_Update(&sha256, in, inlen))
+    {
+        openssl_get_error();
+        free(out_sha256);
+        return 0;
+    }
+
+    LOG(SERVER_LOG, "HERE NOT BLOCK 2\n");
+
+    if(!SHA256_Final(out_sha256, &sha256))
+    {
+        openssl_get_error();
+        free(out_sha256);
+        return 0;
+    }
+
+    LOG(SERVER_LOG, "HERE NOT BLOCK 3\n");
 
 #elif OPENSSL_3
     out_sha256 = (char*) malloc(EVP_MAX_MD_SIZE);
@@ -26,30 +54,36 @@ void sha256(char* in, int inlen, char** out, int *outlen )
 
     if (!EVP_DigestInit_ex(mdCtx, EVP_sha256(), NULL))
     {
-        printf("Message digest initialization failed.\n");
+        LOG(SEVRER_LOG, "Message digest initialization failed.\n");
         EVP_MD_CTX_free(mdCtx);
+        openssl_get_error();
         exit(EXIT_FAILURE);
     }
 
     // Hashes cnt bytes of data at d into the digest context mdCtx
     if (!EVP_DigestUpdate(mdCtx, in, inlen))
     {
-        printf("Message digest update failed.\n");
+        printf(SEVRER_LOG, "Message digest update failed.\n");
         EVP_MD_CTX_free(mdCtx);
+        openssl_get_error();
         exit(EXIT_FAILURE);
     }
 
     if (!EVP_DigestFinal_ex(mdCtx, out_sha256, &out_sha256_len))
     {
-        printf("Message digest finalization failed.\n");
+        printf(SEVRER_LOG, "Message digest finalization failed.\n");
         EVP_MD_CTX_free(mdCtx);
+        openssl_get_error();
         exit(EXIT_FAILURE);
     }
+
     EVP_MD_CTX_free(mdCtx);
 
     LOG(SERVER_LOG, "HERE 4");
 
 #endif
+
+    LOG(SERVER_LOG, "HERE MIDDLE\n");
 
     // convert to human readable format
     *outlen = SHA256_DIGEST_LENGTH << 1;
@@ -61,5 +95,7 @@ void sha256(char* in, int inlen, char** out, int *outlen )
     }
 
     out[64] = 0;
+
+    LOG(SERVER_LOG, "HERE END\n");
 
 }

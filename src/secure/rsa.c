@@ -603,7 +603,7 @@ void rsa_pubkey_hash(RSA* pubkey, char** ret, int* retlen)
     unsigned char *nbuf, *ebuf, *bbuf;
     unsigned int ttlen, nlen, elen;
 
-    RSA_get0_key(pub_key, &n, &e, NULL );
+    RSA_get0_key(pubkey, &n, &e, NULL );
     nlen  = BN_num_bits(n);
     elen = BN_num_bits(e);
     ttlen += nlen;
