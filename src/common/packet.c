@@ -118,6 +118,7 @@ int packet_read(Packet* packet)
         buffer_uncompress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
+        buffer_free(outbuf);
     }
 
     return len;
@@ -417,4 +418,38 @@ void packet_convert_header(Packet* packet)
     buffer_put_int(packet->p_header->header_buf, packet->p_header->fragment_offset);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->packet_type);
     buffer_put_int(packet->p_header->header_buf, packet->p_header->compression_mode);
+}
+
+void packet_set_fragment(Packet* packet, int fragment_offset)
+{
+    packet->p_header->fragment_offset = fragment_offset;
+}
+
+void packet_clear_header(Packet* packet)
+{
+    packet->p_header->fragment_offset = 0;
+    packet->p_header->data_len = 0;
+    packet->p_header->identification = 0;
+    packet->p_header->tt_len = 0;
+    packet->p_header->packet_type = -1;
+}
+
+void packet_set_identification(Packet* packet, int ident)
+{   
+    packet->p_header->identification = ident;       
+}
+
+void packet_set_data_len(Packet* packet, int data_len)
+{
+    packet->p_header->data_len = data_len;
+}
+
+void packet_set_tt_len(Packet* packet, int total_len)
+{
+    packet->p_header->tt_len = total_len;
+}
+
+int packet_get_ident(Packet* packet)
+{
+    return packet->p_header->identification;
 }

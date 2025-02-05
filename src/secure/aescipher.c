@@ -117,6 +117,8 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
             LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
         }
+
+        free(convert_key);
         return 0;
     }
 
@@ -131,6 +133,7 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
             LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
         }
 
+        free(convert_key);
         LOG(SERVER_LOG, "Could not perform decryption\n");
         return 0;
     }
@@ -146,12 +149,14 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
             LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
         }
 
+        free(convert_key);
         LOG(SERVER_LOG, "Could not perform decryption\n");
         EVP_CIPHER_CTX_free(cipher_ctx->evp);
         return 0;
     }
 
     *outlen += tmplen;
+    free(convert_key);
 
     return 1;
 }

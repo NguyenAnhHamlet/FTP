@@ -9,7 +9,7 @@
 #define FTP_ASYM_AUTHEN             5
 #define FTP_PUB_KEY_SEND            6
 #define FTP_ACK                     7
-#define FTP_UNACK                   8
+#define FTP_NACK                   8
 #define FTP_PASS_AUTHEN             9
 #define FTP_FILE_NAME               10
 #define ABORT                       11

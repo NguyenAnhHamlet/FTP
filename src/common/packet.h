@@ -66,4 +66,11 @@ int packet_header_len(Packet* packet);
 void packet_send_header(Packet* packet);
 void packet_convert_header(Packet* packet);
 
+void packet_set_fragment(Packet* packet, int fragment_offset);
+void packet_clear_header(Packet* packet);
+void packet_set_identification(Packet* packet, int ident);
+void packet_set_data_len(Packet* packet, int data_len);
+void packet_set_tt_len(Packet* packet, int total_len);
+int packet_get_ident(Packet* packet);
+
 #endif

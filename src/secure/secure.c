@@ -788,6 +788,7 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
     if(!extract_public_key_values(ec_key, &pub_x, &pub_y))
     {
         LOG(COMMON_LOG, "Fail to extract public key value from ecdh key\n");
+        EC_KEY_free(ec_key);
         return 0;
     }
 
@@ -797,6 +798,7 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
        !EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_EC_PUB_Y, &pub_y) )
     {
         ERR_print_errors_fp(stderr);
+        EVP_PKEY_free(pkey);
         return 0;
     }
 
@@ -830,6 +832,12 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
         LOG(SERVER_LOG, "Failed to compute shared secret key\n");
         return 0;
     }
+
+#ifdef OPENSSL_1
+    EC_KEY_free(ec_key);
+#elif OPENSSL_3
+    EVP_PKEY_free(pkey);
+#endif
 
     return 1;
 }

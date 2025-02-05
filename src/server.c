@@ -260,7 +260,7 @@ restart:
         }
         else
         {
-            control_channel_append_ftp_type(FTP_UNACK, c_channel);
+            control_channel_append_ftp_type(FTP_NACK, c_channel);
             control_channel_send_wait(c_channel);
             return 0;
         }        
@@ -292,7 +292,7 @@ restart:
     }
     else
     {
-        control_channel_append_ftp_type(FTP_UNACK, c_channel);
+        control_channel_append_ftp_type(FTP_NACK, c_channel);
         control_channel_send_wait(c_channel);
         return 0;
     }
@@ -448,8 +448,8 @@ int main()
                          ftp_server_session.c_socket, ftp_server_session.d_socket, 
                          SERVER, SERVER_LOG);
 
-    if(!pass_authen_server(&ftp_server_session.c_channel, ftp_server_session.ctx))
-        exit(1);
+    // if(!pass_authen_server(&ftp_server_session.c_channel, ftp_server_session.ctx))
+    //     exit(1);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);

@@ -241,7 +241,7 @@ restart:
         return 1;
     }
 
-    if(control_channel_get_ftp_type_in(c_channel) == FTP_UNACK)
+    if(control_channel_get_ftp_type_in(c_channel) == FTP_NACK)
     {
         free(name_enc);
         free(pass_enc);
@@ -420,7 +420,7 @@ int main(int argc, char* argvs[])
                          c_socket, d_socket, CLIENT, CLIENT_LOG);
     
     // perform password authentication
-    password_authen_client(&c_channel, ctx);
+    // password_authen_client(&c_channel, ctx);
 
     // Cancel alarm as all initial steps have been completed without any issue
     alarm(0);

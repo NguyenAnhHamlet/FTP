@@ -205,5 +205,21 @@ void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx);
 void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type);
 int data_channel_get_ftp_type_in(data_channel* d_channel);
 int data_channel_get_ftp_type_out(data_channel* d_channel);
+int data_channel_get_ident_in(data_channel* d_channel);
+int data_channel_get_ident_out(data_channel* d_channel);
+
+void data_channel_set_fragment_in(data_channel* d_channel, int fragment_offset);
+void data_channel_clear_header_in(data_channel* d_channel);
+void data_channel_set_identification_in(data_channel* d_channel, int ident);
+void data_channel_set_data_len_in(data_channel* d_channel, int data_len);
+void data_channel_set_tt_len_in(data_channel* d_channel, int total_len);
+
+void data_channel_set_fragment_out(data_channel* d_channel, int fragment_offset);
+void data_channel_clear_header_out(data_channel* d_channel);
+void data_channel_set_identification_out(data_channel* d_channel, int ident);
+void data_channel_set_data_len_out(data_channel* d_channel, int data_len);
+void data_channel_set_tt_len_out(data_channel* d_channel, int total_len);
+int data_channel_get_fragment_in(data_channel* d_channel);
+int data_channel_get_fragment_out(data_channel* d_channel);
 
 #endif

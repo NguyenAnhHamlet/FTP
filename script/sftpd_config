@@ -10,7 +10,6 @@ PubkeyAcceptedKeyTypes rsa ed25519
 KexkeyAcceptedKeyTypes ecdh dh
 
 # security
-PasswordAuthentication yes
 PermitRootLogin no
-IdleTimeOut 30
+IdleTimeOut 600
 MaxAuthTries 3
