@@ -709,14 +709,9 @@ int send_file(channel_context* channel_ctx, FILE* file)
     // read and send file over to other endpoint
     while((bytes = fread(buf, sizeof(char), BUF_LEN, file)) > 0)
     {
-        if(feof(file))
-        {
-            fragment_offset = 1;
-        }
-
         ident++;
 
-        LOG(SERVER_LOG, "AVAI 4 %d %d\n", fragment_offset, bytes);
+        // LOG(SERVER_LOG, "AVAI 4 %d %d\n", fragment_offset, bytes);
 
         data_channel_clear_header_out(channel_ctx->d_channel);                           
         data_channel_append_ftp_type(channel_ctx->d_channel, SEND);     
@@ -730,6 +725,8 @@ int send_file(channel_context* channel_ctx, FILE* file)
         if(control_channel_read_expect(channel_ctx->c_channel, FTP_NACK))
         {
             LOG(channel_ctx->log_type, "Error sending file\n");
+            LOG(channel_ctx->log_type, "Expected %d but got %d\n", 
+                FTP_ACK, control_channel_get_ftp_type_in(channel_ctx->c_channel));
             control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
             return 0;
@@ -748,6 +745,33 @@ int send_file(channel_context* channel_ctx, FILE* file)
             return 0;
         }
     }
+
+    if(feof(file))
+    {
+        fragment_offset = 1;
+        data_channel_append_ftp_type(channel_ctx->d_channel, SEND);
+        data_channel_set_fragment_out(channel_ctx->d_channel, fragment_offset);
+        data_channel_send(channel_ctx->d_channel);
+    }
+    else
+    {
+        data_channel_append_ftp_type(channel_ctx->d_channel, ABORT);
+        data_channel_send(channel_ctx->d_channel);
+        return 0;
+    }
+
+    LOG(SERVER_LOG, "AVAI OUTSIDE %d %d\n", fragment_offset, bytes);
+
+    if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+    {
+        LOG(channel_ctx->log_type, "Failed to received file\n");
+        LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+            SEND, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+        control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+        return 0;
+    }
+
     LOG(SERVER_LOG, "AVAI END\n");
 
     return 1;
@@ -770,16 +794,22 @@ int get_file(channel_context* channel_ctx, char* base_file_name)
 
         if(!data_channel_read_expect(channel_ctx->d_channel, SEND))
         {
+            LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+                SEND, data_channel_get_ftp_type_in(channel_ctx->d_channel));
             control_channel_append_ftp_type(FTP_NACK, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
             return 0;
         }
 
+        fragment_offset = data_channel_get_fragment_in(channel_ctx->d_channel);
+        
+        if(fragment_offset)
+            break;
+
         recv_len = 0;
         memset(buf, 0, data_len + 1);
         curr_ident = data_channel_get_ident_in(channel_ctx->d_channel);
         data_len = data_channel_get_data_len_in(channel_ctx->d_channel);
-        fragment_offset = data_channel_get_fragment_in(channel_ctx->d_channel);
         data_channel_get_str(channel_ctx->d_channel, buf, &recv_len);
 
         // Add check to see if the order of arriving packets are correct
@@ -811,6 +841,9 @@ int get_file(channel_context* channel_ctx, char* base_file_name)
         control_channel_append_int(curr_ident, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
     }
+
+    control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+    control_channel_send(channel_ctx->c_channel);
 
     return 1;
 }
