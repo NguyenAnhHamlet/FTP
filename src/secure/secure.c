@@ -432,6 +432,8 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             {
                 LOG(COMMON_LOG, "Fail to received the signature and" 
                     "message by other side\n");
+                BN_free(challenge);
+                BN_free(sign);
                 return 0;
             }
 
@@ -439,6 +441,8 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             if (!BN_rand(challenge, CHALLENGE_LEN, 0, 0)) 
             {
                 LOG(SERVER_LOG, "Error generating random number\n");
+                BN_free(challenge);
+                BN_free(sign);
                 return 0;
             }
 
@@ -448,6 +452,8 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             if(!edpkey)
             {
                 LOG(COMMON_LOG, "Fail to load ed25519 private key\n");
+                BN_free(challenge);
+                BN_free(sign);
                 return 0;
             }
             
@@ -456,6 +462,9 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             if(!BN_cmp(challenge, sign))
             {   
                 BN_print_fp(stdout, challenge); printf("\n"); BN_print_fp(stdout, sign);
+                BN_free(challenge);
+                BN_free(sign);
+                EVP_PKEY_free(edpkey);
                 LOG(COMMON_LOG, "Fail to sign\n");
                 return 0;
             }
@@ -470,8 +479,15 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             {
                 LOG(COMMON_LOG, "Expected %d but received %d", 
                     SUCCESS, control_channel_get_ftp_type_in(channel));
+                BN_free(challenge);
+                BN_free(sign);
+                EVP_PKEY_free(edpkey);
                 return 0;
             }
+            
+            EVP_PKEY_free(edpkey);
+            BN_free(challenge);
+            BN_free(sign);
 
             break;
         }
@@ -494,6 +510,8 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
             {
                 LOG(1, "Expected %d but received %d", 
                     FTP_ASYM_AUTHEN, control_channel_get_ftp_type_in(channel));
+                BN_free(challenge);
+                BN_free(sign);
                 return 0;
             }
 
@@ -506,11 +524,18 @@ int public_key_authentication_ed25519(control_channel* channel, int evolution)
                 LOG(COMMON_LOG, "Could not verify the signature\n");
                 control_channel_append_ftp_type(ABORT, channel);
                 control_channel_send(channel);
+                EVP_PKEY_free(edpkey);
+                BN_free(challenge);
+                BN_free(sign);
                 return 0;
             }
 
             control_channel_append_ftp_type(SUCCESS, channel);
             control_channel_send(channel);
+
+            EVP_PKEY_free(edpkey);
+            BN_free(challenge);
+            BN_free(sign);
         }
     }
 
@@ -560,6 +585,7 @@ int channel_send_public_key_ed25519(control_channel* channel, char path[])
 
     // free
     EVP_PKEY_free(pkey);
+    OPENSSL_free(pubkey);
 
     return 1;
 }
@@ -595,6 +621,7 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
     if ( !OSSL_PARAM_BLD_push_octet_string(params_build, OSSL_PKEY_PARAM_PUB_KEY, pubkey, pubkey_len)) 
     {
         LOG(COMMON_LOG, "Error: failed to push public value into param build.\n");
+        free(pubkey);
         return 0;
     }
 
@@ -604,6 +631,7 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
     if ( params == NULL ) 
     {
         LOG(COMMON_LOG, "Error: failed to construct params from build.\n");
+        free(pubkey);
         return 0;
     }
 
@@ -617,6 +645,7 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
        EVP_PKEY_fromdata(ctx, pkey, EVP_PKEY_PUBLIC_KEY, params) <= 0)
     {
         openssl_get_error();
+        free(pubkey);
         return 0;
     }
 
@@ -625,6 +654,7 @@ int channel_recv_public_key_ed25519(control_channel* channel, EVP_PKEY **pkey)
     OSSL_PARAM_free(params);
     OSSL_PARAM_BLD_free(params_build);
     EVP_PKEY_CTX_free(ctx);
+    free(pubkey);
 }
 
 int public_key_authentication(control_channel* channel, int evolution, 
@@ -707,6 +737,8 @@ int kexkey_negotiate(control_channel* channel, unsigned int kexkeyaccept_avail, 
     }
 }
 
+// TODO 
+// Clean up 
 int channel_generate_shared_key_dh(control_channel* channel, cipher_context* ctx)
 {
 #ifdef OPENSSL_1
@@ -835,9 +867,14 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
 
 #ifdef OPENSSL_1
     EC_KEY_free(ec_key);
+    BN_free(pub_x);
+    BN_free(pub_y);
 #elif OPENSSL_3
     EVP_PKEY_free(pkey);
 #endif
+
+    BN_free(peer_pub_x);
+    BN_free(peer_pub_y);
 
     return 1;
 }

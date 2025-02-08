@@ -347,7 +347,6 @@ int main(int argc, char* argvs[])
 {
     char conf[] = "/etc/ftp/sftp_config"; 
     char* buffer;
-    unsigned char* request_str;
     unsigned int request_int; 
     unsigned char* cmd;
     unsigned char* arg;
@@ -357,7 +356,6 @@ int main(int argc, char* argvs[])
     read_config(conf);
 
     // init
-    request_str = (char*) malloc(BUF_LEN);
     ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
     aes_cipher_init(ctx);
     channel_ctx.control_port = client_config.controlport;

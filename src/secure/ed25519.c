@@ -128,6 +128,7 @@ int ed25519_priv_sign(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** signbn)
     BN_bin2bn(sign, signlen, *signbn);
     EVP_MD_CTX_destroy(mdctx);
     free(in);
+    free(sign);
 
     return 1;
 }

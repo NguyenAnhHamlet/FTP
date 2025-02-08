@@ -29,15 +29,19 @@ void buffer_compress(Buffer* inbuf, Buffer* outbuf)
 						  	  sizeof(buf) - outgoing_stream.avail_out);
 			break;
 		case Z_STREAM_END:
+			deflateEnd(&outgoing_stream);
 			fatal("buffer_compress: deflate returned Z_STREAM_END");
 		
 		case Z_STREAM_ERROR:
+			deflateEnd(&outgoing_stream);
 			fatal("buffer_compress: deflate returned Z_STREAM_ERROR");
 			
 		case Z_BUF_ERROR:
+			deflateEnd(&outgoing_stream);
 			fatal("buffer_compress: deflate returned Z_BUF_ERROR");
 			
 		default:
+			deflateEnd(&outgoing_stream);
 			fatal("buffer_compress: deflate returned %d", status);
 			
         }
@@ -63,7 +67,6 @@ void buffer_uncompress(Buffer* inbuf, Buffer* outbuf)
 
     for (;;) 
 	{
-
 		status = inflate(&incoming_stream, Z_PARTIAL_FLUSH);
 		switch (status) {
 		case Z_OK:
@@ -73,21 +76,27 @@ void buffer_uncompress(Buffer* inbuf, Buffer* outbuf)
 			incoming_stream.avail_out = sizeof(buf);
 			break;
 		case Z_STREAM_END:
+			inflateEnd(&incoming_stream);
 			fatal("buffer_uncompress: inflate returned Z_STREAM_END");
 			
 		case Z_DATA_ERROR:
+			inflateEnd(&incoming_stream);
 			fatal("buffer_uncompress: inflate returned Z_DATA_ERROR");
 			
 		case Z_STREAM_ERROR:
+			inflateEnd(&incoming_stream);
 			fatal("buffer_uncompress: inflate returned Z_STREAM_ERROR");
 			
 		case Z_BUF_ERROR:
-			
+			inflateEnd(&incoming_stream);
 			return;
+
 		case Z_MEM_ERROR:
+			inflateEnd(&incoming_stream);
 			fatal("buffer_uncompress: inflate returned Z_MEM_ERROR");
 			
 		default:
+			inflateEnd(&incoming_stream);
 			fatal("buffer_uncompress: inflate returned %d", status);
 		}
 	}

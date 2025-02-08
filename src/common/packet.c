@@ -48,6 +48,8 @@ void packet_set_timeout(Packet* packet, unsigned int timeout)
 void packet_destroy(Packet* packet)
 {
     buffer_free(packet->buf);
+    free(packet->p_header->header_buf);
+    free(packet->p_header);
     free(packet);
 }
 
@@ -119,6 +121,7 @@ int packet_read(Packet* packet)
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
         buffer_free(outbuf);
+        free(outbuf);
     }
 
     return len;
@@ -186,6 +189,7 @@ int packet_send_wait(Packet* packet)
         buffer_compress(packet->buf, outbuf );
         buffer_clear(packet->buf);
         buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
+        buffer_free(outbuf);
     }
 
     int curr_len = 0;

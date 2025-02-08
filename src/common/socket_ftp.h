@@ -11,6 +11,7 @@ typedef struct
     unsigned int PORT_;
     unsigned int endpoint_addr_size;
     unsigned int op;
+    int* opt;
 } socket_ftp;
 
 int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,

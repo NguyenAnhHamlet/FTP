@@ -678,6 +678,7 @@ int data_reget(channel_context* channel_ctx)
         close(channel_ctx->d_channel->data_in->in_port);
         packet_destroy(channel_ctx->d_channel->data_in);
         packet_destroy(channel_ctx->d_channel->data_out);
+        free(channel_ctx->source);
 
         break;
     }
