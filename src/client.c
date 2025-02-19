@@ -439,8 +439,12 @@ int main(int argc, char* argvs[])
             add_history (buffer);
             int operation_sucess = 1;
             get_cmd_contents(buffer, &cmd, &arg);
-            channel_ctx.source = arg;
-            channel_ctx.source_len = strlen(arg);
+
+            if(arg)
+            {
+                channel_ctx.source = arg;
+                channel_ctx.source_len = strlen(arg);
+            }
 
             operation_sucess = run_command(&channel_ctx, cmd);
 
