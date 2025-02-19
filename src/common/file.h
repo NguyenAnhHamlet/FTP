@@ -15,6 +15,7 @@ void append_file(char path[], char data[], int data_size);
 bool not_exist(char path[]);
 int list_dir(char* dir, char* res, unsigned int* r_len);
 void delete_file(char path[]);
+int change_dir(char path[]);
 
 // NOTICE: only deallocate path when ret is no longer needed
 void basename(char* path, char** ret);

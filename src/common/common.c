@@ -235,3 +235,21 @@ void x_abs_path(char* src, char* ret)
     if (!realpath(src, ret)) 
         perror("Error resolving path");
 }
+
+int port_number(unsigned int sockfd)
+{
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+    unsigned int port = 0;
+
+    if (getsockname(sockfd, (struct sockaddr *)&addr, &addr_len) == -1) 
+    {
+        perror("Error getting socket name");
+        close(sockfd);
+        exit(1);
+    }
+
+    port = ntohs(addr.sin_port);
+
+    return port;
+}

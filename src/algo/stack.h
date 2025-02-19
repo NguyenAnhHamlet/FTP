@@ -9,7 +9,7 @@
 
 typedef struct Stack
 {
-    int data[2056];
+    int data[sizeStack];
     int total;
 } Stack;
 

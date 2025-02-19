@@ -17,7 +17,7 @@ OBJS_CURRENT=$(patsubst %.c,obj/%.o,$(SRC))
 DEPS=$(OBJS:.o=.d) 
 
 openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
-OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_1, -DOPENSSL_1)
+OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_1)
 
 LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ -lreadline
 
@@ -37,11 +37,11 @@ all: ftpclient ftpserver ftpkeygen
 
 ftpclient: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o obj/datab.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 ftpserver: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o obj/datab.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 ftpkeygen: $(OBJS_CURRENT)
 	@$(call make_subdirs)

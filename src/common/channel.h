@@ -64,12 +64,14 @@ typedef struct
     socket_ftp* d_socket_listening;
     endpoint_type type;
     pubkey_type pkeytype;
+    char username[32];
 
     // Data assigned by client side 
     char *source;
     int source_len;
 
     // Data returned that will be read by client side 
+    Buffer* retb; 
     char* ret;
     unsigned int ret_len;
     unsigned int ret_int;
@@ -79,6 +81,16 @@ typedef struct
     unsigned int control_port;
     unsigned int data_port; 
 
+    unsigned int prompt;
+    unsigned int passmode;
+
+    // read status of current transfer process 
+    unsigned int pipe_fd[MAXPROCCESS][2];
+    unsigned int usedpipe[MAXPROCCESS + 1];
+    unsigned int max_pipe_fd;
+    Stack free_pipe;
+
+    
 } channel_context;
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
@@ -87,6 +99,8 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
                      endpoint_type type, ftplog_type log_type);
 
 void channel_context_set_pub(channel_context* channel_ctx, pubkey_type pkeytype );
+
+int get_free_pipe(channel_context* channel_ctx);
 
 // 
 // Control channel

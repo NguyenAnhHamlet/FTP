@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ftw.h>
+#include "algo/algo.h"
+#include <signal.h>
+#include "algo/stack.h"
 
 void operation_abort(control_channel* c_channel)
 {
@@ -78,7 +81,12 @@ int remote_file_exist(channel_context* channel_ctx)
     return 1;
 }
 
-int change_dir(channel_context* channel_ctx)
+int local_change_dir(channel_context* channel_ctx)
+{
+    return change_dir(channel_ctx->source);
+}
+
+int remote_change_dir(channel_context* channel_ctx)
 {
     switch (channel_ctx->type)
     {
@@ -763,4 +771,588 @@ int remove_remote_dir(channel_context* channel_ctx)
     }
 
     return 1;
+}
+
+int list_local_dir(channel_context* channel_ctx)
+{
+    channel_ctx->ret = (char*) malloc(BUF_LEN);
+    if(!list_dir(channel_ctx->source, channel_ctx->ret, 
+                &channel_ctx->source_len))
+    {
+        strncpy(channel_ctx->ret, "Failed to read directory\n", BUF_LEN);
+        return 0;
+    }
+
+    return 1;
+}
+
+int mdelte_remote_files(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        // append files name 
+        control_channel_append_ftp_type(MDELETE, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel,
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            char ret_file[BUF_LEN];
+            unsigned int rlen;
+            control_channel_get_str(channel_ctx->c_channel, ret_file, &rlen);
+            LOG(channel_ctx->log_type, "Failed to mdelete file %s. "
+                "Expected %d but received %d.", ret_file,
+                SUCCESS, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            return 0;
+        }
+
+        return 1;
+
+        break;
+    }
+    
+    case SERVER:
+    {
+        char* ppos = channel_ctx->source;
+        char* npos = NULL;
+        while(npos = strchr(ppos, ' '))
+        {
+            npos = NULL;
+            npos++;
+            while(*npos == ' ') npos++;
+
+            if(remove(ppos) != 0)
+            {
+                LOG(channel_ctx->log_type, "Failed to delete file %s", ppos);
+                control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+                control_channel_append_str(ppos, channel_ctx->c_channel, strlen(ppos));
+                control_channel_send(channel_ctx->c_channel);
+                return 0;
+            }
+
+            ppos = npos;
+        }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        break;
+    }
+
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+    
+    }
+}
+
+int remote_mmkdir(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        // append multiple dir name
+        control_channel_append_ftp_type(MMKDIR, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel,
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        break;
+    }
+        
+
+    case SERVER:
+    {
+        if(!control_channel_read_expect(channel_ctx->c_channel, MMKDIR))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        char* dirname = NULL;
+        char* uppos = NULL;
+        char dirsname[BUF_LEN];
+        unsigned int rlen;
+        control_channel_get_str(channel_ctx->c_channel, dirsname, &rlen);
+        dirname = dirsname;
+
+        while((uppos = strchr(dirsname, ' ')))
+        {
+            *uppos = 0;
+            if(mkdir(dirname, 0755) != 0)
+            {
+                LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                    "received CODE %d: \n",
+                    control_channel_get_ftp_type_in(channel_ctx->c_channel));
+                operation_abort(channel_ctx->c_channel);
+                control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+                control_channel_send(channel_ctx->c_channel);
+                return 0;
+            }
+            uppos++;
+            while(*uppos == 0) uppos++;
+            dirname = uppos;
+        }
+
+        // last one in str
+        if(mkdir(dirname, 0755) != 0)
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        break;
+    }
+        
+    
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+
+    }
+
+    return 1;
+}
+
+int remote_mkdir(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        // append dir name
+        control_channel_append_ftp_type(MKDIR, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel,
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        break;
+    }
+        
+
+    case SERVER:
+    {
+        if(!control_channel_read_expect(channel_ctx->c_channel, MKDIR))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        char dirname[BUF_LEN];
+        unsigned int rlen;
+        control_channel_get_str(channel_ctx->c_channel, dirname, &rlen);
+        if(mkdir(dirname, 0755) != 0)
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        break;
+    }
+        
+    
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+
+    }
+
+    return 1;
+}
+
+int mlist_remote_dir(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        control_channel_append_ftp_type(MLS, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel, 
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, MLS))
+        {
+            LOG(CLIENT_LOG, "Failed to list dir, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+
+            return 0;
+        }
+
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        char* data = (char*) malloc(data_len);
+        channel_ctx->ret = data;
+        channel_ctx->ret_len= data_len;
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret, 
+                                &channel_ctx->ret_len);
+
+        break;
+    }
+    case SERVER:
+    {
+        char res[BUF_LEN << 2];
+        unsigned int ret_len;
+        char* indiv_dir = NULL, *npos = NULL;
+
+        memset(res, 0, BUF_LEN);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, MLS))
+        {
+            LOG(SERVER_LOG, "Failed to list dir, received CODE: %d\n", 
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+
+            return 0;
+        }
+
+        int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        channel_ctx->source = (char*) malloc(data_len);
+        memset(channel_ctx->source, 0, data_len);
+
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
+                                &channel_ctx->source_len);                       
+        
+        control_channel_append_ftp_type(LS, channel_ctx->c_channel);
+
+        indiv_dir = channel_ctx->source;
+        while(npos = strchr(indiv_dir, ' '))
+        {
+            *npos = 0;
+            if(!list_dir(indiv_dir, res, &ret_len))
+            {
+                LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
+            
+            control_channel_append_str(indiv_dir, channel_ctx->c_channel, strlen(indiv_dir));
+            control_channel_append_str(res, channel_ctx->c_channel, ret_len);
+            control_channel_append_str(":\n", channel_ctx->c_channel, 1);
+            control_channel_append_str(res, channel_ctx->c_channel, ret_len);
+            control_channel_send(channel_ctx->c_channel);
+
+            npos++;
+            while(*npos == ' ') npos++;
+            indiv_dir = npos;
+        }
+
+        free(channel_ctx->source);
+
+        break;
+    }
+    
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+
+    }
+
+    return 1;
+}
+
+int local_prompt(channel_context* channel_ctx)
+{
+    channel_ctx->prompt = str_to_int(channel_ctx->source, channel_ctx->source_len); 
+}
+
+int remote_pwd(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        control_channel_append_ftp_type(PWD, channel_ctx->c_channel);
+        control_channel_append_str(channel_ctx->source, channel_ctx->c_channel, 
+                                   channel_ctx->source_len);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, PWD))
+        {
+            LOG(CLIENT_LOG, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        channel_ctx->ret = (char*) malloc(len);
+        channel_ctx->ret_len = len;
+        if(!channel_ctx->ret)
+        {
+            LOG(CLIENT_LOG, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret, 
+                                &channel_ctx->ret_len);
+        
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        break;
+    }
+    
+    case SERVER:
+    {
+        if(!control_channel_read_expect(channel_ctx->c_channel, PWD))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        char* data = NULL;
+        char cwd[BUF_LEN];
+        int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        data = (char*) malloc(len);
+
+        if(!data)
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_get_str(channel_ctx->c_channel, data, &len);
+
+        memset(cwd, 0, sizeof(cwd));
+        if(!getcwd(cwd, sizeof(cwd)))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_append_ftp_type(PWD, channel_ctx->c_channel);
+        control_channel_append_str(cwd, channel_ctx->c_channel, strlen(cwd));
+        control_channel_send_wait(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        break;
+    }
+    
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+
+    }
+
+    return 1;
+}
+
+int status(channel_context* channel_ctx)
+{
+    char buf[BUF_LEN];
+    char* hostnamebuf;
+    
+    hostnamebuf = (char*) malloc(16);
+    memset(buf, 0, BUF_LEN);
+    memset(hostnamebuf, 0, 16);
+
+    hostname(control_channel_get_sockfd_in(channel_ctx->c_channel), &hostnamebuf);
+    sprintf(buf, "Connected to %s\n", hostnamebuf);
+    buffer_append_str(channel_ctx->retb, buf, strlen(buf));
+
+    // TODO: append user's name here
+    // Session time : 
+    // Server uptime : 
+    // <> users currently logged in 
+    // Available command : 
+    
+    for(int i =0; i< MAXPROCCESS+ 1; i++ )
+    {
+        if(channel_ctx->usedpipe[i] > 0)
+        {
+            if((kill(channel_ctx->usedpipe[i], 0) == 0))
+            {
+                channel_ctx->usedpipe[i] = 0;
+                close(channel_ctx->pipe_fd[i][0]);
+                close(channel_ctx->pipe_fd[i][1]);
+                push(&channel_ctx->free_pipe, i);
+            }
+            else 
+            {
+                kill(channel_ctx->usedpipe[i], SIGUSR1);
+                read(channel_ctx->pipe_fd[i][0], buf, BUF_LEN);
+                buffer_append_str(channel_ctx->retb, buf, strlen(buf));
+                buffer_append_str(channel_ctx->retb, "\n", 1);
+                memset(buf, 0, BUF_LEN);
+            }
+        }
+    }
+
+    return 1;
+}
+
+int remote_system_info(channel_context* channel_ctx)
+{
+    switch (channel_ctx->type)
+    {
+    case CLIENT:
+    {
+        control_channel_append_ftp_type(SYSTEM, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SYSTEM))
+        {
+            LOG(channel_ctx->log_type, "Expected %d but got %d instead\n",
+                                        SYSTEM, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        channel_ctx->ret_len = len;
+        channel_ctx->ret = (char*) malloc(len);
+        if(!channel_ctx->ret)
+        {
+            LOG(channel_ctx->log_type, "Failed to allocate memory\n");
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret, &channel_ctx->ret_len);
+        
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        break;
+    }
+    
+    case SERVER:
+    {
+        if(!control_channel_read_expect(channel_ctx->c_channel, SYSTEM))
+        {
+            LOG(channel_ctx->log_type, "Expected %d but got %d instead\n", 
+                SYSTEM, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+        
+        char* ret = NULL;
+        FILE* file = NULL;
+        unsigned int bytes = 0;
+        char  buf[BUF_LEN];
+        
+        memset(buf, 0, sizeof(buf));
+        read_file(OS_RELEASE, &file);
+        if(!file)
+        {
+            LOG(channel_ctx->log_type, "Failed to open file %s", OS_RELEASE);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        bytes = fread(buf, sizeof(char), BUF_LEN, file);
+
+        if(bytes == 0)
+        {
+            LOG(channel_ctx->log_type, "Failed to open file %s", OS_RELEASE);
+            operation_abort(channel_ctx->c_channel);
+            fclose(file);
+            return 0;
+        }
+
+        control_channel_append_ftp_type(SYSTEM, channel_ctx->c_channel);
+        control_channel_append_str(buf, channel_ctx->c_channel, strlen(buf));
+        control_channel_send(channel_ctx->c_channel);
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Expected %d but got %d instead\n", 
+                SUCCESS, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        break;
+    }
+    
+    
+    default:
+    {
+        operation_abort(channel_ctx->c_channel);
+        return -1;
+    }
+
+    }
+
+    return 1;
+}
+
+int passmode(channel_context* channel_ctx)
+{   
+    channel_ctx->passmode = ~ channel_ctx->passmode;
 }

@@ -10,6 +10,9 @@ int put(channel_context* channel_ctx);
 int data_append(channel_context* channel_ctx);
 int data_newer(channel_context* channel_ctx);
 int data_reget(channel_context* channel_ctx);
+int mget(channel_context* channel_ctx);
+int mput(channel_context* channel_ctx);
+int restart_get_file(channel_context* channel_ctx); 
 
 // auxiliaries
 int send_file(channel_context* channel_ctx, FILE* file);

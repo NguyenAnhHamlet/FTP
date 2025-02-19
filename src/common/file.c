@@ -133,3 +133,14 @@ void basename(char* path, char** ret)
 
     (*ret)++; 
 }
+
+int change_dir(char path[])
+{
+    if(chdir(path) < 0)
+    {
+        perror("Fail to change directory\n");
+        return -1;
+    }
+
+    return 1;
+}

@@ -1,6 +1,7 @@
 #include "common/channel.h"
 #include "common/packet.h"
 #include "log/ftplog.h"
+#include <signal.h>
 
 void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
                      data_channel* d_channel, control_channel* c_channel, 
@@ -19,11 +20,59 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
     channel_ctx->ret = NULL;
     channel_ctx->ret_len = 0;
     channel_ctx->log_type = log_type;
+    channel_ctx->prompt = 0;
+    channel_ctx->passmode = 1;
+    buffer_init(channel_ctx->retb);
 }
 
 void channel_context_set_pub(channel_context* channel_ctx, pubkey_type pkeytype )
 {
     channel_ctx->pkeytype = pkeytype;
+}
+
+int get_free_pipe(channel_context* channel_ctx)
+{
+    int ret = 0;
+    int checkmax = 0;
+start:
+    if(!is_stack_empty(&channel_ctx->free_pipe))
+    {
+        int ret = top(&channel_ctx->free_pipe);
+        pop(&channel_ctx->free_pipe);
+    }
+    else 
+    {
+        if(channel_ctx->max_pipe_fd > MAXPROCCESS && checkmax == 0)
+        {
+            for(int i =0; i< MAXPROCCESS+ 1; i++ )
+            {
+                if((kill(channel_ctx->usedpipe[i], 0) == 0))
+                {
+                    channel_ctx->usedpipe[i] = 0;
+                    close(channel_ctx->pipe_fd[i][0]);
+                    close(channel_ctx->pipe_fd[i][1]);
+                    push(&channel_ctx->free_pipe, i);
+                    checkmax = 1;
+                }
+            }
+
+            goto start;
+        }
+        else if(channel_ctx->max_pipe_fd < MAXPROCCESS)
+        {
+            channel_ctx->max_pipe_fd++;
+            ret = channel_ctx->max_pipe_fd - 1;
+        }
+        else 
+        {
+            return -1;
+        }
+
+    }
+
+    channel_ctx->usedpipe[ret] = 1;
+
+    return ret;
 }
 
 void control_channel_init(  control_channel* channel,
@@ -393,7 +442,6 @@ void data_channel_clean_datain(data_channel* channel)
 void data_channel_clean_dataout(data_channel* channel)
 {
     packet_clear_data(channel->data_out);
-    // TODO : add clear identification and fragment_offset
 }
 
 void data_channel_destroy(data_channel* d_channel)

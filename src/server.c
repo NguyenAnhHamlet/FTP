@@ -36,7 +36,7 @@ static struct
     unsigned int rlogin;
     unsigned int maxauth;
     unsigned int passauth;
-    unsigned int dataport;
+    // unsigned int dataport;
     unsigned int controlport;
     unsigned int addrfamily;
     unsigned int idle_tmout;
@@ -68,7 +68,7 @@ static struct {
     {"MaxAuthTries", MaxAuthTries},
     {"PermitRootLogin", PermitRootLogin},
     {"ChannelPort", ChannelPort},
-    {"DataPort", DataPort},
+    // {"DataPort", DataPort},
     {NULL, 0}
 };
 
@@ -176,18 +176,18 @@ int read_config(char* conf)
             {
                 cp = strtok(NULL, WHITESPACE);
                 printf("%s\n", cp);
-                server_config.dataport = str_to_int(cp, strlen(cp));
-                printf("%d\n", server_config.dataport);
-                break;
-            }
-            case DataPort:
-            {
-                cp = strtok(NULL, WHITESPACE);
-                printf("%s\n", cp);
                 server_config.controlport = str_to_int(cp, strlen(cp));
                 printf("%d\n", server_config.controlport);
                 break;
             }
+            // case DataPort:
+            // {
+            //     cp = strtok(NULL, WHITESPACE);
+            //     printf("%s\n", cp);
+            //     server_config.controlport = str_to_int(cp, strlen(cp));
+            //     printf("%d\n", server_config.controlport);
+            //     break;
+            // }
         }
     }
 
@@ -334,7 +334,7 @@ int main()
 
     // init
     ftp_server_session.channel_ctx.control_port = server_config.controlport;
-    ftp_server_session.channel_ctx.data_port = server_config.dataport;
+    // ftp_server_session.channel_ctx.data_port = server_config.dataport;
     socket_server = create_ftp_socket(NULL, AF_INET, SERVER, 
                                       ftp_server_session.channel_ctx.control_port, 
                                       SERVER_LISTENING, 

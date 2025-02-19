@@ -75,7 +75,6 @@ int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _e
     if(_ip_addr) strncpy(socket->ip_addr, _ip_addr, IP_LEN);
     socket->PORT_ = _PORT_;
     socket->endpoint_addr_size = sizeof(*_endpoint_addr);
-    // int opt = (int*) malloc(sizeof(int));
     int opt = 1;
 
     switch (type)
@@ -170,7 +169,6 @@ socket_ftp* socket_ftp_raw_cre()
 void destroy_ftp_socket(socket_ftp* socket)
 {
     free(socket->endpoint_addr);
-    // free(socket->opt);
     free(socket);
 }
 
@@ -179,4 +177,9 @@ int accept_new_connection_ftp(socket_ftp* socket )
     return accept((int) socket->sockfd, 
                   (struct sockaddr*) (socket->endpoint_addr), 
                   (socklen_t*)&(socket->endpoint_addr_size));
+}
+
+unsigned int socket_ftp_get_port(socket_ftp* socket)
+{
+    return socket->PORT_;
 }

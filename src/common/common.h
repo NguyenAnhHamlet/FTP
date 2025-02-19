@@ -16,6 +16,7 @@
 #define BUF_LEN 4096    
 
 #define NUMCLIENT 2056
+#define MAXPROCCESS 256 
 
 #define IP_LEN 36
 
@@ -68,6 +69,7 @@ int is_peer_correct(unsigned int sockfd1, unsigned int sockfd2);
 void x_chdir(char* path);
 void x_getcwd(char* cwd);
 void x_abs_path(char* src, char* ret);
+int port_number(unsigned int sockfd);
 
 
 #endif

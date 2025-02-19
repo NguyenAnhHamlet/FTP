@@ -28,6 +28,7 @@
 #define FTP_FINGER_PRINT            24
 #define FTP_KEXKEY_NEGOTIATE        25
 #define FTP_AUTHEN_RETRY            25
-#define FTP_ROOT_DENY               26
+#define FTP_ROOT_DENY               26 
+#define FTP_PASV                    27
 
 #endif

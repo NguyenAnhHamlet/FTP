@@ -1,8 +1,5 @@
-# TODO 
-# Implement this
 #config
 ChannelPort 50000 
-DataPort 51000
 #AddressFamily any
 
 # specify which keytype is available 

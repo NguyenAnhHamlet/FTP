@@ -45,5 +45,6 @@ int connect_endpoint(unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr
                      unsigned int _endpoint_addr_size);
 
 int accept_new_connection_ftp(socket_ftp* socket);
+unsigned int socket_ftp_get_port(socket_ftp* socket);
 
 #endif

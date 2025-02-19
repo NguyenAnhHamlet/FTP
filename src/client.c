@@ -55,7 +55,7 @@ static struct {
     {"ecdh", ECK},
     {"dh", DHK},
     {"ChannelPort", ChannelPort},
-    {"DataPort", DataPort},
+    // {"DataPort", DataPort},
     {NULL, 0}
 };
 
@@ -63,7 +63,7 @@ static struct
 {
     unsigned int pkeyaccept;
     unsigned int kexkey_accept;
-    unsigned int dataport;
+    // unsigned int dataport;
     unsigned int controlport;
     unsigned int addrfamily;
 } client_config;
@@ -112,7 +112,7 @@ int run_command(channel_context* channel_ctx, char* command_str)
     {
         if(!strcmp(commands[i].command_str, command_str))
         {
-            printf(commands[i].helper);
+            printf("%s",commands[i].helper);
             printf("\n");
             control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
             control_channel_send(channel_ctx->c_channel);
@@ -298,7 +298,6 @@ int read_config(char* conf)
             case PubkeyAcceptedKeyTypes:
             {
                 int ret = 0;
-                // cp = strtok(NULL, WHITESPACE);
                 while(cp = strtok(NULL, WHITESPACE))
                 {
                     opcode = parse_token(cp, conf, linenum);
@@ -325,18 +324,18 @@ int read_config(char* conf)
             {
                 cp = strtok(NULL, WHITESPACE);
                 printf("%s\n", cp);
-                client_config.dataport = str_to_int(cp, strlen(cp));
-                printf("%d\n", client_config.dataport);
-                break;
-            }
-            case DataPort:
-            {
-                cp = strtok(NULL, WHITESPACE);
-                printf("%s\n", cp);
                 client_config.controlport = str_to_int(cp, strlen(cp));
                 printf("%d\n", client_config.controlport);
                 break;
             }
+            // case DataPort:
+            // {
+            //     cp = strtok(NULL, WHITESPACE);
+            //     printf("%s\n", cp);
+            //     client_config.controlport = str_to_int(cp, strlen(cp));
+            //     printf("%d\n", client_config.controlport);
+            //     break;
+            // }
         }
     }
 
@@ -359,7 +358,7 @@ int main(int argc, char* argvs[])
     ctx = (cipher_context* ) malloc(sizeof(cipher_context)); 
     aes_cipher_init(ctx);
     channel_ctx.control_port = client_config.controlport;
-    channel_ctx.data_port = client_config.dataport;
+    // channel_ctx.data_port = client_config.dataport;
 
     // signal and handle
     signal(SIGINT, signal_handler);

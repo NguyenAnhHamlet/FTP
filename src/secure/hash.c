@@ -54,7 +54,7 @@ void sha256(char* in, int inlen, char** out, int *outlen )
 
     if (!EVP_DigestInit_ex(mdCtx, EVP_sha256(), NULL))
     {
-        LOG(SEVRER_LOG, "Message digest initialization failed.\n");
+        LOG(SERVER_LOG, "Message digest initialization failed.\n");
         EVP_MD_CTX_free(mdCtx);
         openssl_get_error();
         exit(EXIT_FAILURE);
@@ -63,7 +63,7 @@ void sha256(char* in, int inlen, char** out, int *outlen )
     // Hashes cnt bytes of data at d into the digest context mdCtx
     if (!EVP_DigestUpdate(mdCtx, in, inlen))
     {
-        printf(SEVRER_LOG, "Message digest update failed.\n");
+        LOG(SERVER_LOG,  "Message digest update failed.\n");
         EVP_MD_CTX_free(mdCtx);
         openssl_get_error();
         exit(EXIT_FAILURE);
@@ -71,7 +71,7 @@ void sha256(char* in, int inlen, char** out, int *outlen )
 
     if (!EVP_DigestFinal_ex(mdCtx, out_sha256, &out_sha256_len))
     {
-        printf(SEVRER_LOG, "Message digest finalization failed.\n");
+        LOG(SERVER_LOG, "Message digest finalization failed.\n");
         EVP_MD_CTX_free(mdCtx);
         openssl_get_error();
         exit(EXIT_FAILURE);

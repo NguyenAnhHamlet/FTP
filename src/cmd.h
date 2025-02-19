@@ -12,7 +12,7 @@
 #define CD          506
 #define CHMOD       507
 #define DELETE      508
-#define _DIR        509
+#define MMKDIR      509
 #define LCD         510
 #define LS          511
 #define IDLE        512
@@ -42,12 +42,7 @@
 #define IPV4_OP     536
 #define IPV6_OP     537
 #define PASSMODE    538
-#define INT_OFF     539
-#define AULOG_DIS   540
 #define GLOB_DIS    541
-#define VERBOSE_ENB 542
-#define DEBUG_ENB   543
-#define CLEAR       544
 
 typedef int (* command_func_ptr) (channel_context*); 
 typedef struct 

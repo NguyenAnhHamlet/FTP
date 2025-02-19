@@ -404,8 +404,6 @@ int extract_public_key_values(EVP_PKEY* evp_key, BIGNUM*** x, BIGNUM*** y)
     return 1;
 }
 
-// TODO
-// Could not generate the EC_KEY in here
 int generate_ecdh_from_points(EVP_PKEY** evp_pkey, BIGNUM** x, BIGNUM** y)
 {
     unsigned char pub_key_bytes[65];
