@@ -507,7 +507,6 @@ int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_v
     {
         openssl_get_error();
         EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
         return 0;
     }
 
@@ -517,7 +516,6 @@ int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_v
     {
         openssl_get_error();
         EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
         return 0;
     }
 
@@ -525,7 +523,6 @@ int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_v
     {
         openssl_get_error();
         EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
         OPENSSL_free(skey);
         return 0;
     }
@@ -533,7 +530,6 @@ int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_v
     BN_bin2bn(skey, skeylen, *shared_key);
 
     EVP_PKEY_CTX_free(ctx);
-    EVP_PKEY_free(pkey);
     OPENSSL_free(skey);
 
     return 1;

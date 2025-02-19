@@ -22,6 +22,7 @@ void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_c
     channel_ctx->log_type = log_type;
     channel_ctx->prompt = 0;
     channel_ctx->passmode = 1;
+    channel_ctx->retb = (Buffer*) malloc(sizeof(Buffer));
     buffer_init(channel_ctx->retb);
 }
 

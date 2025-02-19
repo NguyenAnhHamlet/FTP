@@ -867,7 +867,6 @@ int channel_generate_shared_key_ecdh(control_channel* channel, cipher_context* c
 #elif OPENSSL_3
     EVP_PKEY_free(pkey);
 #endif
-
     BN_free(peer_pub_x);
     BN_free(peer_pub_y);
 
