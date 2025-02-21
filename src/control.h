@@ -36,5 +36,6 @@ int status(channel_context* channel_ctx);
 int remote_system_info(channel_context* channel_ctx);
 int passmode(channel_context* channel_ctx);
 int local_change_dir(channel_context* channel_ctx);
+int local_pwd(channel_context* channel_ctx);
 
 #endif

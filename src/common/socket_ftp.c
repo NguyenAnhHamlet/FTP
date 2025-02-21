@@ -181,5 +181,5 @@ int accept_new_connection_ftp(socket_ftp* socket )
 
 unsigned int socket_ftp_get_port(socket_ftp* socket)
 {
-    return socket->PORT_;
+    return socket->sockfd;
 }

@@ -269,6 +269,8 @@ int delete_remote_file(channel_context* channel_ctx)
 
         int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->source = (char*) malloc(data_len);
+        channel_ctx->source_len = data_len;
+        memset(channel_ctx->source, 0, data_len);
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);
 
@@ -394,13 +396,15 @@ int idle_set_remote(channel_context* channel_ctx)
     {
     case CLIENT:
     {
-        control_channel_append_header(channel_ctx->c_channel, 0, sizeof(Packet), 
-                                      0, IDLE, 0, 0);
-        control_channel_append_int( (int) *channel_ctx->source, channel_ctx->c_channel );
-        if(!control_channel_send(channel_ctx->c_channel) || 
-           !control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        control_channel_append_ftp_type(IDLE, channel_ctx->c_channel);
+        control_channel_append_int( atoi(channel_ctx->source), channel_ctx->c_channel );
+        control_channel_send(channel_ctx->c_channel);
+        LOG(SERVER_LOG, "IDLE: %d %s\n", atoi(channel_ctx->source), channel_ctx->source);
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
         {
-            LOG(CLIENT_LOG, "Set timeout remote failed\n");
+            LOG(channel_ctx->log_type, "Set timeout remote failed\n");
+            LOG(channel_ctx->log_type, "Expected code %d but got %d",
+                SUCCESS, control_channel_get_ftp_type_in(channel_ctx->c_channel));
             operation_abort(channel_ctx->c_channel);
 
             return 0;
@@ -417,8 +421,45 @@ int idle_set_remote(channel_context* channel_ctx)
 
             return 0;
         }
+        
+        unsigned int timeout = control_channel_get_int(channel_ctx->c_channel);
 
-        channel_ctx->ret_int = control_channel_get_int(channel_ctx->c_channel);
+        // TODO : update value timeout in file /etc/ftp/sftpd_config
+        const char tempconf[32] = "/etc/ftp/.sftpd_config";
+        FILE* file = fopen(SFTPD_CONFIG, "r");
+        FILE *temp = fopen(tempconf, "w");
+        char line[256];
+        while (fgets(line, sizeof(line), file)) 
+        {
+            if (strstr(line, "IdleTimeOut")) 
+            {
+                fprintf(temp, "%s %d\n", "IdleTimeOut", timeout);
+            }
+            else
+            {
+                fputs(line, temp);
+            }
+        }
+
+        fclose(file);
+        fclose(temp);
+
+        if (remove(SFTPD_CONFIG) != 0) 
+        {
+            perror("Failed to delete the original file\n");
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        if (rename(tempconf, SFTPD_CONFIG) != 0) 
+        {
+            perror("Failed to rename config file\n");
+            operation_abort(channel_ctx->c_channel);    
+            return 0;
+        }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
 
         break;
     }
@@ -796,7 +837,9 @@ int mdelte_remote_files(channel_context* channel_ctx)
         control_channel_append_ftp_type(MDELETE, channel_ctx->c_channel);
         control_channel_append_str(channel_ctx->source, channel_ctx->c_channel,
                                    channel_ctx->source_len);
-        control_channel_send(channel_ctx->c_channel);
+        control_channel_send_wait(channel_ctx->c_channel);
+
+        LOG(SERVER_LOG, "MDELETE 0 %s\n", channel_ctx->source);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
         {
@@ -816,13 +859,35 @@ int mdelte_remote_files(channel_context* channel_ctx)
     
     case SERVER:
     {
+        if(!control_channel_read_expect(channel_ctx->c_channel, MDELETE))
+        {
+            LOG(channel_ctx->log_type, "Unknown CODE from server side," 
+                "received CODE %d: \n",
+                control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        LOG(SERVER_LOG, "MDELETE 1\n");
+
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
+        channel_ctx->source = (char*) malloc(len);
+        channel_ctx->source_len = len;
+        memset(channel_ctx->source, 0, channel_ctx->source_len);
+        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
+                                &channel_ctx->source_len);
+        
+        LOG(SERVER_LOG, "MDELETE 2 %s\n", channel_ctx->source);
+
         char* ppos = channel_ctx->source;
         char* npos = NULL;
         while(npos = strchr(ppos, ' '))
         {
-            npos = NULL;
+            *npos = 0;
             npos++;
             while(*npos == ' ') npos++;
+
+            LOG(SERVER_LOG, "file name : %s\n", ppos);
 
             if(remove(ppos) != 0)
             {
@@ -835,6 +900,19 @@ int mdelte_remote_files(channel_context* channel_ctx)
 
             ppos = npos;
         }
+
+        LOG(SERVER_LOG, "file name : %s\n", ppos);
+
+        if(remove(ppos) != 0)
+        {
+            LOG(channel_ctx->log_type, "Failed to delete file %s", ppos);
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_append_str(ppos, channel_ctx->c_channel, strlen(ppos));
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
+        LOG(SERVER_LOG, "MDELETE 3\n");
 
         control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
@@ -894,9 +972,12 @@ int remote_mmkdir(channel_context* channel_ctx)
         control_channel_get_str(channel_ctx->c_channel, dirsname, &rlen);
         dirname = dirsname;
 
-        while((uppos = strchr(dirsname, ' ')))
+        while((uppos = strchr(dirname, ' ')))
         {
             *uppos = 0;
+            uppos++;
+            while(*uppos == ' ') uppos++;
+
             if(mkdir(dirname, 0755) != 0)
             {
                 LOG(channel_ctx->log_type, "Unknown CODE from server side," 
@@ -907,8 +988,7 @@ int remote_mmkdir(channel_context* channel_ctx)
                 control_channel_send(channel_ctx->c_channel);
                 return 0;
             }
-            uppos++;
-            while(*uppos == 0) uppos++;
+
             dirname = uppos;
         }
 
@@ -1023,8 +1103,9 @@ int mlist_remote_dir(channel_context* channel_ctx)
 
         if(!control_channel_read_expect(channel_ctx->c_channel, MLS))
         {
-            LOG(CLIENT_LOG, "Failed to list dir, received CODE: %d\n", 
+            LOG(CLIENT_LOG, "Failed to mlist dir, received CODE: %d\n", 
                 control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
 
             return 0;
         }
@@ -1040,7 +1121,7 @@ int mlist_remote_dir(channel_context* channel_ctx)
     }
     case SERVER:
     {
-        char res[BUF_LEN << 2];
+        char res[BUF_LEN];
         unsigned int ret_len;
         char* indiv_dir = NULL, *npos = NULL;
 
@@ -1048,7 +1129,7 @@ int mlist_remote_dir(channel_context* channel_ctx)
 
         if(!control_channel_read_expect(channel_ctx->c_channel, MLS))
         {
-            LOG(SERVER_LOG, "Failed to list dir, received CODE: %d\n", 
+            LOG(SERVER_LOG, "Failed to mlist dir, received CODE: %d\n", 
                 control_channel_get_ftp_type_in(channel_ctx->c_channel));
             operation_abort(channel_ctx->c_channel);
 
@@ -1062,12 +1143,16 @@ int mlist_remote_dir(channel_context* channel_ctx)
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);                       
         
-        control_channel_append_ftp_type(LS, channel_ctx->c_channel);
+        control_channel_append_ftp_type(MLS, channel_ctx->c_channel);
 
         indiv_dir = channel_ctx->source;
         while(npos = strchr(indiv_dir, ' '))
         {
             *npos = 0;
+            npos++;
+            while(*npos == ' ') npos++;
+            
+            memset(res, 0, sizeof(res));
             if(!list_dir(indiv_dir, res, &ret_len))
             {
                 LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
@@ -1076,16 +1161,29 @@ int mlist_remote_dir(channel_context* channel_ctx)
             }
             
             control_channel_append_str(indiv_dir, channel_ctx->c_channel, strlen(indiv_dir));
-            control_channel_append_str(res, channel_ctx->c_channel, ret_len);
-            control_channel_append_str(":\n", channel_ctx->c_channel, 1);
-            control_channel_append_str(res, channel_ctx->c_channel, ret_len);
-            control_channel_send(channel_ctx->c_channel);
+            control_channel_append_str(":\n", channel_ctx->c_channel, 2);
+            control_channel_append_str(res, channel_ctx->c_channel, strlen(res));
+            control_channel_append_str("\n", channel_ctx->c_channel, 1);
 
-            npos++;
-            while(*npos == ' ') npos++;
             indiv_dir = npos;
         }
+        
+        memset(res, 0, sizeof(res));
+        if(!list_dir(indiv_dir, res, &ret_len))
+        {
+            LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+        LOG(SERVER_LOG, "DIR: %s\n", indiv_dir);
+        LOG(SERVER_LOG, "VALUE: %s\n", res);
 
+        control_channel_append_str(indiv_dir, channel_ctx->c_channel, strlen(indiv_dir));
+        control_channel_append_str(":\n", channel_ctx->c_channel, 2);
+        control_channel_append_str(res, channel_ctx->c_channel, strlen(res));
+        control_channel_append_str("\n", channel_ctx->c_channel, 1);
+
+        control_channel_send_wait(channel_ctx->c_channel);
         free(channel_ctx->source);
 
         break;
@@ -1105,6 +1203,21 @@ int mlist_remote_dir(channel_context* channel_ctx)
 int local_prompt(channel_context* channel_ctx)
 {
     channel_ctx->prompt = str_to_int(channel_ctx->source, channel_ctx->source_len); 
+}
+
+int local_pwd(channel_context* channel_ctx)
+{
+    char cwd[BUF_LEN];
+    memset(cwd, 0, sizeof(cwd));
+    if(!getcwd(cwd, sizeof(cwd)))
+    {
+        LOG(channel_ctx->log_type, "Failed to list local dir\n");
+        return 0;
+    }
+
+    channel_ctx->ret = (char*) malloc(strlen(cwd));
+    strncpy(channel_ctx->ret, cwd, strlen(cwd));
+    return 1;
 }
 
 int remote_pwd(channel_context* channel_ctx)
@@ -1127,7 +1240,7 @@ int remote_pwd(channel_context* channel_ctx)
             return 0;
         }
 
-        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1 ;
         channel_ctx->ret = (char*) malloc(len);
         channel_ctx->ret_len = len;
         if(!channel_ctx->ret)
@@ -1161,7 +1274,7 @@ int remote_pwd(channel_context* channel_ctx)
 
         char* data = NULL;
         char cwd[BUF_LEN];
-        int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         data = (char*) malloc(len);
 
         if(!data)
@@ -1273,7 +1386,7 @@ int remote_system_info(channel_context* channel_ctx)
             return 0;
         }
 
-        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->ret_len = len;
         channel_ctx->ret = (char*) malloc(len);
         if(!channel_ctx->ret)

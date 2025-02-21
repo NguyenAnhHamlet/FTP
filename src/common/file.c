@@ -111,7 +111,7 @@ int list_dir(char* dir, char* res, unsigned int* r_len)
                 continue;
             strncat(res, ep->d_name, sizeof(ep->d_name));
             strncat(res, " \n", 2);
-            *r_len += sizeof(ep->d_name);
+            *r_len += strlen(ep->d_name);
             *r_len +=2;
         }
     }

@@ -377,6 +377,7 @@ int data_append(channel_context* channel_ctx)
 
         *remote_name = 0;
         remote_name++;
+        while(*remote_name == ' ') remote_name++;
 
         // establish the data channel first
         if(!data_conn(channel_ctx))
@@ -389,6 +390,8 @@ int data_append(channel_context* channel_ctx)
         control_channel_send(channel_ctx->c_channel);
 
         FILE* file = fopen(local_name, "rb");
+
+        LOG(SERVER_LOG, "NAME: %s\n", local_name);
 
         if (file == NULL)
         {
@@ -429,8 +432,9 @@ int data_append(channel_context* channel_ctx)
             operation_abort(channel_ctx->c_channel);
             return 0;
         }
-
+        
         control_channel_get_str(channel_ctx->c_channel, file_name, &n_len);
+        LOG(SERVER_LOG, "APPEND1\n %s", file_name);                                                     
 
         // in case file does not exist, create a brand new one
         if(not_exist(file_name)) 

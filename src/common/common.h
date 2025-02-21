@@ -28,8 +28,8 @@
 
 #define GREEN "\033[1;32m"
 #define RESET_COLOR "\033[0m"
-
 #define WHITESPACE " \t\r\n"
+#define SFTPD_CONFIG "/etc/ftp/sftpd_config"
 
 typedef enum 
 {
