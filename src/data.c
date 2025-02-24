@@ -848,7 +848,7 @@ int mget(channel_context* channel_ctx)
         control_channel_send(channel_ctx->c_channel);
 
         // get the series of files name from server
-        if(!control_channel_read_expect(channel_ctx->c_channel, FILE_EXIST))
+        if(!control_channel_read_expect(channel_ctx->c_channel, MGET))
         {
             LOG(channel_ctx->log_type, "Expected %d but got %d instead.\n", 
                 MGET, control_channel_get_ftp_type_in(channel_ctx->c_channel));
@@ -856,8 +856,9 @@ int mget(channel_context* channel_ctx)
             return 0;
         }
 
-        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         files_name = (char*) malloc(len);
+        memset(files_name, 0, len);
 
         if(!files_name)
         {
@@ -867,51 +868,79 @@ int mget(channel_context* channel_ctx)
         } 
 
         control_channel_get_str(channel_ctx->c_channel, files_name, &len);
-
-        free(files_name);
+        LOG(channel_ctx->log_type, "files_name: %s\n", files_name);
+        control_channel_append_ftp_type(MGET, channel_ctx->c_channel);
 
         if(channel_ctx->prompt)
         {
-            
             indiv_file = files_name;
-            while(npos = strchr(indiv_file, ' '))
+            npos++;
+            while(*npos == ' ') npos++;
+
+            while((npos = strchr(indiv_file, ' ')) || indiv_file)
             {
-                *npos = 0;
+                if(npos)
+                {
+                    *npos = 0;
+                    npos++;
+                    while(*npos == ' ') npos++;
+                }
+
                 char* ans = NULL;
                 char ques[BUF_LEN];
                 sprintf(ques, "get %s ? ", channel_ctx->source);
                 ans = readline(ques);
                 if(!ans || strncmp(ans, "y", 2))
                 {
-                    memset(indiv_file, ' ', strlen(indiv_file));
-                }
-                else 
-                {
                     count++;
+                    control_channel_append_str(indiv_file, channel_ctx->c_channel, 
+                                               strlen(indiv_file));
                 }
 
-                npos++;
-                while(*npos == ' ') npos++;
+                
+                if(ans) free(ans);
+
                 indiv_file = npos;
+                if(!indiv_file || *indiv_file == '\0') break;
             }
             
+            if(!count) 
+            {
+                LOG(channel_ctx->log_type, "No file in files_name\n");
+                operation_abort(channel_ctx->c_channel);
+                return 1;
+            }
+
+        }
+        else
+        {
+            control_channel_append_str(files_name, channel_ctx->c_channel, len);
         }
 
-        if(!count) 
-        {
-            LOG(channel_ctx->log_type, "No file in files_name\n");
-            operation_abort(channel_ctx->c_channel);
-            return 1;
-        }
+        free(files_name); 
+        len = control_channel_get_data_len_out(channel_ctx->c_channel) + 1;
+        files_name = (char*) malloc(len); 
+        memset(files_name, 0, len);
+        control_channel_get_str_out(channel_ctx->c_channel, files_name, &len);
+        
+        control_channel_append_ftp_type(MGET, channel_ctx->c_channel);
+        control_channel_append_str(files_name, channel_ctx->c_channel, len);
+        control_channel_send(channel_ctx->c_channel);
 
         // establish the data channel first
         if(!data_conn(channel_ctx))
             return 0;
-        
+
         indiv_file = files_name;
-        while(npos = strchr(indiv_file, ' '))
+        while((npos = strchr(indiv_file, ' ')) || indiv_file)
         {
-            *npos = 0;
+            if(npos) 
+            {
+                *npos = 0;
+                npos++;
+                while(*npos == ' ') npos++;
+            }
+
             basename(indiv_file, &base_file_name);
     
             if (!not_exist(base_file_name))
@@ -920,6 +949,7 @@ int mget(channel_context* channel_ctx)
                 remove(base_file_name);
             }
         
+            LOG(CLIENT, "Create file name : %s\n", indiv_file);
             create_file(base_file_name);
             // read data and append into file 
             if(!get_file(channel_ctx, base_file_name))
@@ -935,10 +965,12 @@ int mget(channel_context* channel_ctx)
                 return 0;
             }
     
-            npos++;
-            while(*npos == ' ') npos++;
             indiv_file = npos;
+            if(!indiv_file || *indiv_file == '\0') break;
         }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
 
         break;
     }
@@ -954,27 +986,40 @@ int mget(channel_context* channel_ctx)
             return 0;
         }
             
-        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         files_name = (char*) malloc(len);
-        
+        memset(files_name, 0, len);
+
         if(!files_name)
         {
             LOG(channel_ctx->log_type, "Failed to allocate mem for files_name\n");
             operation_abort(channel_ctx->c_channel);
             return 0;
         } 
-
+        
         control_channel_get_str(channel_ctx->c_channel, files_name, &len);
             
         // Check and send back all available files from server
+        control_channel_clean_data_out(channel_ctx->c_channel);
+        control_channel_append_ftp_type(MGET, channel_ctx->c_channel);
+
         indiv_file = files_name;
-        while(npos = strchr(indiv_file, ' '))
+        while((npos = strchr(indiv_file, ' ')) || indiv_file)
         {
-            *npos = 0;
+            if(npos) 
+            {
+                *npos = 0;
+                npos++;
+                while(*npos == ' ') npos++;
+            }
+
             glob_t glob_result;
             int ret;
 
             ret = glob(indiv_file, 0, NULL, &glob_result);
+
+            LOG(SERVER_LOG, "indiv_file outside: %s : %d\n", indiv_file, strlen(indiv_file));
+
             
             if(ret == 0)
             {
@@ -983,15 +1028,17 @@ int mget(channel_context* channel_ctx)
                     control_channel_append_str(glob_result.gl_pathv[i], channel_ctx->c_channel, 
                                                strlen(glob_result.gl_pathv[i]));
                     control_channel_append_str(" ", channel_ctx->c_channel, 1);
+                    LOG(SERVER_LOG, "indiv_file: %s\n", indiv_file);
                 }
             }
-
-            npos++;
-            while(*npos == ' ') npos++;
+            
             indiv_file = npos;
+            if(!indiv_file || *indiv_file == '\0') break;
         }
 
         free(files_name);
+        LOG(SERVER_LOG, "channel_ctx->c_channel->data_out : %s\n", channel_ctx->c_channel->data_out->buf->buf);
+        control_channel_send_wait(channel_ctx->c_channel);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, MGET))
         {
@@ -1001,7 +1048,7 @@ int mget(channel_context* channel_ctx)
             return 0;
         }
 
-        len = control_channel_get_data_len_in(channel_ctx->c_channel);
+        len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         files_name = (char*) malloc(len);
 
         if(!files_name)
@@ -1013,11 +1060,22 @@ int mget(channel_context* channel_ctx)
 
         control_channel_get_str(channel_ctx->c_channel, files_name, &len);
 
+        // establish the data channel first
+        if(!data_conn(channel_ctx))
+            return 0;
+
         indiv_file = files_name;
-        while(npos = strchr(indiv_file, ' '))
+        while((npos = strchr(indiv_file, ' ')) || indiv_file)
         {
-            *npos = 0;
+            if(npos) 
+            {
+                *npos = 0;
+                npos++;
+                while(*npos == ' ') npos++;
+            }
+
             FILE* file = NULL;
+            LOG(channel_ctx->log_type,"FILE: %s\n", indiv_file);
             read_file(indiv_file, &file);
             if(!send_file(channel_ctx, file))
             {
@@ -1029,20 +1087,26 @@ int mget(channel_context* channel_ctx)
                 packet_destroy(channel_ctx->d_channel->data_out);
                 if(channel_ctx->type == CLIENT)
                     destroy_ftp_socket(channel_ctx->d_socket);
-                if(files_name) free(files_name);
                 return 0;
             }
             
-            npos++;
-            while(*npos == ' ') npos++;
             indiv_file = npos;
+            if(!indiv_file || *indiv_file == '\0') break;
         }
-        
-        // establish the data channel first
-        if(!data_conn(channel_ctx))
-            return 0;
 
-        
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Failed to received files\n");
+            LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+                SEND, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
+        LOG(SERVER_LOG, "MGET 60\0");
+
+        free(files_name);
         
         break;
     }
@@ -1061,8 +1125,6 @@ int mget(channel_context* channel_ctx)
     packet_destroy(channel_ctx->d_channel->data_out);
     if(channel_ctx->type == CLIENT)
         destroy_ftp_socket(channel_ctx->d_socket);
-
-    if(files_name) free(files_name);
 
     return 1;
 }

@@ -21,18 +21,6 @@ void buffer_free(Buffer * buffer)
 
 void buffer_clear(Buffer * buffer)
 {
-	if(buffer == NULL )
-	{
-		LOG(SERVER_LOG, "BUFFER NULL 1\n");
-		return;
-	} 
-
-	if(buffer->buf == NULL )
-	{
-		LOG(SERVER_LOG, "BUFFER NULL 1\n");
-		return;
-	} 
-
 	memset(buffer->buf, '\0', buffer->alloc);
 	buffer->offset = 0;
 	buffer->end = 0;

@@ -159,6 +159,10 @@ int control_channel_get_ftp_type_in(control_channel* c_channel);
 int control_channel_get_ftp_type_out(control_channel* c_channel);
 int control_channel_get_sockfd_in(control_channel* c_channel);
 int control_channel_get_sockfd_out(control_channel* c_channel);
+int control_channel_get_str_out(control_channel* channel, char* str, 
+                                unsigned int* len);
+void control_channel_clean_data_out(control_channel* channel);
+void control_channel_clean_data_in(control_channel* channel);
 
 // 
 // data channel

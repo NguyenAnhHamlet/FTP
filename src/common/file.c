@@ -7,7 +7,11 @@
 
 void read_file(char path[], FILE** fp)
 {
-    if(not_exist(path)) fatal("File does not exist\n");
+    if(not_exist(path))
+    {
+        perror("File does not exist\n");
+        return;
+    }     
 
     *fp = fopen(path, "r");
 

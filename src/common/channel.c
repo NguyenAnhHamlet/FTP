@@ -228,9 +228,24 @@ int control_channel_get_str(control_channel* channel, char* str, unsigned int* l
     return packet_get_str(channel->data_in, str, len);
 }
 
+int control_channel_get_str_out(control_channel* channel, char* str, unsigned int* len)
+{
+    return packet_get_str(channel->data_out, str, len);
+}
+
 int control_channel_get_bignum(BIGNUM** bignum, control_channel* channel)
 {
     return packet_get_bignum(bignum, channel->data_in);
+}
+
+void control_channel_clean_data_out(control_channel* channel)
+{
+    packet_clear_data(channel->data_out);
+}
+
+void control_channel_clean_data_in(control_channel* channel)
+{
+    packet_clear_data(channel->data_in);
 }
 
 int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
