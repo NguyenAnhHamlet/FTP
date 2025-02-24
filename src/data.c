@@ -12,6 +12,7 @@
 #include <glob.h>
 #include <signal.h>
 #include <readline/readline.h>
+#include <libgen.h>
 
 unsigned long total_bytes=0;
 
@@ -200,7 +201,7 @@ int get(channel_context* channel_ctx)
 
     }
 
-    basename(channel_ctx->source, &base_file_name);
+    base_file_name = basename(channel_ctx->source);
 
     if (!not_exist(base_file_name))
     {
@@ -486,7 +487,7 @@ int data_newer(channel_context* channel_ctx)
             return 0;
         }
 
-        basename(channel_ctx->source, &local_file_name);
+        local_file_name = basename(channel_ctx->source);
         local_modtime(local_file_name, &channel_ctx->source_len, 
                       lc_modtime, &lc_len);
 
@@ -556,7 +557,7 @@ int data_reget(channel_context* channel_ctx)
 
         FILE* fp;
         char* base = NULL;
-        basename(channel_ctx->source, &base);
+        base = basename(channel_ctx->source);
         read_file(base, &fp);
 
         // get the offset of the end of file in client side
@@ -941,7 +942,7 @@ int mget(channel_context* channel_ctx)
                 while(*npos == ' ') npos++;
             }
 
-            basename(indiv_file, &base_file_name);
+            base_file_name = basename(indiv_file);
     
             if (!not_exist(base_file_name))
             {
@@ -1151,6 +1152,59 @@ int mput(channel_context* channel_ctx)
                                    channel_ctx->source_len);
         control_channel_send(channel_ctx->c_channel);
 
+        // receive ACK
+        if(!control_channel_read_expect(channel_ctx->c_channel, FTP_ACK))
+        {
+            LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+                FTP_ACK, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
+        // Start sending files
+        char* indiv_file = channel_ctx->source;
+        char* npos = NULL;
+        while((npos = strchr(indiv_file, ' ')) || indiv_file)
+        {
+            if(npos)
+            {
+                *npos = 0;
+                npos++;
+                while(*npos == ' ') npos++;
+            }
+
+            FILE* file = NULL;
+            LOG(channel_ctx->log_type,"FILE: %s\n", indiv_file);
+            read_file(indiv_file, &file);
+
+            if(!send_file(channel_ctx, file))
+            {
+                LOG(channel_ctx->log_type, "Failed to send file to endpoint\n");
+                control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+                control_channel_send(channel_ctx->c_channel);
+                close(channel_ctx->d_channel->data_in->in_port);
+                packet_destroy(channel_ctx->d_channel->data_in);
+                packet_destroy(channel_ctx->d_channel->data_out);
+                if(channel_ctx->type == CLIENT)
+                    destroy_ftp_socket(channel_ctx->d_socket);
+                return 0;
+            }
+
+            indiv_file = npos;
+            if(!indiv_file || *indiv_file == '\0') break;
+
+        }
+
+        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+        {
+            LOG(channel_ctx->log_type, "Failed to received files\n");
+            LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+                SEND, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
+            control_channel_send(channel_ctx->c_channel);
+            return 0;
+        }
+
         break;
     }
 
@@ -1163,17 +1217,68 @@ int mput(channel_context* channel_ctx)
         // get file's name
         if(!control_channel_read_expect(channel_ctx->c_channel, FTP_FILE_NAME))
         {
+            LOG(channel_ctx->log_type, "Expected %d but received %d\n", 
+                FTP_FILE_NAME, control_channel_get_ftp_type_in(channel_ctx->c_channel));
             operation_abort(channel_ctx->c_channel);
-
             return 0;
         }
 
         int data_len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         files_name = (char*) malloc(data_len);
         memset(files_name, 0, data_len);
-        channel_ctx->source = files_name;
-        control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
-                                &channel_ctx->source_len);        
+        control_channel_get_str(channel_ctx->c_channel, files_name, 
+                                &data_len); 
+        
+        // send ACK
+        control_channel_append_ftp_type(FTP_ACK, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        // Start reading files
+        char* indiv_file = files_name;
+        char* npos = NULL;
+        char* base_file_name = NULL;
+        while((npos = strchr(indiv_file, ' ')) || indiv_file)
+        {
+            if(npos) 
+            {
+                *npos = 0;
+                npos++;
+                while(*npos == ' ') npos++;
+            }
+
+            base_file_name = basename(indiv_file);
+    
+            if (!not_exist(base_file_name))
+            {
+                // Remove old file
+                remove(base_file_name);
+            }
+        
+            LOG(CLIENT, "Create file name : %s\n", indiv_file);
+            create_file(base_file_name);
+            // read data and append into file 
+            if(!get_file(channel_ctx, base_file_name))
+            {
+                LOG(channel_ctx->log_type, "Error when getting file %s from remote server\n", 
+                    channel_ctx->source);
+                operation_abort(channel_ctx->c_channel);
+                close(channel_ctx->d_channel->data_in->in_port);
+                packet_destroy(channel_ctx->d_channel->data_in);
+                packet_destroy(channel_ctx->d_channel->data_out);
+                if(channel_ctx->type == CLIENT)
+                    destroy_ftp_socket(channel_ctx->d_socket);
+                return 0;
+            }
+    
+            indiv_file = npos;
+            if(!indiv_file || *indiv_file == '\0') break;
+        }
+
+        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+        control_channel_send(channel_ctx->c_channel);
+
+        free(files_name);
+
         break;
     }
     
@@ -1185,59 +1290,12 @@ int mput(channel_context* channel_ctx)
 
     }
 
-    indiv_file = channel_ctx->source;
-    while((npos = strchr(indiv_file, ' ')))
-    {
-        *npos = 0;
-        file = fopen(indiv_file, "rb"); 
-
-        // file does not exist or there is error in I/O operation
-        if (file == NULL)
-        {
-            LOG(channel_ctx->log_type, "Error opening file\n");
-            LOG(channel_ctx->log_type, strerror(errno));
-            control_channel_append_ftp_type(FILE_NOT_EXIST, channel_ctx->c_channel);
-            control_channel_send_wait(channel_ctx->c_channel);
-            return 0;
-        } 
-
-        if(channel_ctx->type == SERVER)
-        {
-            // File does exist, send code to confirm operation - server side only
-            control_channel_append_ftp_type(FILE_EXIST, channel_ctx->c_channel);
-            control_channel_send_wait(channel_ctx->c_channel);
-        }
-
-        // read and send file over to other endpoint
-        if(!send_file(channel_ctx, file))
-        {
-            LOG(channel_ctx->log_type, "Failed to send file to endpoint\n");
-            control_channel_append_ftp_type(ABORT, channel_ctx->c_channel);
-            control_channel_send(channel_ctx->c_channel);
-            close(channel_ctx->d_channel->data_in->in_port);
-            packet_destroy(channel_ctx->d_channel->data_in);
-            packet_destroy(channel_ctx->d_channel->data_out);
-            if(channel_ctx->type == CLIENT)
-                destroy_ftp_socket(channel_ctx->d_socket);
-            if(files_name) free(files_name);
-            return 0;
-        }
-        
-        npos++;
-        while(*npos == ' ') npos++;
-        indiv_file = npos;
-
-        LOG(SERVER_LOG, "AVAI 2\n");
-    }
-
     // destroy data channel and socket
     close(channel_ctx->d_channel->data_in->in_port);
     packet_destroy(channel_ctx->d_channel->data_in);
     packet_destroy(channel_ctx->d_channel->data_out);
     if(channel_ctx->type == CLIENT)
         destroy_ftp_socket(channel_ctx->d_socket);
-
-    if(files_name) free(files_name);
 
     LOG(SERVER_LOG, "AVAI 3\n");
 
@@ -1258,7 +1316,7 @@ int restart_get_file(channel_context* channel_ctx)
         char* base = NULL;
         int offset;
         char* offset_str = NULL;
-        basename(channel_ctx->source, &base);
+        base = basename(channel_ctx->source);
         read_file(base, &fp);
 
         if(!(offset_str = strchr(channel_ctx->source, ' ')))
