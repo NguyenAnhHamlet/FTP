@@ -472,7 +472,7 @@ int data_append(channel_context* channel_ctx)
 int data_newer(channel_context* channel_ctx)
 {
     total_bytes = 0;
-    char rm_modtime[BUF_LEN], lc_modtime[BUF_LEN], *local_file_name;
+    char* rm_modtime, lc_modtime[BUF_LEN], *local_file_name;
     struct tm rm_datetime, lc_datetime;
     unsigned int rm_len, lc_len;
 
@@ -487,6 +487,8 @@ int data_newer(channel_context* channel_ctx)
             return 0;
         }
 
+        rm_modtime = channel_ctx->ret;
+
         local_file_name = basename(channel_ctx->source);
         local_modtime(local_file_name, &channel_ctx->source_len, 
                       lc_modtime, &lc_len);
@@ -498,6 +500,8 @@ int data_newer(channel_context* channel_ctx)
         {
             LOG(CLIENT_LOG, "Server file is older than local file " 
                             "Abort the operation\n");
+            LOG(CLIENT_LOG, "rm_datetime : %s vs lc_modtime : %s\n", rm_modtime,
+                lc_modtime);
 
             // notify server about this to prevent further unneccesary operation
             // in server side
