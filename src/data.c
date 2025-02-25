@@ -591,8 +591,7 @@ int data_reget(channel_context* channel_ctx)
             close(channel_ctx->d_channel->data_in->in_port);
             packet_destroy(channel_ctx->d_channel->data_in);
             packet_destroy(channel_ctx->d_channel->data_out);
-            if(channel_ctx->type == CLIENT)
-                destroy_ftp_socket(channel_ctx->d_socket);
+            destroy_ftp_socket(channel_ctx->d_socket);
             return 0;
         }
 
@@ -651,8 +650,6 @@ int data_reget(channel_context* channel_ctx)
             packet_destroy(channel_ctx->d_channel->data_in);
             packet_destroy(channel_ctx->d_channel->data_out);
             free(channel_ctx->source);
-            if(channel_ctx->type == CLIENT)
-                destroy_ftp_socket(channel_ctx->d_socket);
             return 0;
         }
 
@@ -819,6 +816,7 @@ int get_file(channel_context* channel_ctx, char* base_file_name)
         }
 
         append_file(base_file_name, buf, data_len);
+
         total_bytes += data_len;
         pre_ident = curr_ident;
 
@@ -1320,15 +1318,15 @@ int restart_get_file(channel_context* channel_ctx)
         char* base = NULL;
         int offset;
         char* offset_str = NULL;
-        base = basename(channel_ctx->source);
-        read_file(base, &fp);
-
         if(!(offset_str = strchr(channel_ctx->source, ' ')))
         {
             LOG(CLIENT_LOG, "Lacked offset value\n");
             operation_abort(channel_ctx->c_channel);
             return 0;
         }
+
+        *offset_str = 0;
+        offset_str++;
 
         while(*offset_str == ' ' ) offset_str++;
 
@@ -1340,8 +1338,11 @@ int restart_get_file(channel_context* channel_ctx)
             return 0;
         }
 
+        base = basename(channel_ctx->source);
+        read_file(base, &fp);
+
         // got the offset value, send over file name and offset
-        control_channel_append_ftp_type(REGET, channel_ctx->c_channel);
+        control_channel_append_ftp_type(RESTART, channel_ctx->c_channel);
         control_channel_append_int(offset, channel_ctx->c_channel);
         control_channel_append_str(channel_ctx->source, 
                                    channel_ctx->c_channel,
@@ -1382,7 +1383,7 @@ int restart_get_file(channel_context* channel_ctx)
         char buf[BUF_LEN];
 
         // get offset from client 
-        if(!control_channel_read_expect(channel_ctx->c_channel, REGET))
+        if(!control_channel_read_expect(channel_ctx->c_channel, RESTART))
         {
             LOG(SERVER_LOG, "Failed to receive offset, received CODE: %d\n", 
                 control_channel_get_ftp_type_in(channel_ctx->c_channel));
