@@ -7,17 +7,18 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-void read_file(char path[], FILE** fp);
-void write_file(char path[], char data[], FILE* fp);
-mode_t permission(char path[]);      
-void create_file(char path[]);
-void append_file(char path[], char data[], int data_size);
-bool not_exist(char path[]);
-int list_dir(char* dir, char* res, unsigned int* r_len);
-void delete_file(char path[]);
-int change_dir(char path[]);
+int read_file(const char* path, FILE** fp);
+void write_file(const char* path, char data[], FILE* fp);
+mode_t permission(const char* path);      
+int create_file(const char* path);
+int append_file(const char* path, char data[], int data_size);
+bool not_exist(const char* path);
+int list_dir(const char* dir, char* res, unsigned int* r_len);
+void delete_file(const char* path);
+int change_dir(const char* path);
+int directory_exists(const char *path);
 
 // NOTICE: only deallocate path when ret is no longer needed
-void basename(char* path, char** ret);
+void basename(const char* path, char** ret);
 
 #endif

@@ -1420,7 +1420,13 @@ int remote_system_info(channel_context* channel_ctx)
         char  buf[BUF_LEN];
         
         memset(buf, 0, sizeof(buf));
-        read_file(OS_RELEASE, &file);
+        if(!read_file(OS_RELEASE, &file))
+        {
+            LOG(channel_ctx->log_type, "Fail to create file %s\n", OS_RELEASE);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
         if(!file)
         {
             LOG(channel_ctx->log_type, "Failed to open file %s", OS_RELEASE);

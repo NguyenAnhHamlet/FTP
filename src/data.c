@@ -209,7 +209,13 @@ int get(channel_context* channel_ctx)
         remove(base_file_name);
     }
 
-    create_file(base_file_name);
+    if(!create_file(base_file_name))
+    {
+        LOG(channel_ctx->log_type, "Fail to create file %s\n", base_file_name);
+        operation_abort(channel_ctx->c_channel);
+        return 0;
+    }
+
     // read data and append into file 
     if(!get_file(channel_ctx, base_file_name))
     {
@@ -260,6 +266,14 @@ int put(channel_context* channel_ctx)
                 operation_abort(channel_ctx->c_channel);
                 return 0;
             }
+        }
+
+        // check if file exist 
+        if(not_exist(channel_ctx->source))
+        {
+            LOG(channel_ctx->log_type, "File %s does not exist\n", channel_ctx->source);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
         }
 
         // establish the data channel first
@@ -439,7 +453,14 @@ int data_append(channel_context* channel_ctx)
 
         // in case file does not exist, create a brand new one
         if(not_exist(file_name)) 
-            create_file(file_name);
+        {
+            if(!create_file(file_name))
+            {
+                LOG(channel_ctx->log_type, "Fail to create file %s\n", file_name);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
+        }
 
         // read data and append into file
         if(!get_file(channel_ctx, file_name))
@@ -562,7 +583,13 @@ int data_reget(channel_context* channel_ctx)
         FILE* fp;
         char* base = NULL;
         base = basename(channel_ctx->source);
-        read_file(base, &fp);
+
+        if(!read_file(base, &fp))
+        {
+            LOG(channel_ctx->log_type, "Fail to create file %s\n", base);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
 
         // get the offset of the end of file in client side
         fseek(fp, 0, SEEK_END);
@@ -636,7 +663,13 @@ int data_reget(channel_context* channel_ctx)
             return 0;
         }
 
-        read_file(channel_ctx->source, &fp);
+        if(!read_file(channel_ctx->source, &fp))
+        {
+            LOG(channel_ctx->log_type, "Fail to create file %s\n", channel_ctx->source);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
         fseek(fp, offset, SEEK_SET);
 
         // read and send file over to other endpoint
@@ -815,7 +848,13 @@ int get_file(channel_context* channel_ctx, char* base_file_name)
             return 0;
         }
 
-        append_file(base_file_name, buf, data_len);
+        if(!append_file(base_file_name, buf, data_len))
+        {
+            LOG(channel_ctx->log_type, "Failed to append file %s\n",
+                base_file_name);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
 
         total_bytes += data_len;
         pre_ident = curr_ident;
@@ -973,7 +1012,14 @@ int mget(channel_context* channel_ctx)
             }
         
             LOG(CLIENT, "Create file name : %s\n", indiv_file);
-            create_file(base_file_name);
+
+            if(!create_file(base_file_name))
+            {
+                LOG(channel_ctx->log_type, "Fail to create file %s\n", base_file_name);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
+
             // read data and append into file 
             if(!get_file(channel_ctx, base_file_name))
             {
@@ -1111,7 +1157,14 @@ int mget(channel_context* channel_ctx)
 
             FILE* file = NULL;
             LOG(channel_ctx->log_type,"FILE: %s\n", indiv_file);
-            read_file(indiv_file, &file);
+
+            if(!read_file(indiv_file, &file))
+            {
+                LOG(channel_ctx->log_type, "Fail to create file %s\n", indiv_file);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
+
             if(!send_file(channel_ctx, file))
             {
                 LOG(channel_ctx->log_type, "Failed to send file to endpoint\n");
@@ -1268,7 +1321,13 @@ int mput(channel_context* channel_ctx)
 
             FILE* file = NULL;
             LOG(channel_ctx->log_type,"FILE: %s\n", indiv_file);
-            read_file(indiv_file, &file);
+
+            if(!read_file(indiv_file, &file))
+            {
+                LOG(channel_ctx->log_type, "Fail to create file %s\n", indiv_file);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
 
             if(!send_file(channel_ctx, file))
             {
@@ -1350,7 +1409,14 @@ int mput(channel_context* channel_ctx)
             }
         
             LOG(CLIENT, "Create file name : %s\n", indiv_file);
-            create_file(base_file_name);
+
+            if(!create_file(base_file_name))
+            {
+                LOG(channel_ctx->log_type, "Fail to create file %s\n", base_file_name);
+                operation_abort(channel_ctx->c_channel);
+                return 0;
+            }
+
             // read data and append into file 
             if(!get_file(channel_ctx, base_file_name))
             {
@@ -1432,7 +1498,13 @@ int restart_get_file(channel_context* channel_ctx)
         }
 
         base = basename(channel_ctx->source);
-        read_file(base, &fp);
+
+        if(!read_file(base, &fp))
+        {
+            LOG(channel_ctx->log_type, "Fail to create file %s\n", base);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
 
         // got the offset value, send over file name and offset
         control_channel_append_ftp_type(RESTART, channel_ctx->c_channel);
@@ -1497,7 +1569,13 @@ int restart_get_file(channel_context* channel_ctx)
             return 0;
         }
 
-        read_file(channel_ctx->source, &fp);
+        if(!read_file(channel_ctx->source, &fp))
+        {
+            LOG(channel_ctx->log_type, "Fail to create file %s\n", channel_ctx->source);
+            operation_abort(channel_ctx->c_channel);
+            return 0;
+        }
+
         fseek(fp, offset, SEEK_SET);
 
         // read and send file over to other endpoint

@@ -5,24 +5,28 @@
 #include <sys/stat.h>
 #include "log/ftplog.h"
 
-void read_file(char path[], FILE** fp)
+int read_file(const char* path, FILE** fp)
 {
     if(not_exist(path))
     {
-        perror("File does not exist\n");
-        return;
+        perror("File does not exist");
+        return 0;
     }     
 
     *fp = fopen(path, "r");
 
-    if(!*fp) fatal("Could not create file descriptor\n");
+    if(!*fp)
+    {
+        perror("Could not create file descriptor");
+        return 0;
+    } 
 }
 
-void write_file(char path[], char data[], FILE* fp)
+void write_file(const char* path, char data[], FILE* fp)
 {
     fp = fopen(path, "wb");
 
-    if(!fp) fatal("Could not create file descriptor\n");
+    if(!fp) perror("Could not create file descriptor");
 
     fprintf(fp, "%s", data);
 
@@ -30,36 +34,50 @@ void write_file(char path[], char data[], FILE* fp)
 
 }
 
-mode_t permission(char path[])
+mode_t permission(const char* path)
 {
-    if(not_exist(path)) fatal("File does not exist\n");
+    if(not_exist(path)) 
+    {
+        perror("File does not exist");
+        return -1;
+    }
 
     struct stat stat_result;
-    if (stat(path, &stat_result) == -1) fatal("Error in stat");
-
+    if (stat(path, &stat_result) == -1)
+    {
+        perror("Error in stat");
+        return -1;
+    } 
+        
     mode_t permissions = stat_result.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
 
     return permissions;
 }   
 
-void create_file(char path[])
+int create_file(const char* path)
 {
     FILE* fp = fopen(path, "w");
+    if(!fp) return 0;
     fclose(fp);
+    return 1;
 }
 
 
-void delete_file(char path[])
+void delete_file(const char* path)
 {
     remove(path);
 }
 
 
-void append_file(char path[], char data[], int data_size)
+int append_file(const char* path, char data[], int data_size)
 {
     FILE* fp = fopen(path, "ab");
 
-    if(!fp) fatal("Could not create file descriptor\n");
+    if(!fp)
+    {
+        perror("Could not create file descriptor");
+        return 0;
+    } 
 
     int bytes_written = fwrite(data, sizeof(char), data_size, fp);
 
@@ -67,11 +85,14 @@ void append_file(char path[], char data[], int data_size)
 
     if(bytes_written != data_size)
     {
-        perror("Write operation failed\n");
+        perror("Write operation failed");
+        return 0;
     }
+
+    return 1;
 }
 
-bool is_empty(char path[], FILE* fp)
+bool is_empty(const char* path, FILE* fp)
 {
     fp = fopen(path, "r");
     char buffer[1];
@@ -85,14 +106,14 @@ bool is_empty(char path[], FILE* fp)
     return true;
 }
 
-bool not_exist(char path[])
+bool not_exist(const char* path)
 {
     if(access(path, F_OK) == -1) return true;
 
     return false;
 }
 
-int list_dir(char* dir, char* res, unsigned int* r_len)
+int list_dir(const char* dir, char* res, unsigned int* r_len)
 {
     DIR *d;
     struct dirent *ep; 
@@ -125,7 +146,7 @@ int list_dir(char* dir, char* res, unsigned int* r_len)
     return 1;
 }
 
-void basename(char* path, char** ret)
+void basename(const char* path, char** ret)
 {
     *ret = strrchr(path, '/');
 
@@ -138,13 +159,24 @@ void basename(char* path, char** ret)
     (*ret)++; 
 }
 
-int change_dir(char path[])
+int change_dir(const char* path)
 {
     if(chdir(path) < 0)
     {
-        perror("Fail to change directory\n");
+        perror("Fail to change directory");
         return -1;
     }
 
     return 1;
+}
+
+int directory_exists(const char *path) 
+{
+    struct stat st;
+
+    if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) 
+    {
+        return 1;
+    }
+    return 0; 
 }
