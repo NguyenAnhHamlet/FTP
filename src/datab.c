@@ -115,12 +115,14 @@ int bput(channel_context* channel_ctx)
         return 0;
     }
 
-    if(pid == 0)
+    else if(pid == 0)
     {
         // set signal to interrupt, send back infos to parent process
         // Doing normal activities of put file 
         signal(SIGUSR1, data_signal_bput_handler);
         ret = put(channel_ctx);
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
         return ret;
     }
 
@@ -157,12 +159,14 @@ int bmget(channel_context* channel_ctx)
         return 0;
     }
 
-    if(pid == 0)
+    else if(pid == 0)
     {
         // set signal to interrupt, send back infos to parent process
         // Doing normal activities of mget file 
         signal(SIGUSR1, data_signal_bmget_handler);
         ret = mget(channel_ctx);
+        close(pipe_fd[0]);
+        close(pipe_fd[1]);
         return ret;
     }
 
@@ -199,7 +203,7 @@ int bmput(channel_context* channel_ctx)
         return 0;
     }
 
-    if(pid == 0)
+    else if(pid == 0)
     {
         // set signal to interrupt, send back infos to parent process
         // Doing normal activities of get file 

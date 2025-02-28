@@ -110,12 +110,18 @@ int run_command(channel_context* channel_ctx, char* command_str)
 {
     for(int i =0; commands[i].command_str != NULL; i++)
     {
+        LOG(CLIENT_LOG, "str : %s\n", commands[i].command_str);
         if(!strcmp(commands[i].command_str, command_str))
         {
             printf("%s",commands[i].helper);
             printf("\n");
-            control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
-            control_channel_send(channel_ctx->c_channel);
+            printf("%s\n", commands[i].command_str);
+            if(!islocal_func(commands[i].command_code))
+            {
+                control_channel_append_ftp_type(commands[i].command_code, channel_ctx->c_channel);
+                control_channel_send(channel_ctx->c_channel);
+            }
+
             return commands[i].func(channel_ctx);
         }
     }
@@ -432,6 +438,7 @@ int main(int argc, char* argvs[])
         if(!line) 
             break;
 
+        // buffer = NULL;
         buffer = stripwhite(line);
 
         if(*buffer)

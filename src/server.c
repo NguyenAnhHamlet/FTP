@@ -305,6 +305,8 @@ int run_command(channel_context* channel_ctx, unsigned int code)
     // Some unique base case
     if(code == GET) code = PUT;
     else if(code == PUT) code = GET;
+    else if(code == BPUT) code = BGET;
+    else if(code == BGET) code = BPUT;
 
     for(int i =0; commands[i].command_str != NULL; i++)
     {

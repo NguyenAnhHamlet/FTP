@@ -29,7 +29,7 @@ command commands[] = {
     {"pwd", 521, remote_pwd, "remote pwd. Usage: pwd"},
     {"reget", 522, data_reget, "reget the file from the latest cursor position. Usage: reget <remote file name>"},
     {"rename", 523, remote_change_name, "change remote file name. Usage: rename <old name> <new name>"},                                                                    // TODO: display bytes counter
-    {"restart", 524, restart_get_file, "restart the get from bytes. Usage: restart <name> <bytes> "},                                 // Restart from bytes
+    {"restart", 524, restart_get_file, "restart the get from bytes. Usage: restart <name> <bytes> "},                        
     {"rmdir", 525, remove_remote_dir, "remove remote dir. Usage: rmdir <remote dir>"},
     {"size", 526, remote_get_size, "get remote file's size. Usage: size <remote file>"},
     {"stat", 527, status, "status of file, folder, local. Usage: rstatus || rstatus <file> || rstatus <folder>"},
@@ -37,13 +37,22 @@ command commands[] = {
     {"ipv4_op", 529, NULL},
     {"ipv6_op", 530, NULL},
     {"passmode", 531, passmode, "Switch to passive mode (connect to server in passive mode). Usage: passmode"},
-    {"bget", 532, bget, "run get file from remote server in the bg. Usage: get <remote file name>"},
-    {"bput", 533, bput, "run send file to remote server in the bg. Usage: put <local file name>"},
-    {"bmget", 534, bmget, "run get multiple files from remote server in the bg. Usage: mget <file1 file2 ...> "},
-    {"bmput", 535, bmput, "run put multiple files to remote server in the bg. Usage: mput <file1 file2 file3 ...>"},
+    // {"bget", 532, bget, "run get file from remote server in the bg. Usage: get <remote file name>"},
+    // {"bput", 533, bput, "run send file to remote server in the bg. Usage: put <local file name>"},
+    // {"bmget", 534, bmget, "run get multiple files from remote server in the bg. Usage: mget <file1 file2 ...> "},
+    // {"bmput", 535, bmput, "run put multiple files to remote server in the bg. Usage: mput <file1 file2 file3 ...>"},
     {"mmkdir", 536, remote_mmkdir, "multiple mkdir on remote server. Usage: mkdir <dir1 dir2 ...>"},
     {"!pwd", 537, local_pwd, "local pwd. Usage: !pwd"},
-    { NULL, NULL, NULL }
+    { NULL, 0, NULL, NULL }
 };
+
+int islocal_func(unsigned int code)
+{
+    if(code == STATUS) return 1;
+    if(code == LCD) return 1;
+    if(code == LLS) return 1;
+
+    return 0;
+}
 
 

@@ -10,7 +10,7 @@
 #include "common/socket_ftp.h"
 #include "log/ftplog.h"
 
-#define DEFAULT_CHANNEL_TMOUT 5
+#define DEFAULT_CHANNEL_TMOUT 20
 
 // 
 // Control channel

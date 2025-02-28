@@ -45,10 +45,12 @@
 typedef int (* command_func_ptr) (channel_context*); 
 typedef struct 
 {
-    char command_str[32];
+    char* command_str;
     unsigned int command_code;
     command_func_ptr func ;
-    char helper[512];
+    char* helper;
 } command;
+
+int islocal_func(unsigned int code);
 
 #endif
