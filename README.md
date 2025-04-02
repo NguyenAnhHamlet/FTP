@@ -29,5 +29,5 @@ A secure remote file transfer client and server supporting a wide range of FTP-l
 
 To build and install the client, run:  
 ```sh
-make all       # Compile the client  
-make install   # Install the client  
+make all       # Compile the client and server
+make install   # Install the client and server
