@@ -73,7 +73,7 @@ rhel:
 	sudo cp ../rhel/*.spec ~/rpmbuild/SPECS
 	sudo cp ../rhel/sftp-[0-9]*.tar.gz ~/rpmbuild/SOURCES  
 	# Start to build the rpm package
-	#sudo rpmbuild --define "_topdir ~/rpmbuild" -ba ~/rpmbuild/SPECS/sftp.spec
+	sudo rpmbuild --define "_topdir ${HOME}/rpmbuild" -ba ~/rpmbuild/SPECS/sftp.spec
 
 -include $(DEPS)
 
