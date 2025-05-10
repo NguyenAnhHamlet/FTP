@@ -6,6 +6,8 @@ include secure/Makefile
 SUBDIRS=algo common log secure
 CURRENT_DIR := $(CURDIR)
 BINS=bin
+DESTDIR ?= /  
+TARBALL= rhel/sftp-1.0.0.tar.gz
 
 SRCS=$(wildcard *.c)
 OBJS := $(patsubst ./common/%.c,./common/obj/%.o,$(wildcard ./common/*.c)) \
@@ -52,9 +54,24 @@ cleanall:
 	rm -rf ${OBJS}
 
 install:
-	chmod 755 bin/* && sudo mv bin/* /usr/bin/
-	chmod 644 ../script/sftp.pam && sudo cp ../script/sftp.pam /etc/pam.d/sftp
-	chmod 644 ../script/*config && sudo cp ../script/*config /etc/ftp/
+	chmod 755 bin/* && sudo mv bin/* ${DESTDIR}/usr/bin/
+	chmod 644 script/sftp.pam && sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
+	chmod 644 script/*config && sudo cp script/*config ${DESTDIR}/etc/ftp/
+
+compress: 
+	@if [ ! -f ${TARBALL} ]; then 	\
+		cp -r ../src ../rhel/sftp-1.0.0; \
+		cd ../rhel;	\
+		tar -czf sftp-1.0.0.tar.gz sftp-1.0.0; \
+		rm -rf sftp-1.0.0; \
+		echo "Creating TARBALL rhel/sftp-1.0.0.tar.gz"; \
+	fi
+
+rhel: 
+	# prepare the environment for building rpm package for rhel platform 
+	sudo mkdir -p root/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
+	cp ../rhel/*.spec ~/rpmbuild/SPECS
+	cp ../rhel/sftp-[0-9]*.tar.gz ~/rpmbuild/SOURCES  
 
 -include $(DEPS)
 
