@@ -69,9 +69,11 @@ compress:
 
 rhel: 
 	# prepare the environment for building rpm package for rhel platform 
-	sudo mkdir -p root/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
-	cp ../rhel/*.spec ~/rpmbuild/SPECS
-	cp ../rhel/sftp-[0-9]*.tar.gz ~/rpmbuild/SOURCES  
+	sudo mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
+	sudo cp ../rhel/*.spec ~/rpmbuild/SPECS
+	sudo cp ../rhel/sftp-[0-9]*.tar.gz ~/rpmbuild/SOURCES  
+	# Start to build the rpm package
+	#sudo rpmbuild --define "_topdir ~/rpmbuild" -ba ~/rpmbuild/SPECS/sftp.spec
 
 -include $(DEPS)
 
