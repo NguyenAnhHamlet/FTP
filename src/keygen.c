@@ -12,6 +12,10 @@
 #define ED25519_KEY "ed25519"
 #define RSA_KEY "rsa"
 
+// TODO: 
+// Check the file existence before generating keys
+// If there is no such file exist, try to touch one 
+
 void ed25519_keygen()
 {
     EVP_PKEY* pkey = NULL;

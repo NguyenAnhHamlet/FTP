@@ -488,5 +488,9 @@ int main(int argc, char* argvs[])
     } 
 
     control_channel_destroy(&c_channel);
-    data_channel_destroy(&d_channel);
+
+    // data channel managed dynamically by client, 
+    // free here is nonsensical and could lead 
+    // to segment fault
+    // data_channel_destroy(&d_channel);
 }

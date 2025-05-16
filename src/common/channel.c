@@ -152,7 +152,9 @@ void control_channel_destroy(control_channel* c_channel)
     packet_destroy(c_channel->data_in);
     packet_destroy(c_channel->data_out);
 
-    free(c_channel);
+    // Not sure if the channel was dynamically created 
+    // or not, user should manually free the channel instead
+    // free(c_channel);
 }
 
 void set_control_channel_compress(control_channel* channel)
@@ -464,7 +466,10 @@ void data_channel_destroy(data_channel* d_channel)
 {
     packet_destroy(d_channel->data_in);
     packet_destroy(d_channel->data_out);
-    free(d_channel);
+    
+    // Not sure if the channel was dynamically created 
+    // or not, user should manually free the channel instead
+    // free(d_channel);
 }
 
 void data_channel_set_time_out(data_channel* channel, 

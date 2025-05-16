@@ -53,10 +53,10 @@ cleanall:
 	rm -rf obj/* bin/*
 	rm -rf ${OBJS}
 
-install:
-	chmod 755 ${BINS}/* && sudo mv bin/* ${DESTDIR}/usr/bin/
-	chmod 644 script/sftp.pam && sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
-	chmod 644 script/*config && sudo cp script/*config ${DESTDIR}/etc/ftp/
+install:	
+	sudo chmod 755 ${BINS}/* && sudo mv bin/* ${DESTDIR}/usr/bin/
+	sudo chmod 644 script/sftp.pam && sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
+	sudo chmod 644 script/*config && sudo cp script/*config ${DESTDIR}/etc/ftp/
 
 compress: 
 	@if [ ! -f ${TARBALL} ]; then 	\
