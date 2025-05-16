@@ -5,8 +5,8 @@ include secure/Makefile
 
 SUBDIRS=algo common log secure
 CURRENT_DIR := $(CURDIR)
-BINS=bin
-DESTDIR ?= /  
+BINS=./bin
+DESTDIR ?=  
 TARBALL= rhel/sftp-1.0.0.tar.gz
 
 SRCS=$(wildcard *.c)
@@ -54,7 +54,7 @@ cleanall:
 	rm -rf ${OBJS}
 
 install:
-	chmod 755 bin/* && sudo mv bin/* ${DESTDIR}/usr/bin/
+	chmod 755 ${BINS}/* && sudo mv bin/* ${DESTDIR}/usr/bin/
 	chmod 644 script/sftp.pam && sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
 	chmod 644 script/*config && sudo cp script/*config ${DESTDIR}/etc/ftp/
 
