@@ -107,7 +107,7 @@ int public_key_authentication_rsa(control_channel* channel, int evolution)
         recv_challenge = BN_new();
 
         // Send the RSA public key to endpoint
-        channel_send_public_key_rsa(channel, public_RSAkey_file);
+        channel_send_public_key_rsa(channel, PUBLIC_RSA);
 
         if(control_channel_read_expect(channel, FTP_ASYM_AUTHEN) <= 0)
         {
@@ -118,10 +118,10 @@ int public_key_authentication_rsa(control_channel* channel, int evolution)
         control_channel_get_bignum(&recv_challenge, channel);
 
 #ifdef OPENSSL_1
-        load_private_rsa_key(&rsa_private_key, private_RSAkey_file);
+        load_private_rsa_key(&rsa_private_key, PRIVATE_RSA);
         rsa_pub_decrypt(rsa_private_key, &recv_challenge, &decrypt_challenge);
 #elif OPENSSL_3
-        load_private_rsa_key(&pkey, private_RSAkey_file);
+        load_private_rsa_key(&pkey, PRIVATE_RSA);
         // PEM_write_PrivateKey(stdout, pkey, NULL, NULL, 0, NULL, NULL);
         rsa_pub_decrypt(pkey, &recv_challenge, &decrypt_challenge);
 #endif
@@ -982,7 +982,7 @@ int channel_verify_finger_print_rsa(control_channel* channel, endpoint_type type
 #endif
             char* hash = NULL;
             unsigned int hlen;
-            load_rsa_auth_key(&pubkey, public_RSAkey_file);
+            load_rsa_auth_key(&pubkey, PUBLIC_RSA);
             rsa_pubkey_hash(pubkey, &hash, &hlen);
 
             // send hash value of public key

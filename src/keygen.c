@@ -6,18 +6,29 @@
 #include <string.h>
 #include <time.h>
 #include "secure/ed25519.h"
+#include "common/file.h"
 
 #define KEY_TYPE "-k"
 #define OVEWRITE "-o"
 #define ED25519_KEY "ed25519"
 #define RSA_KEY "rsa"
 
-// TODO: 
-// Check the file existence before generating keys
-// If there is no such file exist, try to touch one 
-
 void ed25519_keygen()
 {
+    // check and touch 
+    if(not_exist(PUBLIC_ED25519) || not_exist(PRIVATE_ED25519))
+    {
+        if( !create_file(PUBLIC_ED25519) || 
+            !create_file(PRIVATE_ED25519))
+        {
+            perror("Fail to create file with error: ");
+            return;
+        }
+
+        CHMOD_640(PUBLIC_ED25519);
+        CHMOD_640(PRIVATE_ED25519);
+    }
+
     EVP_PKEY* pkey = NULL;
     generate_ed25519_key_pair(&pkey);
     save_ed25519_private_key(PRIVATE_ED25519, pkey);
@@ -27,6 +38,19 @@ void ed25519_keygen()
 
 void rsa_keygen()
 {
+    // check and touch 
+    if(not_exist(PUBLIC_RSA) || not_exist(PRIVATE_RSA))
+    {
+        if( !create_file(PUBLIC_RSA) || 
+            !create_file(PRIVATE_RSA))
+        {
+            perror("Fail to create file with error: ");
+            return;
+        }
+
+        CHMOD_640(PUBLIC_RSA);
+        CHMOD_640(PRIVATE_RSA);
+    }
 
 #ifdef OPENSSL_1
     RSA* rsa = RSA_new();
@@ -37,16 +61,16 @@ void rsa_keygen()
     }
 
     generate_RSA_KEYPAIR(rsa);
-    save_RSApublic_key(rsa, public_RSAkey_file);
-    save_RSAprivate_key(rsa,private_RSAkey_file);
+    save_RSApublic_key(rsa, PUBLIC_RSA);
+    save_RSAprivate_key(rsa, PRIVATE_RSA);
     RSA_free(rsa);
 
 #elif OPENSSL_3
     EVP_PKEY *pkey = NULL;
 
     generate_rsa_key_pair(&pkey);
-    save_rsa_public_key(public_RSAkey_file, pkey);
-    save_rsa_private_key(private_RSAkey_file, pkey);
+    save_rsa_public_key(PUBLIC_RSA, pkey);
+    save_rsa_private_key(PRIVATE_RSA, pkey);
     EVP_PKEY_free(pkey);
 #endif
 }

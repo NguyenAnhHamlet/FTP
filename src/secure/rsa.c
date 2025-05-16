@@ -3,7 +3,7 @@
 #include "common/file.h"
 #include <string.h>
 #include <openssl/rsa.h>
-#include <node/openssl/rsa.h>
+#include <openssl/rsa.h>
 #include <openssl/err.h>
 #include <log/ftplog.h>
 #include "hash.h"
@@ -332,7 +332,7 @@ int rsa_pub_decrypt(EVP_PKEY* pkey, BIGNUM** inbn, BIGNUM** outbn)
 
 int load_rsa_auth_key(EVP_PKEY **pkey, char path[])
 {
-    FILE *fp = fopen(public_RSAkey_file, "rb");
+    FILE *fp = fopen(PUBLIC_RSA, "rb");
 
     if(!fp)
     {
@@ -359,7 +359,7 @@ int load_rsa_auth_key(EVP_PKEY **pkey, char path[])
 
 int load_private_rsa_key(EVP_PKEY **pkey, char path[])
 {
-    FILE* fp = fopen(private_RSAkey_file, "r");
+    FILE* fp = fopen(PRIVATE_RSA, "r");
 
     if(!fp)
     {
@@ -550,7 +550,7 @@ int rsa_pub_decrypt(RSA * priv, BIGNUM** in, BIGNUM** out)
 
 int load_rsa_auth_key(RSA **pub_key, char path[])
 {
-    FILE *fp = fopen(public_RSAkey_file, "r");
+    FILE *fp = fopen(PUBLIC_RSA, "r");
     RSA* t = RSA_new();
     if (!fp) 
     {
@@ -575,7 +575,7 @@ int load_rsa_auth_key(RSA **pub_key, char path[])
 
 int load_private_rsa_key(RSA **private_key, char path[])
 {
-    FILE *fp = fopen(private_RSAkey_file, "r");
+    FILE *fp = fopen(PRIVATE_RSA, "r");
     RSA* t = RSA_new();
     if (!fp) 
     {

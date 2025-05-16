@@ -57,4 +57,7 @@ int channel_verify_finger_print_ed25519(control_channel* channel, endpoint_type 
 int channel_verify_finger_print(control_channel* channel, endpoint_type type, 
                                 unsigned int pkeyaccept);
 
+// TODO : 
+// Allow using public authen to bypass password authen 
+
 #endif

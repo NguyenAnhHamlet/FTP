@@ -450,8 +450,8 @@ int main()
                          ftp_server_session.c_socket, ftp_server_session.d_socket, 
                          SERVER, SERVER_LOG);
 
-    // if(!pass_authen_server(&ftp_server_session.c_channel, ftp_server_session.ctx))
-    //     exit(1);
+    if(!pass_authen_server(&ftp_server_session.c_channel, ftp_server_session.ctx))
+        exit(1);
     
     // Cancel alarm as all initial steps are done without issue
     alarm(0);

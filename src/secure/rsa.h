@@ -9,8 +9,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define public_RSAkey_file "/etc/ftp/rsa.pub"
-#define private_RSAkey_file "/etc/ftp/rsa.priv"
+#define PUBLIC_RSA "/etc/ftp/rsa.pub"
+#define PRIVATE_RSA "/etc/ftp/rsa.priv"
 
 #define KEY_SIZE 2056  
 
