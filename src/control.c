@@ -332,7 +332,7 @@ int list_remote_dir(channel_context* channel_ctx)
     case SERVER:
     {
         char* res = (char*) malloc(BUF_LEN);
-        unsigned int ret_len;
+        unsigned int ret_len = 0;
         memset(res, 0, BUF_LEN);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, LS))
@@ -351,7 +351,7 @@ int list_remote_dir(channel_context* channel_ctx)
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);                       
         
-        if(!list_dir(channel_ctx->source, res, &ret_len))
+        if(!ll_dir(channel_ctx->source, res, &ret_len))
         {
             LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
             operation_abort(channel_ctx->c_channel);
@@ -1325,49 +1325,49 @@ int remote_pwd(channel_context* channel_ctx)
     return 1;
 }
 
-int status(channel_context* channel_ctx)
-{
-    char buf[BUF_LEN];
-    char* hostnamebuf;
+// int status(channel_context* channel_ctx)
+// {
+//     char buf[BUF_LEN];
+//     char* hostnamebuf;
     
-    hostnamebuf = (char*) malloc(16);
-    memset(buf, 0, BUF_LEN);
-    memset(hostnamebuf, 0, 16);
+//     hostnamebuf = (char*) malloc(16);
+//     memset(buf, 0, BUF_LEN);
+//     memset(hostnamebuf, 0, 16);
 
-    hostname(control_channel_get_sockfd_in(channel_ctx->c_channel), &hostnamebuf);
-    sprintf(buf, "Connected to %s\n", hostnamebuf);
-    buffer_append_str(channel_ctx->retb, buf, strlen(buf));
+//     hostname(control_channel_get_sockfd_in(channel_ctx->c_channel), &hostnamebuf);
+//     sprintf(buf, "Connected to %s\n", hostnamebuf);
+//     buffer_append_str(channel_ctx->retb, buf, strlen(buf));
 
-    // TODO: append user's name here
-    // Session time : 
-    // Server uptime : 
-    // <> users currently logged in 
-    // Available command : 
+//     // TODO: append user's name here
+//     // Session time : 
+//     // Server uptime : 
+//     // <> users currently logged in 
+//     // Available command : 
     
-    for(int i =0; i< MAXPROCCESS+ 1; i++ )
-    {
-        if(channel_ctx->usedpipe[i] > 0)
-        {
-            if((kill(channel_ctx->usedpipe[i], 0) == 0))
-            {
-                channel_ctx->usedpipe[i] = 0;
-                close(channel_ctx->pipe_fd[i][0]);
-                close(channel_ctx->pipe_fd[i][1]);
-                push(&channel_ctx->free_pipe, i);
-            }
-            else 
-            {
-                kill(channel_ctx->usedpipe[i], SIGUSR1);
-                read(channel_ctx->pipe_fd[i][0], buf, BUF_LEN);
-                buffer_append_str(channel_ctx->retb, buf, strlen(buf));
-                buffer_append_str(channel_ctx->retb, "\n", 1);
-                memset(buf, 0, BUF_LEN);
-            }
-        }
-    }
+//     for(int i =0; i< MAXPROCCESS+ 1; i++ )
+//     {
+//         if(channel_ctx->usedpipe[i] > 0)
+//         {
+//             if((kill(channel_ctx->usedpipe[i], 0) == 0))
+//             {
+//                 channel_ctx->usedpipe[i] = 0;
+//                 close(channel_ctx->pipe_fd[i][0]);
+//                 close(channel_ctx->pipe_fd[i][1]);
+//                 push(&channel_ctx->free_pipe, i);
+//             }
+//             else 
+//             {
+//                 kill(channel_ctx->usedpipe[i], SIGUSR1);
+//                 read(channel_ctx->pipe_fd[i][0], buf, BUF_LEN);
+//                 buffer_append_str(channel_ctx->retb, buf, strlen(buf));
+//                 buffer_append_str(channel_ctx->retb, "\n", 1);
+//                 memset(buf, 0, BUF_LEN);
+//             }
+//         }
+//     }
 
-    return 1;
-}
+//     return 1;
+// }
 
 int remote_system_info(channel_context* channel_ctx)
 {

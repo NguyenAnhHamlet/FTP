@@ -143,6 +143,9 @@ int quit()
 {
     ftp_running = 0;
     client_terminate_connection(&c_channel);
+    // exit the program to prevent issue
+    exit(EXIT_SUCCESS);
+    return 0;
 }
 
 void time_out_alarm(int sig)

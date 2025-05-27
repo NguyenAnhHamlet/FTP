@@ -17,6 +17,8 @@ all: ${SECURE_OBJS}
 obj/%.o: %.c 
 	${CC} ${DEBUG_FLAGS} ${CFLAGS} ${INC_SECURE_FLAGS} -c $< -o $@ ${LDFLAGS} ${OPENSSL_FLAG}
 
+# TODO : 
+# Remove the warning here
 clean: 
 	rm -rf obj/*
 

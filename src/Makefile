@@ -79,5 +79,3 @@ rhel:
 
 .PHONY:cleanall
 
-
-

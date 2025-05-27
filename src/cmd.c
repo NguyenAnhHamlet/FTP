@@ -28,11 +28,11 @@ command commands[] = {
     {"prompt", 520, local_prompt, "set to 1 enable prompt, 0 disable it. Usgae: prompt <0/1>"},                                                                          // TODO: prompt 0 : not asking, prompt 1: asking
     {"pwd", 521, remote_pwd, "remote pwd. Usage: pwd"},
     {"reget", 522, data_reget, "reget the file from the latest cursor position. Usage: reget <remote file name>"},
-    {"rename", 523, remote_change_name, "change remote file name. Usage: rename <old name> <new name>"},                                                                    // TODO: display bytes counter
+    {"rename", 523, remote_change_name, "change remote file name. Usage: rename <old name> <new name"},
     {"restart", 524, restart_get_file, "restart the get from bytes. Usage: restart <name> <bytes> "},                        
     {"rmdir", 525, remove_remote_dir, "remove remote dir. Usage: rmdir <remote dir>"},
     {"size", 526, remote_get_size, "get remote file's size. Usage: size <remote file>"},
-    {"stat", 527, status, "status of file, folder, local. Usage: rstatus || rstatus <file> || rstatus <folder>"},
+    // {"stat", 527, status, "status of file, folder, local. Usage: rstatus || rstatus <file> || rstatus <folder>"},
     {"system", 528, remote_system_info, "remote system infos. Usage: system"},
     {"ipv4_op", 529, NULL},
     {"ipv6_op", 530, NULL},

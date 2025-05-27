@@ -226,6 +226,8 @@ int ll_dir(const char* dir, char* res, unsigned int* r_len)
 
         snprintf(full_path, sizeof(full_path), "%s/%s", dir, ep->d_name);
 
+        LOG(SERVER, "full_path: %s\n", full_path);
+
         if (stat(full_path, &file_stat) == -1) {
             perror("Error getting file status");
             return 0;

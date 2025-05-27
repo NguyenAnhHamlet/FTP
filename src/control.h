@@ -32,7 +32,7 @@ int remote_mkdir(channel_context* channel_ctx);
 int mlist_remote_dir(channel_context* channel_ctx);
 int local_prompt(channel_context* channel_ctx);
 int remote_pwd(channel_context* channel_ctx);
-int status(channel_context* channel_ctx);
+// int status(channel_context* channel_ctx);
 int remote_system_info(channel_context* channel_ctx);
 int passmode(channel_context* channel_ctx);
 int local_change_dir(channel_context* channel_ctx);

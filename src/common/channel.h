@@ -163,6 +163,8 @@ int control_channel_get_str_out(control_channel* channel, char* str,
                                 unsigned int* len);
 void control_channel_clean_data_out(control_channel* channel);
 void control_channel_clean_data_in(control_channel* channel);
+void control_channel_clear_header_in(control_channel* c_channel);
+void control_channel_clear_header_out(control_channel* c_channel);
 
 // 
 // data channel

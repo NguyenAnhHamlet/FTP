@@ -95,6 +95,16 @@ void control_channel_init(  control_channel* channel,
     channel->data_out->in_port = 0;
 }
 
+void control_channel_clear_header_in(control_channel* c_channel)
+{
+    packet_clear_header(c_channel->data_in);
+}
+
+void control_channel_clear_header_out(control_channel* c_channel)
+{
+    packet_clear_header(c_channel->data_out);
+}
+
 int control_channel_get_data_len_out(control_channel* c_channel)
 {
     return packet_get_data_len(c_channel->data_out);

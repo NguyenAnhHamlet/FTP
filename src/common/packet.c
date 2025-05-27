@@ -261,6 +261,8 @@ int packet_read_expect(Packet* packet, unsigned int expect_value)
     if(!packet_read(packet)) return 0;
     packet_type = packet->p_header->packet_type;
 
+    LOG(SERVER, "value: %d\n", packet_type);
+
     return packet_type == expect_value ? 1 : 0;      
 }
 
