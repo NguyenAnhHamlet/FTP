@@ -41,7 +41,8 @@ typedef enum
     PubkeyAcceptedKeyTypes,
     KexkeyAcceptedKeyTypes,
     ChannelPort,
-    DataPort
+    // DataPort,
+    IdleTimeOut
 } client_opcode;
 
 static struct {
@@ -55,6 +56,7 @@ static struct {
     {"ecdh", ECK},
     {"dh", DHK},
     {"ChannelPort", ChannelPort},
+    {"IdleTimeOut", IdleTimeOut},
     // {"DataPort", DataPort},
     {NULL, 0}
 };
@@ -66,6 +68,7 @@ static struct
     // unsigned int dataport;
     unsigned int controlport;
     unsigned int addrfamily;
+    unsigned int idle_timeout; 
 } client_config;
 
 // Get the command and the contents of buffer pointed by cmd and contents
@@ -312,7 +315,7 @@ int read_config(char* conf)
                     opcode = parse_token(cp, conf, linenum);
                     ret |= opcode;
                 }
-                printf("ret : %d\n", ret);
+                // printf("ret : %d\n", ret);
                 client_config.pkeyaccept = ret;
                 break;
             }
@@ -325,17 +328,25 @@ int read_config(char* conf)
                     opcode = parse_token(cp, conf, linenum);
                     ret |= opcode;
                 }
-                printf("ret : %d\n", ret);
+                // printf("ret : %d\n", ret);
                 client_config.kexkey_accept = ret;
                 break;
             }
             case ChannelPort:
             {
                 cp = strtok(NULL, WHITESPACE);
-                printf("%s\n", cp);
+                // printf("%s\n", cp);
                 client_config.controlport = str_to_int(cp, strlen(cp));
-                printf("%d\n", client_config.controlport);
+                // printf("%d\n", client_config.controlport);
                 break;
+            }
+            case IdleTimeOut:
+            {
+                cp = strtok(NULL, WHITESPACE);
+                printf("%s\n", cp);
+                client_config.idle_timeout= str_to_int(cp, strlen(cp));
+                printf("%d\n", client_config.idle_timeout);
+                break;                
             }
             // case DataPort:
             // {
@@ -414,7 +425,6 @@ int main(int argc, char* argvs[])
         fatal("Public key authentication failed\n");
     }
 
-
     // Trying to create a shared secret key
     if(!channel_generate_shared_key(&c_channel, ctx, client_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
@@ -432,6 +442,10 @@ int main(int argc, char* argvs[])
     alarm(0);
 
     ftp_running = true;
+    
+    // trigger the alarm for idle timeout 
+    signal(SIGALRM, time_out_alarm);
+	alarm(client_config.idle_timeout);
 
     // Enter into ftp virtual environment
     while(ftp_running)
@@ -440,6 +454,9 @@ int main(int argc, char* argvs[])
 
         if(!line) 
             break;
+
+        // renew the alarm since the session is ative
+        alarm(client_config.idle_timeout);
 
         // buffer = NULL;
         buffer = stripwhite(line);

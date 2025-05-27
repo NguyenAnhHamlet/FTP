@@ -15,7 +15,7 @@ int change_mode(channel_context* channel_ctx);
 int delete_remote_file(channel_context* channel_ctx);
 int list_remote_dir(channel_context* channel_ctx);
 int list_current_dir(channel_context* channel_ctx);
-int idle_set_remote(channel_context* channel_ctx);
+// int idle_set_remote(channel_context* channel_ctx);
 int remote_modtime(channel_context* channel_ctx);
 int local_modtime(char* file_name, unsigned int* n_len, 
                   char* modtime, unsigned int* m_len);

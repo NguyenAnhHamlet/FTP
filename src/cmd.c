@@ -14,8 +14,8 @@ command commands[] = {
     {"delete", 506, delete_remote_file, "delete remote file on server. Usage: delete <remote file>"},
     {"dir", 507, list_remote_dir, "list remote dir. Usage: ls <remote dir>"},
     {"!ls", 508, list_local_dir, "list local dir. Usage: ls <local dir>"},
-    {"ls", 509, list_remote_dir, "list remote dir. Usage: ls <remote dir>"},                        // TODO : list additional infos
-    {"idle", 510, idle_set_remote, "set idle time out. Usage: idle <time out value>"},              // TODO: set timeout on server for the session
+    {"ls", 509, list_remote_dir, "list remote dir. Usage: ls <remote dir>"},
+    // {"idle", 510, idle_set_remote, "set idle time out. Usage: idle <time out value>"},
     {"mdelete", 511, mdelte_remote_files, "delete multiple remote file on server. Usage: mdelete <remote file>"},
     {"mmkdir", 512, remote_mmkdir, "make multiple dirs on remote server. Usage: mmkdir <dir1 dir2 ...>" },
     {"mget", 513, mget, "get multiple files from remote server. Usage: mget <file1 file2 ...> "},

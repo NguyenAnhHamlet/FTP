@@ -390,88 +390,88 @@ int list_current_dir(channel_context* channel_ctx )
     return list_remote_dir(channel_ctx);
 }
 
-int idle_set_remote(channel_context* channel_ctx)
-{
-    switch (channel_ctx->type)
-    {
-    case CLIENT:
-    {
-        control_channel_append_ftp_type(IDLE, channel_ctx->c_channel);
-        control_channel_append_int( atoi(channel_ctx->source), channel_ctx->c_channel );
-        control_channel_send(channel_ctx->c_channel);
-        LOG(SERVER_LOG, "IDLE: %d %s\n", atoi(channel_ctx->source), channel_ctx->source);
-        if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
-        {
-            LOG(channel_ctx->log_type, "Set timeout remote failed\n");
-            LOG(channel_ctx->log_type, "Expected code %d but got %d",
-                SUCCESS, control_channel_get_ftp_type_in(channel_ctx->c_channel));
-            operation_abort(channel_ctx->c_channel);
+// int idle_set_remote(channel_context* channel_ctx)
+// {
+//     switch (channel_ctx->type)
+//     {
+//     case CLIENT:
+//     {
+//         control_channel_append_ftp_type(IDLE, channel_ctx->c_channel);
+//         control_channel_append_int( atoi(channel_ctx->source), channel_ctx->c_channel );
+//         control_channel_send(channel_ctx->c_channel);
+//         LOG(SERVER_LOG, "IDLE: %d %s\n", atoi(channel_ctx->source), channel_ctx->source);
+//         if(!control_channel_read_expect(channel_ctx->c_channel, SUCCESS))
+//         {
+//             LOG(channel_ctx->log_type, "Set timeout remote failed\n");
+//             LOG(channel_ctx->log_type, "Expected code %d but got %d",
+//                 SUCCESS, control_channel_get_ftp_type_in(channel_ctx->c_channel));
+//             operation_abort(channel_ctx->c_channel);
 
-            return 0;
-        }
+//             return 0;
+//         }
 
-        break;
-    }
-    case SERVER:
-    {
-        if(!control_channel_read_expect(channel_ctx->c_channel, IDLE))
-        {
-            LOG(SERVER_LOG, "Unknown option\n");
-            operation_abort(channel_ctx->c_channel);
+//         break;
+//     }
+//     case SERVER:
+//     {
+//         if(!control_channel_read_expect(channel_ctx->c_channel, IDLE))
+//         {
+//             LOG(SERVER_LOG, "Unknown option\n");
+//             operation_abort(channel_ctx->c_channel);
 
-            return 0;
-        }
+//             return 0;
+//         }
         
-        unsigned int timeout = control_channel_get_int(channel_ctx->c_channel);
+//         unsigned int timeout = control_channel_get_int(channel_ctx->c_channel);
 
-        // TODO : update value timeout in file /etc/ftp/sftpd_config
-        const char tempconf[32] = "/etc/ftp/.sftpd_config";
-        FILE* file = fopen(SFTPD_CONFIG, "r");
-        FILE *temp = fopen(tempconf, "w");
-        char line[256];
-        while (fgets(line, sizeof(line), file)) 
-        {
-            if (strstr(line, "IdleTimeOut")) 
-            {
-                fprintf(temp, "%s %d\n", "IdleTimeOut", timeout);
-            }
-            else
-            {
-                fputs(line, temp);
-            }
-        }
+//         // TODO : update value timeout in file /etc/ftp/sftpd_config
+//         const char tempconf[32] = "/etc/ftp/sftpd_config";
+//         FILE* file = fopen(SFTPD_CONFIG, "r");
+//         FILE *temp = fopen(tempconf, "w");
+//         char line[256];
+//         while (fgets(line, sizeof(line), file)) 
+//         {
+//             if (strstr(line, "IdleTimeOut")) 
+//             {
+//                 fprintf(temp, "%s %d\n", "IdleTimeOut", timeout);
+//             }
+//             else
+//             {
+//                 fputs(line, temp);
+//             }
+//         }
 
-        fclose(file);
-        fclose(temp);
+//         fclose(file);
+//         fclose(temp);
 
-        if (remove(SFTPD_CONFIG) != 0) 
-        {
-            perror("Failed to delete the original file\n");
-            operation_abort(channel_ctx->c_channel);
-            return 0;
-        }
+//         if (remove(SFTPD_CONFIG) != 0) 
+//         {
+//             perror("Failed to delete the original file\n");
+//             operation_abort(channel_ctx->c_channel);
+//             return 0;
+//         }
 
-        if (rename(tempconf, SFTPD_CONFIG) != 0) 
-        {
-            perror("Failed to rename config file\n");
-            operation_abort(channel_ctx->c_channel);    
-            return 0;
-        }
+//         if (rename(tempconf, SFTPD_CONFIG) != 0) 
+//         {
+//             perror("Failed to rename config file\n");
+//             operation_abort(channel_ctx->c_channel);    
+//             return 0;
+//         }
 
-        control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
-        control_channel_send(channel_ctx->c_channel);
+//         control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
+//         control_channel_send(channel_ctx->c_channel);
 
-        break;
-    }
+//         break;
+//     }
 
-    default:
-    {
-        operation_abort(channel_ctx->c_channel);
-        return -1;
-    }
+//     default:
+//     {
+//         operation_abort(channel_ctx->c_channel);
+//         return -1;
+//     }
 
-    }
-}
+//     }
+// }
 
 int remote_modtime(channel_context* channel_ctx)
 {
