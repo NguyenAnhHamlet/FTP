@@ -347,6 +347,8 @@ int main()
     signal(SIGQUIT, signal_handler);
     signal(SIGTERM, signal_handler);
 
+    // Add SIGHUP to handle systemd reload for RHEL
+
     while(isRunning)
     {
         // add server socket

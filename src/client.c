@@ -210,6 +210,9 @@ restart:
     memset(name, '\0', BUF_LEN);
     memset(pass, '\0', BUF_LEN);
 
+    // TODO: 
+    // change to readline which allow user to update text
+
     // prompt for name
     printf("Name: ");
     if(!fgets(name, BUF_SIZE, stdin))
@@ -247,7 +250,7 @@ restart:
 
     if(control_channel_read_expect(c_channel, FTP_ACK))
     {
-        printf("Pass authenticate succeed\n");
+        fprintf(stdout, "Pass authenticate succeed\n");
         free(name_enc);
         free(pass_enc); 
         return 1;
@@ -267,7 +270,7 @@ restart:
         fatal("User has root privileges denied\n");
     }
 
-    printf("Pass authentication failed, retry: \n");
+    fprintf( stdout, "Pass authentication failed, retry: \n");
     
 goto restart;
 
@@ -429,7 +432,7 @@ int main(int argc, char* argvs[])
     if(!channel_generate_shared_key(&c_channel, ctx, client_config.kexkey_accept))
         fatal("Failed to create a shared secret key\n");
 
-    printf("RUNNIG\n");
+    // printf("RUNNIG\n");
 
     // password authentication successed, init channel_ctx
     channel_context_init(&channel_ctx, ctx, &d_channel, &c_channel, 
