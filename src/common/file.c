@@ -200,7 +200,7 @@ static int permission_form(mode_t mode, char* permissions)
     return 1;
 }
 
-int ll_dir(const char* dir, char* res, unsigned int* r_len)
+int ll_dir(const char* dir, char** res, unsigned int* r_len)
 {
     DIR *d;
     struct dirent *ep;
@@ -210,6 +210,7 @@ int ll_dir(const char* dir, char* res, unsigned int* r_len)
     char full_path[1024];
     char time_str[80];
     char permissions[11];
+    int snprintf_ret = 0;
 
     d = opendir(dir);
     if (d == NULL) 
@@ -237,23 +238,39 @@ int ll_dir(const char* dir, char* res, unsigned int* r_len)
         pwd = getpwuid(file_stat.st_uid);
         grp = getgrgid(file_stat.st_gid);
 
-        strftime(time_str, sizeof(time_str), "%b %e %H:%M", localtime(&file_stat.st_mtime));
-
-        int snprintf_ret = snprintf(res + *r_len, 1024 - *r_len,
-                                    "%s %2ld %-8s %-8s %8ld %s %s\n",
-                                    permissions,
-                                    file_stat.st_nlink,
-                                    pwd ? pwd->pw_name : "",
-                                    grp ? grp->gr_name : "",
-                                    file_stat.st_size,
-                                    time_str,
-                                    ep->d_name);
-
-        if (snprintf_ret < 0 || snprintf_ret >= (1024 - *r_len)) 
+        strftime(time_str, sizeof(time_str), "%b %e %H:%M", 
+                 localtime(&file_stat.st_mtime));
+              
+        snprintf_ret = snprintf(NULL, 0,
+                                "%s %2ld %-8s %-8s %8ld %s %s\n",
+                                permissions,
+                                file_stat.st_nlink,
+                                pwd ? pwd->pw_name : "",
+                                grp ? grp->gr_name : "",
+                                file_stat.st_size,
+                                time_str,
+                                ep->d_name);
+                                
+        if (snprintf_ret < 0) 
         {
-            fprintf(stderr, "Buffer overflow or error during formatting.\n");
+            fprintf(stderr, "Error during formatting.\n");
             return 0;
         }
+
+        char *tmp_res = realloc(*res, *r_len + snprintf_ret + 1);
+        *res = tmp_res;
+        LOG(SERVER, "sprintf_ret: %d\n", snprintf_ret);
+
+        snprintf(*res + *r_len, snprintf_ret + 1,
+                "%s %2ld %-8s %-8s %8ld %s %s\n",
+                permissions,
+                file_stat.st_nlink,
+                pwd ? pwd->pw_name : "",
+                grp ? grp->gr_name : "",
+                file_stat.st_size,
+                time_str,
+                ep->d_name);
+
         *r_len += snprintf_ret;
     }
 

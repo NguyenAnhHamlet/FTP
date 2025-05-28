@@ -331,9 +331,8 @@ int list_remote_dir(channel_context* channel_ctx)
     }
     case SERVER:
     {
-        char* res = (char*) malloc(BUF_LEN);
+        char* res = NULL;
         unsigned int ret_len = 0;
-        memset(res, 0, BUF_LEN);
 
         if(!control_channel_read_expect(channel_ctx->c_channel, LS))
         {
@@ -351,7 +350,7 @@ int list_remote_dir(channel_context* channel_ctx)
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->source, 
                                 &channel_ctx->source_len);                       
         
-        if(!ll_dir(channel_ctx->source, res, &ret_len))
+        if(!ll_dir(channel_ctx->source, &res, &ret_len))
         {
             LOG(SERVER_LOG, "List dir %s failed\n", channel_ctx->source);
             operation_abort(channel_ctx->c_channel);

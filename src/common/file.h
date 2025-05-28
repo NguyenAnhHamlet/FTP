@@ -26,6 +26,6 @@ int directory_exists(const char *path);
 void basename(const char* path, char** ret);
 
 // ls -l in bash 
-int ll_dir(const char* dir, char* res, unsigned int* r_len);
+int ll_dir(const char* dir, char** res, unsigned int* r_len);
 
 #endif
