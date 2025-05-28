@@ -816,6 +816,7 @@ int remove_remote_dir(channel_context* channel_ctx)
 int list_local_dir(channel_context* channel_ctx)
 {
     channel_ctx->ret = (char*) malloc(BUF_LEN);
+    memset(channel_ctx->ret, 0 , BUF_LEN);
     if(!list_dir(channel_ctx->source, channel_ctx->ret, 
                 &channel_ctx->source_len))
     {
@@ -1215,6 +1216,7 @@ int local_pwd(channel_context* channel_ctx)
     }
 
     channel_ctx->ret = (char*) malloc(strlen(cwd));
+    memset(channel_ctx->ret, 0, strlen(cwd));
     strncpy(channel_ctx->ret, cwd, strlen(cwd));
     return 1;
 }
@@ -1395,6 +1397,7 @@ int remote_system_info(channel_context* channel_ctx)
         unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1;
         channel_ctx->ret_len = len;
         channel_ctx->ret = (char*) malloc(len);
+        memset(channel_ctx->ret, 0, len);
         if(!channel_ctx->ret)
         {
             LOG(channel_ctx->log_type, "Failed to allocate memory\n");
