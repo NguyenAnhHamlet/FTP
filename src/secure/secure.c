@@ -737,8 +737,6 @@ int kexkey_negotiate(control_channel* channel, unsigned int kexkeyaccept_avail, 
     }
 }
 
-// TODO 
-// Clean up 
 int channel_generate_shared_key_dh(control_channel* channel, cipher_context* ctx)
 {
 #ifdef OPENSSL_1
@@ -790,6 +788,14 @@ int channel_generate_shared_key_dh(control_channel* channel, cipher_context* ctx
         LOG(SERVER_LOG, "Failed to compute shared secret key\n");
         return 0;
     }
+
+    BN_free(perr_pub);
+    BN_free(pub);
+#if OPENSSL_3
+    EVP_PKEY_free(pkey);
+#elif OPENSSL_1
+    dh_free(dh)
+#endif
 
     return 1;
 }
