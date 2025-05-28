@@ -1242,6 +1242,7 @@ int remote_pwd(channel_context* channel_ctx)
         unsigned int len = control_channel_get_data_len_in(channel_ctx->c_channel) + 1 ;
         channel_ctx->ret = (char*) malloc(len);
         channel_ctx->ret_len = len;
+        memset(channel_ctx->ret, 0, len);
         if(!channel_ctx->ret)
         {
             LOG(CLIENT_LOG, "Unknown CODE from server side," 
@@ -1253,6 +1254,8 @@ int remote_pwd(channel_context* channel_ctx)
 
         control_channel_get_str(channel_ctx->c_channel, channel_ctx->ret, 
                                 &channel_ctx->ret_len);
+        
+        LOG(SERVER, "pwd val : %s\n", channel_ctx->ret);
         
         control_channel_append_ftp_type(SUCCESS, channel_ctx->c_channel);
         control_channel_send(channel_ctx->c_channel);
@@ -1309,6 +1312,10 @@ int remote_pwd(channel_context* channel_ctx)
             operation_abort(channel_ctx->c_channel);
             return 0;
         }
+
+        LOG(SERVER, "cwd: %s\n", cwd);
+
+        free(data);
 
         break;
     }
