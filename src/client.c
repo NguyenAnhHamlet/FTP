@@ -202,44 +202,53 @@ int password_authen_client(control_channel* c_channel, cipher_context *ctx)
 {
     if(!c_channel) return -1;
 
-    char pass[BUF_LEN], *pass_enc = NULL;
-    char name[BUF_LEN], *name_enc = NULL;
+    char* name = NULL;
+    char* pass = NULL;
+    char *pass_enc = NULL;
+    char *name_enc = NULL;
+
     int name_enc_len, pass_enc_len;
 
 restart: 
-    memset(name, '\0', BUF_LEN);
-    memset(pass, '\0', BUF_LEN);
+    // memset(name, '\0', BUF_LEN);
+    // memset(pass, '\0', BUF_LEN);
 
     // TODO: 
     // change to readline which allow user to update text
-
-    // prompt for name
-    printf("Name: ");
-    if(!fgets(name, BUF_SIZE, stdin))
-      fatal("Error reading name\n");
-
-    // prompt for pass 
-    disable_echo();
-    printf("Pass: ");
-    if(!fgets(pass, BUF_SIZE, stdin))
+    name = readline("Name: ");
+    if(!name) 
     {
-        enable_echo();
-        fatal("Error reading pass\n");
+        fprintf(stdout, "Please enter user name");
+        goto restart;
     }
+
+    disable_echo();
+    pass = readline("Pass: ");
+    if(!pass)
+    {
+        free(name);
+        fprintf(stdout, "Please enter user name and pass again");
+        enable_echo();
+        goto restart;
+    }
+
     enable_echo();
 
-    // remove newline char
-    remove_endline(name);
-    remove_endline(pass); 
+    LOG(SERVER, "name : %s\n", name);
+    LOG(SERVER, "pass : %s\n", pass);
 
     // init 
     name_enc = (char*) malloc(strlen(name) +  EVP_MAX_BLOCK_LENGTH);
     pass_enc = (char*) malloc(strlen(pass) +  EVP_MAX_BLOCK_LENGTH);
 
+    
     // encrypt the name and the password 
     aes_cypher_encrypt(ctx, name, strlen(name), name_enc, &name_enc_len);
     aes_cypher_encrypt(ctx, pass, strlen(pass), pass_enc, &pass_enc_len);    
-
+    
+    free(name);
+    free(pass);
+    
     control_channel_append_ftp_type(FTP_PASS_AUTHEN, c_channel);
     control_channel_append_str(name_enc, c_channel, name_enc_len);
     control_channel_send_wait(c_channel);

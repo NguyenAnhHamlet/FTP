@@ -7,5 +7,5 @@ PubkeyAcceptedKeyTypes rsa ed25519
 KexkeyAcceptedKeyTypes ecdh dh
 
 #security
-IdleTimeOut 5
+IdleTimeOut 600
 
