@@ -84,7 +84,32 @@ int auth_pam_password(struct passwd *pw, char *password)
 			pw->pw_name, pam_strerror((pam_handle_t *)pamh, pam_retval));
 		return 0;
 	}
-}				
+}	
+
+int do_pam_account(char *username)
+{
+	int pam_retval;
+	pam_retval = pam_acct_mgmt((pam_handle_t *)pamh, 0);
+
+	switch (pam_retval) {
+		case PAM_SUCCESS:
+			/* This is what we want */
+			break;
+		case PAM_NEW_AUTHTOK_REQD:
+			/* flag that password change is necessary */
+			LOG(SERVER, "PAM rejected, requiring password change[%d]: "
+			    "%.200s", pam_retval, pam_strerror(pamh, 
+			    pam_retval));
+			return 0;
+		default:
+			LOG(SERVER, "PAM rejected by account configuration[%d]: "
+			    "%.200s", pam_retval, pam_strerror(pamh, 
+			    pam_retval));
+			return 0;
+	}
+
+	return 1;
+}
 
 void start_pam(struct passwd *pw)
 {

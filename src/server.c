@@ -262,6 +262,8 @@ restart:
         {
             control_channel_append_ftp_type(FTP_NACK, c_channel);
             control_channel_send_wait(c_channel);
+            free(name_dec);
+            free(user_pass_dec);
             return 0;
         }        
     }
@@ -272,12 +274,14 @@ restart:
         LOG(SERVER_LOG, "User %s is stopped due to having root privileges\n", name_dec);
         control_channel_append_ftp_type(FTP_ROOT_DENY, c_channel);
         control_channel_send(c_channel);
+        free(name_dec);
+        free(user_pass_dec);
         return 0;
     }
 
     start_pam(pw);
 
-    if( auth_pam_password(pw, user_pass_dec))
+    if( auth_pam_password(pw, user_pass_dec) && do_pam_account(name_dec))
     {
         control_channel_append_ftp_type(FTP_ACK, c_channel);
         control_channel_send_wait(c_channel);
@@ -294,8 +298,14 @@ restart:
     {
         control_channel_append_ftp_type(FTP_NACK, c_channel);
         control_channel_send_wait(c_channel);
+        free(name_dec);
+        free(user_pass_dec);
         return 0;
     }
+
+    // clean up
+    free(name_dec);
+    free(user_pass_dec);
 
     return 1;
 }

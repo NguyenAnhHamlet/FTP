@@ -12,5 +12,6 @@ int auth_pam_password(struct passwd *pw, char *password);
 void finish_pam(void);
 void pam_cleanup_proc(void *context);
 void start_pam(struct passwd *pw);
+int do_pam_account(char *username);
 
 #endif 

@@ -7,6 +7,13 @@ PubkeyAcceptedKeyTypes rsa ed25519
 KexkeyAcceptedKeyTypes ecdh dh
 
 # security
+#TODO: Implement PermitRootLogin
 PermitRootLogin no
+#LoginGraceTime 2m 
+#LoginGraceTime yes
 IdleTimeOut 600
 MaxAuthTries 3
+#MaxSessions 10
+#PubkeyAuthentication yes
+#PasswordAuthentication yes
+#PermitEmptyPasswords no

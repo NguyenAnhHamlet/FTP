@@ -1,0 +1,14 @@
+[Unit]
+Description=FTPSERVER 
+After=network.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/ftpserver -D $OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process 
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target
