@@ -21,7 +21,8 @@ DEPS=$(OBJS:.o=.d)
 openssl := $(shell openssl version | cut -d ' ' -f2 | cut -d '.' -f1 )
 OPENSSL_FLAG := $(if $(filter 3,$(openssl)), -DOPENSSL_3, -DOPENSSL_1)
 
-LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt -L/usr/lib/x86_64-linux-gnu/ -lreadline
+LDFLAGS=-lcrypto -lz -lpam -lpam_misc -lssl -ldl -lrt	\
+		-L/usr/lib/x86_64-linux-gnu/ -lreadline
 
 # main rules here
 define make_subdirs
@@ -31,7 +32,8 @@ define make_subdirs
 endef
 
 obj/%.o:%.c
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $< -o $@ ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -I $(CURRENT_DIR)  -c $<	\
+	-o $@ ${LDFLAGS} ${OPENSSL_FLAG}
 
 .PHONY: all
 
@@ -39,15 +41,21 @@ all: ftpclient ftpserver ftpkeygen
 
 ftpclient: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  $(OBJS) obj/control.o obj/data.o obj/client.o obj/cmd.o obj/datab.o ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@  \
+	$(OBJS) obj/control.o obj/data.o obj/client_conf.o \
+	obj/client.o obj/cmd.o obj/datab.o \
+	${LDFLAGS} ${OPENSSL_FLAG}	
 
 ftpserver: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/control.o obj/data.o obj/server.o obj/cmd.o obj/datab.o ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS)	\
+	obj/control.o obj/data.o obj/server.o obj/cmd.o obj/datab.o	obj/server_conf.o \
+	${LDFLAGS} ${OPENSSL_FLAG}
 
 ftpkeygen: $(OBJS_CURRENT)
 	@$(call make_subdirs)
-	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS) obj/keygen.o ${LDFLAGS} ${OPENSSL_FLAG}
+	${CC} ${DEBUG_FLAGS} ${CFLAGS} -o ${BINS}/$@ $(OBJS)	\
+	obj/keygen.o ${LDFLAGS} ${OPENSSL_FLAG}
 
 cleanall: 
 	rm -rf obj/* bin/*
@@ -55,8 +63,10 @@ cleanall:
 
 install:	
 	sudo chmod 755 ${BINS}/* && sudo mv bin/* ${DESTDIR}/usr/bin/
-	sudo chmod 644 script/sftp.pam && sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
-	sudo chmod 644 script/*config && sudo cp script/*config ${DESTDIR}/etc/ftp/
+	sudo chmod 644 script/sftp.pam &&	\
+	sudo cp script/sftp.pam ${DESTDIR}/etc/pam.d/sftp
+	sudo chmod 644 script/*config && \
+	sudo cp script/*config ${DESTDIR}/etc/ftp/
 
 compress: 
 	@if [ ! -f ${TARBALL} ]; then 	\

@@ -1,5 +1,5 @@
-obj/server.o: server.c secure/secure.h secure/rsa.h \
- /home/nguyenanh/Programming/FTP/FTP/src/common/buffer.h \
+obj/server_conf.o: server_conf.c server_conf.h secure/secure.h \
+ secure/rsa.h /home/nguyenanh/Programming/FTP/FTP/src/common/buffer.h \
  /home/nguyenanh/Programming/FTP/FTP/src/common/putnum.h \
  /home/nguyenanh/Programming/FTP/FTP/src/common/channel.h \
  /home/nguyenanh/Programming/FTP/FTP/src/secure/rsa.h \
@@ -14,8 +14,8 @@ obj/server.o: server.c secure/secure.h secure/rsa.h \
  /home/nguyenanh/Programming/FTP/FTP/src/common/common.h \
  /home/nguyenanh/Programming/FTP/FTP/src/log/ftplog.h log/ftplog.h \
  common/timer.h common/socket_ftp.h common/pam.h common/packet.h cmd.h \
- common/channel.h common/file.h data.h control.h algo/algo.h \
- server_conf.h
+ common/channel.h common/file.h data.h control.h
+server_conf.h:
 secure/secure.h:
 secure/rsa.h:
 /home/nguyenanh/Programming/FTP/FTP/src/common/buffer.h:
@@ -42,5 +42,3 @@ common/channel.h:
 common/file.h:
 data.h:
 control.h:
-algo/algo.h:
-server_conf.h:

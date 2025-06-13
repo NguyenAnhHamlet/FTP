@@ -1,4 +1,4 @@
-obj/client.o: client.c control.h common/channel.h \
+obj/client_conf.o: client_conf.c client_conf.h control.h common/channel.h \
  /home/nguyenanh/Programming/FTP/FTP/src/secure/rsa.h common/buffer.h \
  common/putnum.h common/common.h \
  /home/nguyenanh/Programming/FTP/FTP/src/algo/stack.h \
@@ -13,8 +13,8 @@ obj/client.o: client.c control.h common/channel.h \
  secure/secure.h secure/rsa.h \
  /home/nguyenanh/Programming/FTP/FTP/src/common/buffer.h \
  /home/nguyenanh/Programming/FTP/FTP/src/common/channel.h common/timer.h \
- common/socket_ftp.h common/packet.h data.h cmd.h log/ftplog.h \
- algo/algo.h common/file.h client_conf.h
+ common/socket_ftp.h common/packet.h data.h cmd.h common/file.h
+client_conf.h:
 control.h:
 common/channel.h:
 /home/nguyenanh/Programming/FTP/FTP/src/secure/rsa.h:
@@ -40,7 +40,4 @@ common/socket_ftp.h:
 common/packet.h:
 data.h:
 cmd.h:
-log/ftplog.h:
-algo/algo.h:
 common/file.h:
-client_conf.h:
