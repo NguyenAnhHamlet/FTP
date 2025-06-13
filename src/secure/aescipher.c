@@ -34,8 +34,10 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
     BN_bn2bin(cipher_ctx->key, convert_key);
     EVP_CIPHER_CTX_reset(cipher_ctx->evp);
 
-    if(!EVP_CipherInit_ex(cipher_ctx->evp, cipher_ctx->evptype, NULL, 
-                     (const char*) convert_key, NULL, ENCRYPT))
+    if(!EVP_CipherInit_ex(cipher_ctx->evp, 
+                          cipher_ctx->evptype, NULL, 
+                          (const char*) convert_key, 
+                          NULL, ENCRYPT))
     {
         unsigned long err_code = ERR_get_error();
 
@@ -43,7 +45,8 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform encryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform encryption %s\n", 
+                err_buf);
         }
 
         LOG(SERVER_LOG, "Could not perform encryption\n");
@@ -65,14 +68,17 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform encryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform encryption %s\n", 
+                err_buf);
         }
 
         LOG(SERVER_LOG, "Could not perform encryption\n");
         return 0;
     }
 
-    if (!EVP_EncryptFinal_ex(cipher_ctx->evp, outbuf + *outlen, &tmplen)) 
+    if (!EVP_EncryptFinal_ex(cipher_ctx->evp, 
+                             outbuf + *outlen, 
+                             &tmplen)) 
     {
         unsigned long err_code = ERR_get_error();
 
@@ -80,7 +86,8 @@ int aes_cypher_encrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform encryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform encryption %s\n", 
+                err_buf);
         }
 
         LOG(SERVER_LOG, "Could not perform decryption\n");
@@ -106,8 +113,10 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
     BN_bn2bin(cipher_ctx->key, convert_key);
     EVP_CIPHER_CTX_reset(cipher_ctx->evp);
 
-    if(!EVP_CipherInit_ex(cipher_ctx->evp, cipher_ctx->evptype, NULL, 
-                     (const char*) convert_key, NULL, DECRYPT))
+    if(!EVP_CipherInit_ex(cipher_ctx->evp, 
+                          cipher_ctx->evptype, NULL, 
+                          (const char*) convert_key, NULL, 
+                          DECRYPT))
     { 
         unsigned long err_code = ERR_get_error();
 
@@ -115,14 +124,16 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform decryption %s\n", 
+                err_buf);
         }
 
         free(convert_key);
         return 0;
     }
 
-    if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, outlen, inbuf, inlen))
+    if (!EVP_CipherUpdate(cipher_ctx->evp, outbuf, 
+                          outlen, inbuf, inlen))
     {
         unsigned long err_code = ERR_get_error();
 
@@ -130,7 +141,8 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform decryption %s\n", 
+                err_buf);
         }
 
         free(convert_key);
@@ -146,7 +158,8 @@ int aes_cypher_decrypt( cipher_context* cipher_ctx, char* inbuf,
         {
             char err_buf[128];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            LOG(SERVER_LOG, "Could not perform decryption %s\n", err_buf);
+            LOG(SERVER_LOG, "Could not perform decryption %s\n", 
+                err_buf);
         }
 
         free(convert_key);

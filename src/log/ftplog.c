@@ -31,7 +31,8 @@ void LOG(ftplog_type type, const char* format, ...)
 
     if (logfile == NULL) 
     {
-        fprintf(stderr, "Error opening log file: %s\n", strerror(errno));
+        fprintf(stderr, "Error opening log file: %s\n", 
+                strerror(errno));
         return;
     }
 
@@ -42,7 +43,8 @@ void LOG(ftplog_type type, const char* format, ...)
     int result = vfprintf(logfile, format, args);
     if (result < 0) 
     {
-        fprintf(stderr, "Error writing to log file: %s\n", strerror(errno));
+        fprintf(stderr, "Error writing to log file: %s\n", 
+                strerror(errno));
     }
 
     fclose(logfile);

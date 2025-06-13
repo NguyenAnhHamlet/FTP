@@ -39,7 +39,8 @@ void set_timer(timer* timer, time_t start , time_t end);
 int start_timer(timer* timer, callbackFunc func);
 
 void* timer_thread_wrapper(void* arg);
-int start_timer_thread(TimerThreadArgs* arg ,timer* timer, callbackFunc func);
+int start_timer_thread(TimerThreadArgs* arg ,timer* timer, 
+                       callbackFunc func);
 
 // in_used variable help to keep track of the object timer
 // if none of the thread / function is using this object

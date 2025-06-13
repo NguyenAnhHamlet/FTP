@@ -26,7 +26,9 @@ void buffer_clear(Buffer * buffer)
 	buffer->end = 0;
 }
 
-void buffer_append_str(Buffer * buffer, const char *data, unsigned int len)
+void buffer_append_str(	Buffer * buffer, 
+						const char *data, 
+						unsigned int len)
 {
 	if (buffer->offset == buffer->end) 
 	{
@@ -51,14 +53,16 @@ restart:
     char *new_point = realloc(buffer->buf , buffer->alloc);
 
     if(!new_point) 
-        fatal("xrealloc: out of memory (new_size %d bytes)", (int) buffer->alloc);
+        fatal("xrealloc: out of memory (new_size %d bytes)", 
+			 (int) buffer->alloc);
 
     buffer->buf  = new_point;
 
 	goto restart;
 }
 
-void buffer_get_data(Buffer* buffer, char* data, unsigned int* len)
+void buffer_get_data(Buffer* buffer, char* data, 
+					 unsigned int* len)
 {
 	*len = buffer->end - buffer->offset;
 	memcpy(data, buffer->buf + buffer->offset, *len);
@@ -70,7 +74,8 @@ unsigned int buffer_len(Buffer * buffer)
     return (buffer->end - buffer->offset);
 }
 
-void buffer_get(Buffer * buffer, char *buf, unsigned int len)
+void buffer_get(Buffer * buffer, char *buf, 
+				unsigned int len)
 {   
     if (len > buffer->end - buffer->offset)
 		fatal("buffer_get trying to get more bytes than in buffer");
@@ -95,7 +100,8 @@ buffer_put_bignum(Buffer *buffer, BIGNUM **value)
 	// Get the value of in binary 
 	oi = BN_bn2bin(*value, buf);
 	if (oi != bin_size)
-		fatal("buffer_put_bignum: BN_bn2bin() failed: oi %d != bin_size %d",
+		fatal("buffer_put_bignum: BN_bn2bin()"
+			  "failed: oi %d != bin_size %d",
 		      oi, bin_size);
 
 	PUT_16BIT(msg, bits);

@@ -51,7 +51,8 @@ mode_t permission(const char* path)
         return -1;
     } 
         
-    mode_t permissions = stat_result.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    mode_t permissions = stat_result.st_mode & 
+                         (S_IRWXU | S_IRWXG | S_IRWXO);
 
     return permissions;
 }   

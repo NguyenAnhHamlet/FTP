@@ -25,7 +25,9 @@ extern void openssl_get_error();
 // at least one match. If there are , the operation shall proceed by server sending 
 // back the available key for both to use. If not, send the ABORT 
 // If both rsa and ed25519 is available, ed25519 shall be the chosen one
-int pkey_negotiate(control_channel* channel, unsigned int pkeyaccept_avail, endpoint_type type)
+int pkey_negotiate(control_channel* channel, 
+                   unsigned int pkeyaccept_avail, 
+                   endpoint_type type)
 {
     switch(type)
     {

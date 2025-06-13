@@ -31,7 +31,8 @@ static int pamconv(int num_msg, const struct pam_message **msg,
 	char *p;
 
 	/* PAM will free this later */
-	reply = (struct pam_response*) malloc(num_msg * sizeof(struct pam_response));	
+	reply = (struct pam_response*) 
+			 malloc(num_msg * sizeof(struct pam_response));	
 	if (reply == NULL)
 		return PAM_CONV_ERR; 
 
@@ -75,13 +76,17 @@ int auth_pam_password(struct passwd *pw, char *password)
 
     if (pam_retval == PAM_SUCCESS) 
     {
-        LOG(SERVER_LOG, "PAM Password authentication accepted for user \"%.100s\"", pw->pw_name);
+        LOG(SERVER_LOG, 
+			"PAM Password authentication accepted for user \"%.100s\"", 
+			pw->pw_name);
         return 1;
 	} 
     else
     {
-		LOG(SERVER_LOG, "PAM Password authentication for \"%.100s\" failed: %s", 
-			pw->pw_name, pam_strerror((pam_handle_t *)pamh, pam_retval));
+		LOG(SERVER_LOG, 
+			"PAM Password authentication for \"%.100s\" failed: %s", 
+			pw->pw_name, pam_strerror((pam_handle_t *)pamh, 
+			pam_retval));
 		return 0;
 	}
 }	
@@ -115,14 +120,17 @@ void start_pam(struct passwd *pw)
 {
 	int pam_retval;
 
-	LOG(SERVER_LOG, "Starting up PAM with username \"%.200s\"\n", pw->pw_name);
+	LOG(SERVER_LOG, 
+		"Starting up PAM with username \"%.200s\"\n", 
+		pw->pw_name);
 
 	pam_retval = pam_start("sftp", pw->pw_name, &conv, &pamh);
 
 	if (pam_retval != PAM_SUCCESS)
 	{
 		pam_cleanup_proc(NULL);
-		fatal("PAM initialisation failed: %.200s", pam_strerror((pam_handle_t *)pamh, pam_retval));
+		fatal("PAM initialisation failed: %.200s", 
+			  pam_strerror((pam_handle_t *)pamh, pam_retval));
 	}
 
 }

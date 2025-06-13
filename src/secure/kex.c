@@ -195,7 +195,6 @@ int generate_secret_key(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_value)
         return 0;
     }
 
-    LOG(1, "RUNNING 0\n");
 
     if (EVP_PKEY_derive_set_peer(ctx, peer_key) <= 0)
     {
@@ -204,8 +203,6 @@ int generate_secret_key(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_value)
         EVP_PKEY_free(pkey);
         return 0;
     }
-
-    LOG(1, "RUNNING 1\n");
 
     if (EVP_PKEY_derive(ctx, NULL, &skeylen) <= 0)
     {
@@ -234,8 +231,6 @@ int generate_secret_key(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_value)
         return 0;
     }
 
-    LOG(1, "RUNNING 2\n");
-
     BN_bin2bn(skey, skeylen, *shared_key);
 
     EVP_PKEY_CTX_free(ctx);
@@ -251,27 +246,35 @@ int generate_secret_key(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_value)
 EC_KEY *EC_KEY_ECDH_init()
 {
     EC_KEY *key;
-	if (NULL == (key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))) {
+	if (NULL == (key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))) 
+    {
 		openssl_get_error();
 		return NULL;
 	}
 
-	if (1 != EC_KEY_generate_key(key)) {
+	if (1 != EC_KEY_generate_key(key)) 
+    {
 		openssl_get_error();
 		return NULL;
 	}
 	return key;
 }
 
-int extract_public_key_values(EC_KEY* ec_key, BIGNUM** x, BIGNUM** y)
+int extract_public_key_values(EC_KEY* ec_key, 
+                              BIGNUM** x, 
+                              BIGNUM** y)
 {
     EC_POINT_get_affine_coordinates_GFp(EC_KEY_get0_group(ec_key), 
-                                        EC_KEY_get0_public_key(ec_key), *x, *y, NULL);
+                                        EC_KEY_get0_public_key(ec_key), 
+                                        *x, *y, NULL);
 
     return 1;
 }
 
-int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_value_x, BIGNUM** pub_value_y)
+int generate_secret_key_ecdh(EC_KEY* ec_key, 
+                             BIGNUM** shared_key, 
+                             BIGNUM** pub_value_x, 
+                             BIGNUM** pub_value_y)
 {
     EC_GROUP *group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1); 
     char* secret;
@@ -292,7 +295,11 @@ int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_v
         return 0;
     }
 
-    if (!EC_POINT_set_affine_coordinates_GFp(group, peer_pub_key, *pub_value_x, *pub_value_y, NULL)) {
+    if (!EC_POINT_set_affine_coordinates_GFp(group, peer_pub_key, 
+                                            *pub_value_x, 
+                                            *pub_value_y, 
+                                            NULL)) 
+    {
         LOG(COMMON_LOG, "Error: Failed to set peer's public key coordinates.\n");
         EC_POINT_free(peer_pub_key);
         EC_GROUP_free(group);
@@ -301,7 +308,8 @@ int generate_secret_key_ecdh(EC_KEY* ec_key, BIGNUM** shared_key, BIGNUM** pub_v
 	field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
 	secret_len = (field_size + 7) / 8;
 
-	if (NULL == (secret = OPENSSL_malloc(secret_len))) {
+	if (NULL == (secret = OPENSSL_malloc(secret_len))) 
+    {
 		openssl_get_error();
         EC_POINT_free(peer_pub_key);
         EC_GROUP_free(group); 
@@ -350,7 +358,8 @@ EVP_PKEY* EC_KEY_ECDH_init()
         return 0;
     }
 
-    if(1 != EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1)) 
+    if(1 != EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, 
+                                                   NID_X9_62_prime256v1)) 
     {
         openssl_get_error();
         EVP_PKEY_CTX_free(pctx);
@@ -417,14 +426,19 @@ int generate_ecdh_from_points(EVP_PKEY** evp_pkey, BIGNUM** x, BIGNUM** y)
 
     OSSL_PARAM_BLD *params_build = OSSL_PARAM_BLD_new();
 
-    if(!OSSL_PARAM_BLD_push_utf8_string(params_build, OSSL_PKEY_PARAM_GROUP_NAME, SN_X9_62_prime256v1, 0))
+    if(!OSSL_PARAM_BLD_push_utf8_string(params_build, 
+                                        OSSL_PKEY_PARAM_GROUP_NAME, 
+                                        SN_X9_62_prime256v1, 0))
     {
         LOG(SERVER_LOG, "Error: failed to push ec_group into param build.\n");
         OSSL_PARAM_BLD_free(params_build);
         return 0;
     }
 
-    if (!OSSL_PARAM_BLD_push_octet_string(params_build, OSSL_PKEY_PARAM_PUB_KEY, pub_key_bytes, sizeof(pub_key_bytes))) 
+    if (!OSSL_PARAM_BLD_push_octet_string(params_build, 
+                                          OSSL_PKEY_PARAM_PUB_KEY, 
+                                          pub_key_bytes, 
+                                          sizeof(pub_key_bytes))) 
     {
         LOG(SERVER_LOG, "Error: failed to push public key into param build.\n");
         OSSL_PARAM_BLD_free(params_build);
@@ -470,14 +484,19 @@ int generate_ecdh_from_points(EVP_PKEY** evp_pkey, BIGNUM** x, BIGNUM** y)
     return 1;
 }
 
-int generate_secret_key_ecdh(EVP_PKEY* pkey, BIGNUM** shared_key, BIGNUM** pub_value_x, BIGNUM** pub_value_y)
+int generate_secret_key_ecdh(EVP_PKEY* pkey, 
+                             BIGNUM** shared_key, 
+                             BIGNUM** pub_value_x, 
+                             BIGNUM** pub_value_y)
 {
     EVP_PKEY* peer_pub_key;
     unsigned int outlen;
     unsigned char *skey;
     size_t skeylen;
 
-    if(!generate_ecdh_from_points(&peer_pub_key, pub_value_x, pub_value_y))
+    if(!generate_ecdh_from_points(&peer_pub_key, 
+                                  pub_value_x, 
+                                  pub_value_y))
     {
         return 0;
     }

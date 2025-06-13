@@ -20,13 +20,17 @@ void buffer_free(Buffer * buffer);
 
 void buffer_clear(Buffer * buffer);
 
-void buffer_append_str(Buffer * buffer, const char *data, unsigned int len);
+void buffer_append_str(Buffer * buffer, 
+					   const char *data, 
+					   unsigned int len);
 
-void buffer_get_data(Buffer* buffer, char* data, unsigned int* len);
+void buffer_get_data(Buffer* buffer, char* data, 
+					 unsigned int* len);
 
 unsigned int buffer_len(Buffer * buffer);
 
-void buffer_get(Buffer * buffer, char *buf, unsigned int len);
+void buffer_get(Buffer * buffer, char *buf, 
+				unsigned int len);
 
 void buffer_put_bignum(Buffer * buffer, BIGNUM **value);
 

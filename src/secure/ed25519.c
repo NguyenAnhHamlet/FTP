@@ -26,7 +26,8 @@ void save_ed25519_public_key(char path[], EVP_PKEY *pkey)
         {
             char err_buf[120];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            fprintf(stderr, "Error opening public key file: %s\n", err_buf);
+            fprintf(stderr, "Error opening public key file: %s\n", 
+                    err_buf);
         }
         return; 
     }
@@ -38,7 +39,8 @@ void save_ed25519_public_key(char path[], EVP_PKEY *pkey)
         {
             char err_buf[120];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            fprintf(stderr, "Error writing public key to file: %s\n", err_buf);
+            fprintf(stderr, "Error writing public key to file: %s\n", 
+                    err_buf);
         }
     }
 
@@ -56,7 +58,8 @@ void save_ed25519_private_key(char path[], EVP_PKEY *pkey)
         {
             char err_buf[120];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            fprintf(stderr, "Error opening private key file: %s\n", err_buf);
+            fprintf(stderr, "Error opening private key file: %s\n", 
+                    err_buf);
         }
         return;  
     }
@@ -68,7 +71,8 @@ void save_ed25519_private_key(char path[], EVP_PKEY *pkey)
         {
             char err_buf[120];
             ERR_error_string_n(err_code, err_buf, sizeof(err_buf));
-            fprintf(stderr, "Error writing private key to file: %s\n", err_buf);
+            fprintf(stderr, "Error writing private key to file: %s\n", 
+                    err_buf);
         }
     }
 
@@ -230,7 +234,9 @@ int load_private_ed25519_key(EVP_PKEY **pkey, char path[])
 void ed25519_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen)
 {
     size_t pubkeystr_len = 0;
-    if (!EVP_PKEY_get_octet_string_param(pub_key, OSSL_PKEY_PARAM_PUB_KEY, NULL, 0, &pubkeystr_len)) 
+    if (!EVP_PKEY_get_octet_string_param(pub_key, 
+                                         OSSL_PKEY_PARAM_PUB_KEY, 
+                                         NULL, 0, &pubkeystr_len)) 
     {
         ERR_print_errors_fp(stderr);
         return ;                                                                                                                                   
@@ -238,7 +244,10 @@ void ed25519_pubkey_hash(EVP_PKEY* pub_key, char** ret, int* retlen)
 
     unsigned char *pubkeystr = OPENSSL_malloc(pubkeystr_len);
 
-    if (!EVP_PKEY_get_octet_string_param(pub_key, OSSL_PKEY_PARAM_PUB_KEY, pubkeystr, pubkeystr_len, &pubkeystr_len)) 
+    if (!EVP_PKEY_get_octet_string_param(pub_key, 
+                                         OSSL_PKEY_PARAM_PUB_KEY, 
+                                         pubkeystr, pubkeystr_len, 
+                                         &pubkeystr_len)) 
     {
         ERR_print_errors_fp(stderr);
         OPENSSL_free(pubkeystr);

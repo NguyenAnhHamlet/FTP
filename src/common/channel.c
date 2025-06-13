@@ -3,10 +3,12 @@
 #include "log/ftplog.h"
 #include <signal.h>
 
-void channel_context_init(channel_context* channel_ctx, cipher_context* cipher_ctx, 
-                     data_channel* d_channel, control_channel* c_channel, 
-                     socket_ftp* c_socket, socket_ftp* d_socket, 
-                     endpoint_type type, ftplog_type log_type)
+void channel_context_init(channel_context* channel_ctx, 
+                          cipher_context* cipher_ctx, 
+                          data_channel* d_channel, 
+                          control_channel* c_channel, 
+                          socket_ftp* c_socket, socket_ftp* d_socket, 
+                          endpoint_type type, ftplog_type log_type)
 {
     channel_ctx->cipher_ctx = cipher_ctx;
     channel_ctx->d_channel = d_channel;
@@ -82,13 +84,10 @@ void control_channel_init(  control_channel* channel,
                             cipher_context* cipher_ctx)
 {
     channel->conn = conn;
-
     channel->data_in = (Packet*) malloc(sizeof(Packet));
     channel->data_out = (Packet*) malloc(sizeof(Packet));
-
     packet_init(channel->data_in, in_port, 0, in_port);
     packet_init(channel->data_out, out_port, 0, in_port);
-
     channel->data_in->in_port = in_port;
     channel->data_in->out_port = 0;
     channel->data_out->out_port = out_port;
@@ -215,7 +214,9 @@ int control_channel_send_wait(control_channel* channel)
     return packet_send_wait(channel->data_out);
 }
 
-int control_channel_append_str(char* str, control_channel* channel, unsigned int len)
+int control_channel_append_str(char* str, 
+                               control_channel* channel, 
+                               unsigned int len)
 {
     return packet_append_str(str, channel->data_out, len);
 }
@@ -235,12 +236,14 @@ int control_channel_get_int(control_channel* channel)
     return packet_get_int(channel->data_in);
 }
 
-int control_channel_get_str(control_channel* channel, char* str, unsigned int* len)
+int control_channel_get_str(control_channel* channel, 
+                            char* str, unsigned int* len)
 {
     return packet_get_str(channel->data_in, str, len);
 }
 
-int control_channel_get_str_out(control_channel* channel, char* str, unsigned int* len)
+int control_channel_get_str_out(control_channel* channel, 
+                                char* str, unsigned int* len)
 {
     return packet_get_str(channel->data_out, str, len);
 }
@@ -260,7 +263,8 @@ void control_channel_clean_data_in(control_channel* channel)
     packet_clear_data(channel->data_in);
 }
 
-int control_channel_append_ftp_type(int ftp_type, control_channel* channel)
+int control_channel_append_ftp_type(int ftp_type, 
+                                    control_channel* channel)
 {
     control_channel_append_header(channel, -1, 0, 
                                   -1, ftp_type, 0, 0);
@@ -295,18 +299,14 @@ void data_channel_init( data_channel* channel,
 {
     channel->data_in = (Packet*) malloc(sizeof(Packet));
     channel->data_out = (Packet*) malloc(sizeof(Packet));
-
     packet_init(channel->data_in, out_port, 0, in_port);
     packet_init(channel->data_out, out_port, 0, in_port);
-
     set_packet_compress(channel->data_in);
     set_packet_compress(channel->data_out);
-
     channel->data_in->in_port = in_port;
     channel->data_in->out_port = 0;
     channel->data_out->out_port = out_port;
     channel->data_out->in_port = 0;
-
     channel->cipher_ctx = cipher_ctx;
 }
 
@@ -338,18 +338,18 @@ void data_channel_decrypt(data_channel* channel)
     char* buf, *outbuf;
     int b_len, out_len;
 
-    outbuf = (char*) malloc(buffer_len(channel->data_in->buf) + EVP_MAX_BLOCK_LENGTH);
+    outbuf = (char*) malloc(buffer_len(channel->data_in->buf) + 
+              EVP_MAX_BLOCK_LENGTH);
     buf = (char*) malloc(buffer_len(channel->data_in->buf) );
-
     memset(outbuf, 0, buffer_len(channel->data_in->buf) + EVP_MAX_BLOCK_LENGTH);
     memset(buf, 0, buffer_len(channel->data_in->buf));
-
     packet_get_str(channel->data_in, buf, &b_len);
     aes_cypher_decrypt( channel->cipher_ctx, buf, 
                         b_len, outbuf, &out_len);
     data_channel_clean_datain(channel);
     packet_append_str(outbuf, channel->data_in, out_len);
 
+    // clean up 
     free(outbuf);
     free(buf);
 }
@@ -359,17 +359,17 @@ void data_channel_encrypt(data_channel* channel)
     char* buf, *outbuf;
     int b_len, out_len, block_size;
 
-    outbuf = (char*) malloc(buffer_len(channel->data_out->buf) + EVP_MAX_BLOCK_LENGTH);
+    outbuf = (char*) malloc(buffer_len(channel->data_out->buf) + 
+              EVP_MAX_BLOCK_LENGTH);
     buf = (char*) malloc(buffer_len(channel->data_out->buf) );
-
     memset(outbuf, 0, buffer_len(channel->data_out->buf));
     memset(buf, 0, buffer_len(channel->data_out->buf));
-
     packet_get_str(channel->data_out, buf, &b_len);
     aes_cypher_encrypt( channel->cipher_ctx, buf, b_len, outbuf, &out_len);
     data_channel_clean_dataout(channel);
     data_channel_append_str(outbuf, channel, out_len);
 
+    // clean up 
     free(outbuf);
     free(buf);
 }
@@ -397,9 +397,11 @@ int data_channel_read_header(data_channel* channel)
     return packet_read_header(channel->data_in);
 }
 
-int data_channel_read_expect(data_channel* channel, unsigned int expect_value)
+int data_channel_read_expect(data_channel* channel, 
+                             unsigned int expect_value)
 {
-    if(!packet_read_expect(channel->data_in, expect_value)) return 0;
+    if(!packet_read_expect(channel->data_in, expect_value)) 
+        return 0;
     data_channel_decrypt(channel);
 
     return 1;
@@ -413,12 +415,12 @@ int data_channel_send(data_channel* channel)
 
 int data_channel_send_wait(data_channel* channel)
 {
-    LOG(SERVER_LOG, "AVAI 9\n");
     data_channel_encrypt(channel);
     return packet_send_wait(channel->data_out);
 }
 
-int data_channel_append_str(char* str, data_channel* channel, unsigned int len)
+int data_channel_append_str(char* str, data_channel* channel, 
+                            unsigned int len)
 {
     return packet_append_str(str, channel->data_out, len);
 }
@@ -438,7 +440,8 @@ int data_channel_get_int(data_channel* channel)
     return packet_get_int(channel->data_in);
 }
 
-int data_channel_get_str(data_channel* channel, char* str, unsigned int* len)
+int data_channel_get_str(data_channel* channel, 
+                         char* str, unsigned int* len)
 {
     return packet_get_str(channel->data_in, str, len);
 }
@@ -499,12 +502,14 @@ int data_channel_get_data_len_in(data_channel* d_channel)
     return packet_get_data_len(d_channel->data_in); 
 }
 
-void data_channel_set_ctx(data_channel* d_channel, cipher_context* ctx)
+void data_channel_set_ctx(data_channel* d_channel, 
+                          cipher_context* ctx)
 {   
     d_channel->cipher_ctx = ctx;
 }
 
-void data_channel_append_ftp_type(data_channel* d_channel, unsigned int ftp_type)
+void data_channel_append_ftp_type(data_channel* d_channel, 
+                                  unsigned int ftp_type)
 {
     data_channel_append_header(d_channel, -1, 0, 
                                   -1, ftp_type, 1, 0);
@@ -530,7 +535,8 @@ int data_channel_get_ident_out(data_channel* d_channel)
     return packet_get_ident(d_channel->data_out);
 }
 
-void data_channel_set_fragment_in(data_channel* d_channel, int fragment_offset)
+void data_channel_set_fragment_in(data_channel* d_channel, 
+                                  int fragment_offset)
 {
     packet_set_fragment(d_channel->data_in, fragment_offset);
 }
@@ -540,12 +546,14 @@ void data_channel_clear_header_in(data_channel* d_channel)
     packet_clear_header(d_channel->data_in);
 }
 
-void data_channel_set_identification_in(data_channel* d_channel, int ident)
+void data_channel_set_identification_in(data_channel* d_channel, 
+                                        int ident)
 {
     packet_set_identification(d_channel->data_in, ident);
 }
 
-void data_channel_set_data_len_in(data_channel* d_channel, int data_len)
+void data_channel_set_data_len_in(data_channel* d_channel, 
+                                  int data_len)
 {
     packet_set_data_len(d_channel->data_in, data_len);
 }
@@ -555,7 +563,8 @@ void data_channel_set_tt_len_in(data_channel* d_channel, int total_len)
     packet_set_tt_len(d_channel->data_in, total_len);
 }
 
-void data_channel_set_fragment_out(data_channel* d_channel, int fragment_offset)
+void data_channel_set_fragment_out(data_channel* d_channel, 
+                                   int fragment_offset)
 {
     packet_set_fragment(d_channel->data_out, fragment_offset);
 }
@@ -565,7 +574,8 @@ void data_channel_clear_header_out(data_channel* d_channel)
     packet_clear_header(d_channel->data_out);
 }
 
-void data_channel_set_identification_out(data_channel* d_channel, int ident)
+void data_channel_set_identification_out(data_channel* d_channel, 
+                                         int ident)
 {
     packet_set_identification(d_channel->data_out, ident);
 }

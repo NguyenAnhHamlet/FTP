@@ -18,7 +18,8 @@ int cre_socket()
     return fd;
 }
 
-int set_end_point(struct sockaddr_in* _endpoint_addr, char* _ip_addr,
+int set_end_point(struct sockaddr_in* _endpoint_addr, 
+                  char* _ip_addr,
                   unsigned int _PORT, socklen_t IPTYPE, 
                   endpoint_type type)
 {
@@ -31,7 +32,8 @@ int set_end_point(struct sockaddr_in* _endpoint_addr, char* _ip_addr,
     {
     case CLIENT:
     {
-        if (inet_pton(AF_INET, _ip_addr , &_endpoint_addr->sin_addr) <= 0) 
+        if (inet_pton(AF_INET, _ip_addr , 
+                      &_endpoint_addr->sin_addr) <= 0) 
         {
             printf("\nInvalid address/ Address not supported \n");
             return -1;
@@ -53,10 +55,12 @@ int set_end_point(struct sockaddr_in* _endpoint_addr, char* _ip_addr,
     return 1;
 }
 
-int connect_endpoint(unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
+int connect_endpoint(unsigned int _socket_fd, 
+                     struct sockaddr_in* _endpoint_addr,
                      unsigned int _endpoint_addr_size)
 {
-    if ((connect(_socket_fd, (struct sockaddr*)_endpoint_addr, _endpoint_addr_size)) < 0) 
+    if ((connect(_socket_fd, (struct sockaddr*)_endpoint_addr, 
+        _endpoint_addr_size)) < 0) 
     {
         perror("\nConnection Failed \n");
         return 0;
@@ -65,9 +69,12 @@ int connect_endpoint(unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr
     return 1;
 }
 
-int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,
-                char* _ip_addr, unsigned int _PORT_, unsigned int _endpoint_addr_size,
-                socklen_t IPTYPE, endpoint_type type, channel_type c_type)
+int set_socket( socket_ftp* socket, unsigned int _sockfd, 
+                struct sockaddr_in* _endpoint_addr,
+                char* _ip_addr, unsigned int _PORT_, 
+                unsigned int _endpoint_addr_size,
+                socklen_t IPTYPE, endpoint_type type, 
+                channel_type c_type)
 {
     int res = 1;
     socket->sockfd = _sockfd;
@@ -81,7 +88,8 @@ int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _e
     {
     case CLIENT:
     {
-        res &= set_end_point(socket->endpoint_addr, socket->ip_addr, 
+        res &= set_end_point(socket->endpoint_addr, 
+                             socket->ip_addr, 
                              socket->PORT_, IPTYPE, CLIENT);
         res &= connect_endpoint(socket->sockfd, socket->endpoint_addr, 
                                 socket->endpoint_addr_size);
@@ -137,11 +145,8 @@ socket_ftp* create_ftp_socket(char* _ip_addr, socklen_t IPTYPE,
 {
     struct sockaddr_in* endpoint_address = 
             (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
-
     int addrlen = sizeof(*endpoint_address);
-
     socket_ftp* socket = (socket_ftp*)malloc(sizeof(socket_ftp));
-
     set_socket(socket, sockfd, endpoint_address, _ip_addr, 
                PORT, addrlen, IPTYPE, type, c_type);
     
@@ -153,7 +158,8 @@ void ftp_socket_cp(socket_ftp* org, socket_ftp* dest)
     dest->PORT_ = org->PORT_;
     dest->op = org->op;
     strcpy(dest->ip_addr, org->ip_addr); 
-    dest->endpoint_addr = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
+    dest->endpoint_addr = (struct sockaddr_in*)
+                           malloc(sizeof(struct sockaddr_in));
     dest->endpoint_addr->sin_family = org->endpoint_addr->sin_family;
     dest->endpoint_addr->sin_port = htons(dest->PORT_);
     dest->sockfd = org->sockfd; 

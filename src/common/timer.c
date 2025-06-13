@@ -46,7 +46,8 @@ void* timer_thread_wrapper(void* arg)
     return NULL;
 }
 
-int start_timerThread(TimerThreadArgs* args, timer* timer, callbackFunc func)
+int start_timerThread(TimerThreadArgs* args, timer* timer, 
+                      callbackFunc func)
 {
     pthread_t thread;
     args->timer = timer;
@@ -75,15 +76,14 @@ int cancel_timer_thread(TimerThreadArgs* arg)
 int delay_timer(timer* timer)
 {
     if(!timer) return Faillure;
-
     wait_timer_semaphore(timer);
-
     timer->in_used++;
 
-    while(timer->running && (int) difftime(timer->current_time, timer->start_time) >= timer->due_time);
+    while(timer->running && 
+        (int) difftime(timer->current_time, timer->start_time) 
+        >= timer->due_time);
 
     timer->in_used--;
-
     signal_timer_semaphore(timer);
 
     return Success;
@@ -91,14 +91,11 @@ int delay_timer(timer* timer)
 
 void set_timer(timer* timer, time_t start , time_t end)
 {
-    if(!timer) return ;
-
+    if(!timer) return 
     timer->in_used++;
-
     timer->current_time = time(NULL);
     timer->start_time = start;
     timer->due_time = end;
     timer->running = 0;
-
     timer->in_used--;
 }

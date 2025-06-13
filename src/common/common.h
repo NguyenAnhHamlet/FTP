@@ -51,13 +51,13 @@ typedef enum
     SERVER_LISTENING
 } channel_type;
 
-bool is_ip_addr(char* buf);
 void execute(char cmd[], char res[]);
 void take_user_name(char username[]);
 void fatal(const char* format, ...); 
 unsigned int size_buffer(char buff[]); 
 bool has_pattern(char path[], char* pattern, FILE* pipe);
-int bind_endpoint(  unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr, 
+int bind_endpoint(  unsigned int _socket_fd, 
+                    struct sockaddr_in* _endpoint_addr, 
                     unsigned int _endpoint_addr_size);
 int listen_endpoint(unsigned int _socket_fd, unsigned int num);
 int available_socket_fd(Stack* available);

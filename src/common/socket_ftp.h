@@ -14,9 +14,12 @@ typedef struct
     int* opt;
 } socket_ftp;
 
-int set_socket( socket_ftp* socket, unsigned int _sockfd, struct sockaddr_in* _endpoint_addr,
-                char* _ip_addr, unsigned int _PORT_, unsigned int _endpoint_addr_size,
-                socklen_t IPTYPE,  endpoint_type type, channel_type c_type);
+int set_socket( socket_ftp* socket, unsigned int _sockfd, 
+                struct sockaddr_in* _endpoint_addr,
+                char* _ip_addr, unsigned int _PORT_, 
+                unsigned int _endpoint_addr_size,
+                socklen_t IPTYPE,  endpoint_type type, 
+                channel_type c_type);
 
 socket_ftp* create_ftp_socket(char* _ip_addr, socklen_t IPTYPE, 
                               endpoint_type type, unsigned int PORT,
@@ -37,11 +40,13 @@ int cre_socket();
 // create a network socket with 
 // specify IP address and PORT
 // and return it
-int set_end_point(struct sockaddr_in* _endpoint_addr, char* _ip_addr, unsigned int _PORT,
+int set_end_point(struct sockaddr_in* _endpoint_addr, 
+                  char* _ip_addr, unsigned int _PORT,
                   socklen_t IPTYPE, endpoint_type type);
 
 // connect the fd to endpoint socket
-int connect_endpoint(unsigned int _socket_fd, struct sockaddr_in* _endpoint_addr,
+int connect_endpoint(unsigned int _socket_fd, 
+                     struct sockaddr_in* _endpoint_addr,
                      unsigned int _endpoint_addr_size);
 
 int accept_new_connection_ftp(socket_ftp* socket);

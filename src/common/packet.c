@@ -13,7 +13,8 @@
 #include "log/ftplog.h"
 #include "algo/algo.h"
 
-void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type,
+void packet_init(Packet* packet, unsigned int out_port, 
+                 unsigned int packet_type,
                  unsigned int in_port )
 {
     packet->buf = (Buffer*) malloc(sizeof(Buffer));
@@ -22,7 +23,8 @@ void packet_init(Packet* packet, unsigned int out_port, unsigned int packet_type
     packet_set_port(packet, in_port, out_port);
 }
 
-void packet_set_port(Packet* packet, unsigned int in_port, unsigned int out_port)
+void packet_set_port(Packet* packet, unsigned int in_port, 
+                     unsigned int out_port)
 {
     packet->in_port = in_port;
     packet->out_port = out_port;
@@ -102,7 +104,8 @@ int packet_read(Packet* packet)
     } 
 
     while(  len < packet->p_header->data_len && 
-            (curr_len = read(packet->in_port, buf, min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
+            (curr_len = read(packet->in_port, buf, 
+                             min(packet->p_header->data_len - len, BUF_LEN)) ) > 0)
     {
         buffer_append_str(packet->buf, buf, curr_len);
         len += curr_len;
@@ -188,7 +191,8 @@ int packet_send_wait(Packet* packet)
         buffer_init(outbuf);
         buffer_compress(packet->buf, outbuf );
         buffer_clear(packet->buf);
-        buffer_append_str(packet->buf, buffer_get_ptr(outbuf), buffer_len(outbuf));
+        buffer_append_str(packet->buf, buffer_get_ptr(outbuf), 
+                          buffer_len(outbuf));
         buffer_free(outbuf);
     }
 
@@ -207,7 +211,8 @@ int packet_send_wait(Packet* packet)
     {
 		FD_ZERO(&write_set);
 		FD_SET(packet->out_port, &write_set);
-		retval = select(packet->out_port + 1, NULL, &write_set, NULL, &timeout);
+		retval = select(packet->out_port + 1, NULL, 
+                        &write_set, NULL, &timeout);
 
         if(retval <= 0)
         {
@@ -219,7 +224,8 @@ int packet_send_wait(Packet* packet)
             if (errno == EAGAIN)
                 continue;
             else
-                fatal("Write failed: %.100s", strerror(errno));
+                fatal("Write failed: %.100s", 
+                      strerror(errno));
         }
     }
 }
@@ -234,7 +240,8 @@ int packet_wait(Packet* packet)
     FD_ZERO(&read_set);
 	FD_SET(packet->in_port, &read_set);
 
-    int res = select(packet->in_port + 1, &read_set, NULL, NULL, &timeout);
+    int res = select(packet->in_port + 1, 
+                     &read_set, NULL, NULL, &timeout);
 
     return res;
 }
