@@ -1,10 +1,32 @@
-# PAM configuration file
+# PAM configuration file for ftp
 
-# 1. Authentication using /etc/passwd or /etc/shadow
-auth	required	pam_unix.so	
+# authentication control
+auth        required                                        pam_env.so
 
-# 2. Logging for debugging
-auth	required	pam_debug.so
+# delay for 2 seconds (2000000 us) before returning 
+# failure message
+auth        required                                        pam_faildelay.so delay=2000000
 
-# 3. Account management (e.g., expiration, restrictions)
-account	required	pam_unix.so	
+# authentication control
+auth        required                                        pam_env.so
+auth        required                                        pam_debug.so
+auth        [default=1 ignore=ignore success=ok]            pam_usertype.so isregular
+auth        [default=1 ignore=ignore success=ok]            pam_localuser.so
+auth        sufficient                                      pam_unix.so
+
+# authentication failure
+auth         required                                        pam_deny.so
+
+# account control
+
+account      sufficient                                      pam_unix.so
+account      requisite                                       pam_localuser.so
+
+# sesssion control
+session     required                                        pam_selinux.so close
+session     required                                        pam_loginuid.so
+session     required                                        pam_limits.so
+session     required                                        pam_unix.so
+session     required                                        pam_selinux.so open env_params
+session     required                                        pam_namespace.so
+session     optional                                        pam_motd.so

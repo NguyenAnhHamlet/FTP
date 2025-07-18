@@ -34,7 +34,6 @@ int parse_token(const char *cp, const char *filename,
 	return -1;
 }
 
-// TODO : better to put this in seperate file called rconfigserver.c 
 int read_config(char* conf)
 {
     FILE* fp = NULL;    
